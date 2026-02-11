@@ -5,6 +5,9 @@ import { ROUTES } from './constants/app-config';
 import { lazy, Suspense } from 'react';
 import { PageLoader } from './components/ui/loading-spinner';
 
+// Protected Layout - Renders header once for all authenticated pages
+import { ProtectedLayout } from './components/layout/protected-layout';
+
 // Auth pages
 const LoginPage = lazy(() => import('./features/auth/pages/login-page'));
 const SignupPage = lazy(() => import('./features/auth/pages/signup-page'));
@@ -28,6 +31,9 @@ const LeaveLayout = lazy(() =>
 );
 const LeaveAllocationsPage = lazy(() => import('./features/leave/pages/leave-allocations-page'));
 
+// Preferences
+const PreferencesPage = lazy(() => import('./features/preferences/pages/preferences-page'));
+
 function App() {
   return (
     <div className="min-h-screen bg-background font-sans antialiased">
@@ -43,21 +49,30 @@ function App() {
             element={<OrganizationNotApprovedPage />}
           />
 
-          {/* Protected Routes - Dashboard (role-based routing) */}
-          <Route path={ROUTES.DASHBOARD} element={<DashboardRouter />} />
+          {/* Protected Routes - Header rendered once in ProtectedLayout */}
+          <Route element={<ProtectedLayout />}>
+            {/* Dashboard (role-based routing) */}
+            <Route path={ROUTES.DASHBOARD} element={<DashboardRouter />} />
 
-          {/* Protected Routes - Students */}
-          <Route path={ROUTES.STUDENTS} element={<StudentsListPage />} />
+            {/* Students */}
+            <Route path={ROUTES.STUDENTS} element={<StudentsListPage />} />
 
-          {/* Protected Routes - Leave Management (with nested layout) */}
-          <Route element={<LeaveLayout />}>
-            <Route path={ROUTES.LEAVE.ALLOCATIONS} element={<LeaveAllocationsPage />} />
-            <Route path={`${ROUTES.LEAVE.ALLOCATIONS}/create`} element={<LeaveAllocationsPage />} />
-            <Route path={`${ROUTES.LEAVE.ALLOCATIONS}/:id`} element={<LeaveAllocationsPage />} />
-            <Route
-              path={`${ROUTES.LEAVE.ALLOCATIONS}/:id/edit`}
-              element={<LeaveAllocationsPage />}
-            />
+            {/* Organization Preferences */}
+            <Route path={ROUTES.PREFERENCES} element={<PreferencesPage />} />
+
+            {/* Leave Management (with nested layout) */}
+            <Route element={<LeaveLayout />}>
+              <Route path={ROUTES.LEAVE.ALLOCATIONS} element={<LeaveAllocationsPage />} />
+              <Route
+                path={`${ROUTES.LEAVE.ALLOCATIONS}/create`}
+                element={<LeaveAllocationsPage />}
+              />
+              <Route path={`${ROUTES.LEAVE.ALLOCATIONS}/:id`} element={<LeaveAllocationsPage />} />
+              <Route
+                path={`${ROUTES.LEAVE.ALLOCATIONS}/:id/edit`}
+                element={<LeaveAllocationsPage />}
+              />
+            </Route>
           </Route>
 
           {/* Default redirect */}

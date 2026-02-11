@@ -129,16 +129,22 @@ export function LeaveAllocationsList({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Leave Allocation Policies</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-gray-700 to-gray-500 bg-clip-text text-transparent">
+            Leave Allocation Policies
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Manage leave policies and entitlements for your organization
           </p>
         </div>
-        <Button onClick={onCreateNew} size="lg" className="gap-2">
+        <Button
+          onClick={onCreateNew}
+          size="lg"
+          className="gap-2 bg-gradient-to-r from-blue-400 to-cyan-400 hover:from-blue-500 hover:to-cyan-500 text-white shadow-md hover:shadow-lg transition-all duration-200 font-semibold w-full sm:w-auto"
+        >
           <Plus className="h-5 w-5" />
-          Create Policy
+          <span className="sm:inline">Create Policy</span>
         </Button>
       </div>
 

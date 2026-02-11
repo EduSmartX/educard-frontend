@@ -51,14 +51,14 @@ export function LeaveAllocationDeleteDialog({
         <AlertDialogFooter className="gap-2 sm:gap-2">
           <AlertDialogCancel
             disabled={isPending}
-            className="border-2 border-gray-300 hover:bg-gray-100 font-semibold text-white hover:text-gray-900"
+            className="border-2 border-gray-500 bg-transparent hover:bg-gray-700 font-semibold text-white"
           >
             Cancel
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             disabled={isPending}
-            className="bg-red-600 hover:bg-red-700 font-semibold shadow-md hover:shadow-lg transition-all"
+            className="bg-gradient-to-r from-red-400 to-rose-400 hover:from-red-500 hover:to-rose-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
           >
             {isPending ? (
               <>
@@ -66,7 +66,7 @@ export function LeaveAllocationDeleteDialog({
                 Deleting...
               </>
             ) : (
-              'Delete Policy'
+              'Delete'
             )}
           </AlertDialogAction>
         </AlertDialogFooter>

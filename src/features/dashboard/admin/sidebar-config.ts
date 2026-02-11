@@ -10,6 +10,7 @@ import {
   CalendarCheck,
   Settings,
   Building2,
+  Sliders,
 } from 'lucide-react';
 import type { SidebarSection } from '@/components/layout/dashboard-sidebar';
 import { ROUTES } from '@/constants/app-config';
@@ -87,6 +88,12 @@ export const adminSidebarConfig: SidebarSection[] = [
   {
     title: 'SETTINGS',
     items: [
+      {
+        id: 'preferences',
+        label: 'Organization Preferences',
+        icon: Sliders,
+        path: ROUTES.PREFERENCES,
+      },
       {
         id: 'organization',
         label: 'Organization',

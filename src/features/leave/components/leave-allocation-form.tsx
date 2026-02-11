@@ -665,7 +665,7 @@ export function LeaveAllocationForm({
                               Select Roles
                             </FormLabel>
                             <div className="max-h-[400px] overflow-y-auto border rounded-lg p-3 bg-white">
-                              <div className="grid grid-cols-2 gap-3">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {organizationRoles?.map((role) => (
                                   <FormField
                                     key={role.id}
@@ -860,30 +860,36 @@ export function LeaveAllocationForm({
                         </AlertDescription>
                       </Alert>
                     )}
+
+                    {/* Form Actions - Inside Policy Summary */}
+                    {!isViewMode && (
+                      <div className="flex flex-col gap-3 pt-4 border-t border-teal-200">
+                        <Button
+                          type="submit"
+                          size="lg"
+                          className="w-full bg-gradient-to-r from-teal-500 to-green-500 hover:from-teal-600 hover:to-green-600 shadow-md hover:shadow-lg transition-all font-semibold"
+                          disabled={createMutation.isPending || updateMutation.isPending}
+                        >
+                          {(createMutation.isPending || updateMutation.isPending) && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          {isEditMode ? 'Update Policy' : 'Create Policy'}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="lg"
+                          className="w-full border-2 font-semibold hover:bg-gray-100"
+                          onClick={onCancel}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
             </div>
-
-            {/* Form Actions */}
-            {!isViewMode && (
-              <div className="flex items-center justify-center gap-3 pt-6">
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="px-8 bg-gradient-to-r from-teal-500 to-green-500 hover:from-teal-600 hover:to-green-600"
-                  disabled={createMutation.isPending || updateMutation.isPending}
-                >
-                  {(createMutation.isPending || updateMutation.isPending) && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  {isEditMode ? 'Update Policy' : 'Create Policy'}
-                </Button>
-                <Button type="button" variant="outline" size="lg" onClick={onCancel}>
-                  Cancel
-                </Button>
-              </div>
-            )}
           </fieldset>
         </form>
       </Form>

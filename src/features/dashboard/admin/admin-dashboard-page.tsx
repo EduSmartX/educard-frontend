@@ -7,12 +7,12 @@ import {
   School,
   FileText,
   UserPlus,
-  UserCheck,
   CalendarPlus,
   Upload,
   Settings as SettingsIcon,
   UserCheck2,
   CheckCircle2,
+  Sliders,
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { StatsCard } from '@/components/dashboard/stats-card';
@@ -20,13 +20,11 @@ import { QuickActions, type QuickAction } from '@/components/dashboard/quick-act
 import { LeaveRequestsList, type LeaveRequest } from '@/components/dashboard/leave-requests-list';
 import { UpcomingEvents, type UpcomingEvent } from '@/components/dashboard/upcoming-events';
 import { adminSidebarConfig } from './sidebar-config';
-import { useAuth } from '@/hooks/use-auth';
 import { useStorageListener } from '@/hooks/use-storage-listener';
 import { ROUTES } from '@/constants/app-config';
 
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
-  const { user, organization } = useAuth();
   useStorageListener(); // Listen for cross-tab logout
 
   // Mock data for stats
@@ -161,14 +159,13 @@ export default function AdminDashboardPage() {
       },
     },
     {
-      id: 'add-student',
-      label: 'Add Student',
-      icon: UserCheck,
-      iconColor: 'text-green-600',
-      iconBgColor: 'bg-green-100',
+      id: 'organization-preferences',
+      label: 'Organization Preferences',
+      icon: Sliders,
+      iconColor: 'text-indigo-600',
+      iconBgColor: 'bg-indigo-100',
       onClick: () => {
-        toast.success('📚 Opening Add Student form...');
-        navigate(`${ROUTES.STUDENTS}/new`);
+        navigate(ROUTES.PREFERENCES);
       },
     },
     {
@@ -196,8 +193,8 @@ export default function AdminDashboardPage() {
       id: 'leave-settings',
       label: 'Leave Allocations',
       icon: SettingsIcon,
-      iconColor: 'text-indigo-600',
-      iconBgColor: 'bg-indigo-100',
+      iconColor: 'text-cyan-600',
+      iconBgColor: 'bg-cyan-100',
       onClick: () => {
         navigate(ROUTES.LEAVE.ALLOCATIONS);
       },
@@ -223,15 +220,7 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <DashboardLayout
-      sidebarSections={adminSidebarConfig}
-      organizationName={organization?.name}
-      organizationLogo={organization?.logo}
-      userName={user?.full_name || user?.username}
-      userRole="Administrator"
-      userAvatar={user?.profile_image}
-      notificationCount={3}
-    >
+    <DashboardLayout sidebarSections={adminSidebarConfig}>
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         {stats.map((stat, index) => (
