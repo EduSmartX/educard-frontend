@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { DataTable } from '@/components/ui/data-table';
 import { ResourceFilter, type FilterField } from '@/components/filters/resource-filter';
+import { PageHeader } from '@/components/common';
 import type { LeaveAllocation } from '@/lib/api/leave-api';
 import type { PaginationInfo } from '@/components/ui/data-table';
 import { createLeaveAllocationColumns } from './leave-allocation-table-columns';
@@ -77,7 +78,7 @@ export function LeaveAllocationsList({
     new Set(
       allocations
         .filter((a) => !a.applies_to_all_roles && a.roles)
-        .flatMap((a) => (a.roles ? a.roles.split(',').map((r) => r.trim()) : []))
+        .flatMap((a) => (a.roles ? a.roles.split(',').map((r: string) => r.trim()) : []))
     )
   ).map((role) => ({ value: role, label: role }));
 
@@ -129,24 +130,19 @@ export function LeaveAllocationsList({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-gray-700 to-gray-500 bg-clip-text text-transparent">
-            Leave Allocation Policies
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage leave policies and entitlements for your organization
-          </p>
-        </div>
+      <PageHeader
+        title="Leave Allocation Policies"
+        description="Manage leave policies and entitlements for your organization"
+      >
         <Button
           onClick={onCreateNew}
           size="lg"
-          className="gap-2 bg-gradient-to-r from-blue-400 to-cyan-400 hover:from-blue-500 hover:to-cyan-500 text-white shadow-md hover:shadow-lg transition-all duration-200 font-semibold w-full sm:w-auto"
+          className="gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md hover:shadow-lg transition-all duration-200 font-semibold"
         >
           <Plus className="h-5 w-5" />
-          <span className="sm:inline">Create Policy</span>
+          <span>Create Policy</span>
         </Button>
-      </div>
+      </PageHeader>
 
       {/* Feature Banner */}
       <LeaveAllocationFeatureBanner />
@@ -228,7 +224,7 @@ export function LeaveAllocationsList({
           <div className="px-6 pb-6">
             <ResourceFilter
               fields={filterFields}
-              onFilter={(appliedFilters) => {
+              onFilter={(appliedFilters: Record<string, string>) => {
                 const { search, ...otherFilters } = appliedFilters;
 
                 // Always update local state for UI display
@@ -303,7 +299,7 @@ export function LeaveAllocationsList({
                   }
                 : undefined
             }
-            getRowKey={(row) => row.public_id}
+            getRowKey={(row: LeaveAllocation) => row.public_id}
           />
         </CardContent>
       </Card>

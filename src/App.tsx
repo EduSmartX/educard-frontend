@@ -34,6 +34,9 @@ const LeaveAllocationsPage = lazy(() => import('./features/leave/pages/leave-all
 // Preferences
 const PreferencesPage = lazy(() => import('./features/preferences/pages/preferences-page'));
 
+// Holidays
+const HolidayCalendarPage = lazy(() => import('./pages/holidays-page'));
+
 function App() {
   return (
     <div className="min-h-screen bg-background font-sans antialiased">
@@ -59,6 +62,9 @@ function App() {
 
             {/* Organization Preferences */}
             <Route path={ROUTES.PREFERENCES} element={<PreferencesPage />} />
+
+            {/* Holiday Calendar */}
+            <Route path={ROUTES.HOLIDAYS} element={<HolidayCalendarPage />} />
 
             {/* Leave Management (with nested layout) */}
             <Route element={<LeaveLayout />}>

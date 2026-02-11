@@ -194,6 +194,7 @@ export const ROUTES = {
     BALANCES: '/leave/balances',
     ALLOCATIONS: '/leave/allocations',
   },
+  HOLIDAYS: '/holidays',
   PREFERENCES: '/preferences',
   // Role-specific routes (legacy - kept for backward compatibility)
   ADMIN: {

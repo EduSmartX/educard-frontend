@@ -1,0 +1,317 @@
+/**
+ * Calendar View Component
+ * Interactive calendar grid showing holidays for the current month
+ */
+
+import { useMemo, useState } from 'react';
+import {
+  startOfMonth,
+  endOfMonth,
+  startOfDay,
+  isSameMonth,
+  isSameDay,
+  format,
+  parseISO,
+  isWithinInterval,
+} from 'date-fns';
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import type { Holiday, CalendarDay } from '../types';
+import {
+  getHolidayTypeColor,
+  formatHolidayType,
+  isWeekendHoliday,
+  filterNonWeekendHolidays,
+  getUpcomingHolidays,
+  calculateDuration,
+  filterWeekendTypes,
+} from '../utils/holiday-utils';
+import { AddHolidayDialog } from './add-holiday-dialog';
+import { DateActionDialog } from './date-action-dialog';
+
+interface CalendarViewProps {
+  currentDate: Date;
+  holidays: Holiday[];
+}
+
+export function CalendarView({ currentDate, holidays }: CalendarViewProps) {
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDateHolidays, setSelectedDateHolidays] = useState<Holiday[]>([]);
+  const [showDateDialog, setShowDateDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+
+  const today = startOfDay(new Date());
+
+  // Generate calendar grid
+  const calendarDays = useMemo((): CalendarDay[] => {
+    const start = startOfMonth(currentDate);
+    const end = endOfMonth(currentDate);
+    const firstDayOfMonth = start.getDay();
+    const daysInMonth = end.getDate();
+    const totalCells = Math.ceil((firstDayOfMonth + daysInMonth) / 7) * 7;
+
+    const days: CalendarDay[] = [];
+
+    for (let i = 0; i < totalCells; i++) {
+      const dayOffset = i - firstDayOfMonth;
+      const date = new Date(start);
+      date.setDate(date.getDate() + dayOffset);
+
+      const isCurrentMonth = isSameMonth(date, currentDate);
+      const isToday = isSameDay(date, today);
+
+      // Find holidays for this date
+      const dayHolidays = holidays.filter((holiday) => {
+        const holidayStart = parseISO(holiday.start_date);
+        const holidayEnd = parseISO(holiday.end_date);
+        return isWithinInterval(date, { start: holidayStart, end: holidayEnd });
+      });
+
+      days.push({
+        date,
+        isCurrentMonth,
+        isToday,
+        holidays: dayHolidays,
+      });
+    }
+
+    return days;
+  }, [currentDate, holidays, today]);
+
+  // Get unique holiday types (excluding weekends)
+  const holidayTypes = useMemo(() => {
+    const types = new Set(holidays.map((h) => h.holiday_type));
+    return filterWeekendTypes(Array.from(types));
+  }, [holidays]);
+
+  // Get upcoming holidays
+  const upcomingHolidays = useMemo(() => {
+    return getUpcomingHolidays(holidays, today, 5);
+  }, [holidays, today]);
+
+  const handleDateClick = (day: CalendarDay) => {
+    if (!day.isCurrentMonth) return;
+
+    setSelectedDate(day.date);
+    setSelectedDateHolidays(day.holidays);
+
+    const nonWeekendHolidays = filterNonWeekendHolidays(day.holidays);
+    if (nonWeekendHolidays.length > 0) {
+      setShowDateDialog(true);
+    } else {
+      setShowAddDialog(true);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Legend */}
+      {holidayTypes.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg bg-white px-4 py-3 border-2 border-gray-200 shadow-sm">
+          <div className="text-xs font-semibold text-gray-900">Legend:</div>
+          {holidayTypes.map((type) => {
+            const colors = getHolidayTypeColor(type);
+            return (
+              <div key={type} className="flex items-center gap-2">
+                <div className={cn('h-3 w-3 rounded-full shadow-sm', colors.badge)} />
+                <span className="text-xs font-medium text-gray-700">{formatHolidayType(type)}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Calendar Grid */}
+        <div className="lg:col-span-3">
+          <div className="overflow-hidden rounded-xl border-2 border-blue-100 shadow-lg">
+            {/* Weekday Headers */}
+            <div className="grid grid-cols-7 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                <div
+                  key={day}
+                  className="border-r border-white/20 last:border-r-0 px-2 py-3 text-center text-sm font-semibold text-white"
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar Days */}
+            <div className="grid grid-cols-7 bg-white">
+              {calendarDays.map((day, index) => {
+                const primaryHoliday = day.holidays[0];
+                const colors = primaryHoliday
+                  ? getHolidayTypeColor(primaryHoliday.holiday_type)
+                  : null;
+                const nonWeekendHolidays = filterNonWeekendHolidays(day.holidays);
+                const hasHolidays = nonWeekendHolidays.length > 0;
+
+                return (
+                  <div
+                    key={index}
+                    role="button"
+                    tabIndex={day.isCurrentMonth ? 0 : -1}
+                    className={cn(
+                      'min-h-[80px] sm:min-h-[100px] border-r border-b cursor-pointer transition-all duration-200',
+                      'hover:shadow-inner hover:ring-2 hover:ring-blue-300',
+                      !day.isCurrentMonth &&
+                        'bg-gray-50/50 text-gray-400 cursor-default hover:shadow-none hover:ring-0',
+                      day.isToday && !hasHolidays && 'ring-2 ring-blue-500 bg-blue-50/50',
+                      day.isToday && hasHolidays && 'ring-2 ring-blue-600',
+                      colors && day.isCurrentMonth && !day.isToday && colors.bg,
+                      'last:border-r-0'
+                    )}
+                    onClick={() => handleDateClick(day)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleDateClick(day);
+                      }
+                    }}
+                    title={
+                      day.isCurrentMonth
+                        ? day.holidays.length > 0
+                          ? 'Click to manage holidays'
+                          : 'Click to add holiday'
+                        : ''
+                    }
+                  >
+                    <div className="p-2">
+                      {/* Date Number */}
+                      <div
+                        className={cn(
+                          'mb-1 text-sm font-semibold',
+                          day.isToday && !hasHolidays && 'text-blue-700 text-base',
+                          day.isToday &&
+                            hasHolidays &&
+                            'inline-flex items-center justify-center rounded-full bg-blue-600 text-white w-6 h-6 text-sm',
+                          !day.isToday && !day.isCurrentMonth && 'text-gray-400'
+                        )}
+                      >
+                        {format(day.date, 'd')}
+                      </div>
+
+                      {/* Holidays */}
+                      {day.holidays.length > 0 && day.isCurrentMonth && (
+                        <div className="space-y-1">
+                          {day.holidays.slice(0, 2).map((holiday) => {
+                            if (isWeekendHoliday(holiday)) {
+                              return null;
+                            }
+                            const holidayColors = getHolidayTypeColor(holiday.holiday_type);
+                            return (
+                              <div
+                                key={holiday.public_id}
+                                className={cn(
+                                  'truncate rounded-md px-1.5 py-0.5 text-[10px] leading-tight border',
+                                  holidayColors.text,
+                                  holidayColors.border,
+                                  'bg-white/80'
+                                )}
+                                title={holiday.description}
+                              >
+                                {holiday.description}
+                              </div>
+                            );
+                          })}
+                          {nonWeekendHolidays.length > 2 && (
+                            <div className="text-[9px] text-gray-600 font-medium px-1">
+                              +{nonWeekendHolidays.length - 2} more
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Upcoming Holidays Sidebar */}
+        <div className="lg:col-span-1">
+          <Card className="shadow-lg border-2 border-blue-100">
+            <CardHeader className="pb-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+              <CardTitle className="text-base flex items-center gap-2 text-blue-900">
+                <CalendarIcon className="h-4 w-4" />
+                Upcoming Holidays
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              {upcomingHolidays.length > 0 ? (
+                <div className="space-y-3">
+                  {upcomingHolidays.map((holiday) => {
+                    const colors = getHolidayTypeColor(holiday.holiday_type);
+                    const duration = calculateDuration(holiday.start_date, holiday.end_date);
+                    return (
+                      <div
+                        key={holiday.public_id}
+                        className="rounded-lg border-2 border-gray-200 bg-white p-3 hover:shadow-md hover:border-blue-200 transition-all duration-200"
+                      >
+                        <div className="flex items-start gap-2 mb-2">
+                          <div
+                            className={cn(
+                              'h-2 w-2 rounded-full mt-1.5 flex-shrink-0 shadow-sm',
+                              colors.badge
+                            )}
+                          />
+                          <span className="text-sm font-semibold text-gray-900 flex-1">
+                            {holiday.description}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-600 mb-2">
+                          {format(parseISO(holiday.start_date), 'MMM dd, yyyy')}
+                          {duration > 1 &&
+                            ` - ${format(parseISO(holiday.end_date), 'MMM dd, yyyy')}`}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="secondary"
+                            className="text-xs px-2 py-0 bg-gray-100 text-gray-700 border border-gray-300"
+                          >
+                            {duration} {duration === 1 ? 'Day' : 'Days'}
+                          </Badge>
+                          <Badge
+                            className={cn(colors.badge, 'text-xs px-2 py-0 border-0 shadow-sm')}
+                          >
+                            {formatHolidayType(holiday.holiday_type)}
+                          </Badge>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <CalendarIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm text-gray-500">No upcoming holidays</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Dialogs */}
+      <AddHolidayDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        defaultDate={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : undefined}
+      />
+      <DateActionDialog
+        open={showDateDialog}
+        onOpenChange={setShowDateDialog}
+        date={selectedDate}
+        holidays={selectedDateHolidays}
+        onAddAnother={() => {
+          setShowDateDialog(false);
+          setShowAddDialog(true);
+        }}
+      />
+    </div>
+  );
+}

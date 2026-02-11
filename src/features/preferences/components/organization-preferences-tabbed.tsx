@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PageHeader } from '@/components/common';
 import { updatePreference, type OrganizationPreference } from '@/lib/api/preferences-api';
 import { useOrganizationPreferences } from '../hooks/use-preferences';
 import { AcademicYearSettingsForm } from './academic-year-settings-form';
@@ -293,12 +294,10 @@ export function OrganizationPreferencesTabbed() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="border-b pb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Organization Settings</h1>
-        <p className="mt-2 text-sm text-gray-600">
-          Manage your organization's preferences, working day policies, and academic year settings
-        </p>
-      </div>
+      <PageHeader
+        title="Organization Preferences"
+        description="Manage your organization's preferences, working day policies, and academic year settings"
+      />
 
       {/* Tabbed Interface */}
       <Tabs defaultValue="preferences" className="w-full">
@@ -320,15 +319,15 @@ export function OrganizationPreferencesTabbed() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="preferences" className="mt-6">
+        <TabsContent value="preferences">
           <PreferencesByCategory preferences={preferences} />
         </TabsContent>
 
-        <TabsContent value="working-day" className="mt-6">
+        <TabsContent value="working-day">
           <WorkingDayPolicyForm />
         </TabsContent>
 
-        <TabsContent value="academic-year" className="mt-6">
+        <TabsContent value="academic-year">
           <AcademicYearSettingsForm />
         </TabsContent>
       </Tabs>

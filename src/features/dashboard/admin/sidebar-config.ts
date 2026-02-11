@@ -8,6 +8,7 @@ import {
   School,
   FileText,
   CalendarCheck,
+  CalendarDays,
   Settings,
   Building2,
   Sliders,
@@ -88,6 +89,12 @@ export const adminSidebarConfig: SidebarSection[] = [
   {
     title: 'SETTINGS',
     items: [
+      {
+        id: 'holidays',
+        label: 'Holiday Calendar',
+        icon: CalendarDays,
+        path: ROUTES.HOLIDAYS,
+      },
       {
         id: 'preferences',
         label: 'Organization Preferences',

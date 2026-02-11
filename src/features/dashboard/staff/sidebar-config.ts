@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   Calendar,
+  CalendarDays,
   Users,
   BookOpen,
   ClipboardCheck,
@@ -82,6 +83,12 @@ export const staffSidebarConfig: SidebarSection[] = [
   {
     title: 'SETTINGS',
     items: [
+      {
+        id: 'holidays',
+        label: 'Holiday Calendar',
+        icon: CalendarDays,
+        path: '/holidays',
+      },
       {
         id: 'profile',
         label: 'My Profile',

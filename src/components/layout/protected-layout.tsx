@@ -10,7 +10,7 @@ export function ProtectedLayout() {
   const { user, organization } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-emerald-50/30 to-gray-50">
       {/* Header - Rendered once at top level */}
       <DashboardHeader
         organizationName={organization?.name}
