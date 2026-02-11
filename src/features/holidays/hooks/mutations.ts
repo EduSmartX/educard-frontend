@@ -1,6 +1,6 @@
 /**
- * Holiday Mutations Hooks
- * React Query mutations for holiday CRUD operations
+ * Holiday Mutations
+ * All React Query mutations for holiday CRUD operations
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -13,14 +13,40 @@ import {
   deleteHoliday,
   bulkUploadHolidays,
 } from '../api/holidays-api';
+import { getErrorMessage, getFieldErrors } from '@/lib/utils/error-handler';
 
 // ============================================================================
-// Mutation Options Types
+// Shared Types
 // ============================================================================
 
-interface MutationOptions {
+/**
+ * Field errors object for form validation
+ */
+export interface FieldErrors {
+  start_date?: string;
+  end_date?: string;
+  holiday_type?: string;
+  description?: string;
+  [key: string]: string | undefined;
+}
+
+/**
+ * Options that can be passed to any mutation hook
+ */
+export interface MutationOptions {
+  /**
+   * Callback executed after successful mutation
+   * Called after toast notification and query invalidation
+   */
   onSuccess?: () => void;
-  onError?: (error: Error) => void;
+
+  /**
+   * Callback executed when mutation fails
+   * Called after error toast notification
+   * @param error - The error that occurred
+   * @param fieldErrors - Field-specific validation errors (if any)
+   */
+  onError?: (error: Error, fieldErrors?: FieldErrors) => void;
 }
 
 // ============================================================================
@@ -46,11 +72,22 @@ export function useCreateHoliday(options?: MutationOptions) {
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      toast.error('Error Creating Holiday', {
-        description: error.message || 'Failed to create holiday. Please try again.',
-      });
+      const errorMessage = getErrorMessage(error, 'Failed to create holiday. Please try again.');
+      const fieldErrors = getFieldErrors(error) as FieldErrors | undefined;
 
-      options?.onError?.(error);
+      // Only show toast if there are no field errors (generic errors)
+      if (!fieldErrors || Object.keys(fieldErrors).length === 0) {
+        toast.error('Error Creating Holiday', {
+          description: errorMessage,
+        });
+      } else {
+        // If there are field errors, show a generic validation message
+        toast.error('Validation Error', {
+          description: 'Please check the form fields and try again.',
+        });
+      }
+
+      options?.onError?.(error, fieldErrors);
     },
   });
 }
@@ -105,11 +142,22 @@ export function useUpdateHoliday(options?: MutationOptions) {
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      toast.error('Error Updating Holiday', {
-        description: error.message || 'Failed to update holiday. Please try again.',
-      });
+      const errorMessage = getErrorMessage(error, 'Failed to update holiday. Please try again.');
+      const fieldErrors = getFieldErrors(error) as FieldErrors | undefined;
 
-      options?.onError?.(error);
+      // Only show toast if there are no field errors (generic errors)
+      if (!fieldErrors || Object.keys(fieldErrors).length === 0) {
+        toast.error('Error Updating Holiday', {
+          description: errorMessage,
+        });
+      } else {
+        // If there are field errors, show a generic validation message
+        toast.error('Validation Error', {
+          description: 'Please check the form fields and try again.',
+        });
+      }
+
+      options?.onError?.(error, fieldErrors);
     },
   });
 }
@@ -157,16 +205,16 @@ export function useBulkUploadHolidays(options?: MutationOptions) {
 
   return useMutation({
     mutationFn: (file: File) => bulkUploadHolidays(file),
-    onSuccess: (result) => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['holidays'] });
 
-      if (result.failed_count > 0) {
+      if (response.data.failed_count > 0) {
         toast.warning('Upload Completed with Errors', {
-          description: `${result.created_count} holidays created, ${result.failed_count} failed.`,
+          description: `${response.data.created_count} holidays created, ${response.data.failed_count} failed.`,
         });
       } else {
         toast.success('Bulk Upload Successful', {
-          description: `${result.created_count} holidays have been created successfully.`,
+          description: `${response.data.created_count} holidays have been created successfully.`,
         });
       }
 

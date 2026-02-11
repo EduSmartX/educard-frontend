@@ -1,117 +1,370 @@
 /**
  * Error Handling Utilities
- * Provides comprehensive error parsing and user-friendly messaging
+ * Single-pass parsing with normalized error model
+ * Handles Django REST Framework error responses with nested structures
  */
 
 import type { UseFormSetError, FieldValues, Path } from 'react-hook-form';
 
+// ============================================================================
+// Types
+// ============================================================================
+
 /**
- * Backend validation error structure
+ * Backend error response structure (what Django sends in response.data)
+ * This is the actual backend format
  */
-interface BackendError {
+interface BackendErrorResponse {
+  success?: boolean;
   status?: string;
   message?: string;
   data?: unknown;
-  errors?: Record<string, string[] | string>;
+  errors?: Record<string, ErrorValue>;
   code?: number;
   detail?: string;
-  non_field_errors?: string[];
 }
 
 /**
- * Parse backend error and extract meaningful message
- * Handles multiple error response formats from Django REST Framework
+ * Axios error wrapper (what we receive in catch block)
  */
-export function parseApiError(
-  error: unknown,
-  defaultMessage = 'An unexpected error occurred'
-): string {
-  if (!error) return defaultMessage;
+interface AxiosErrorWrapper {
+  response?: {
+    data?: BackendErrorResponse;
+    status?: number;
+  };
+  message?: string;
+}
+
+/**
+ * Error values in the errors object can be:
+ * - string[] (field error array)
+ * - string (single error)
+ * - nested object (for nested structures like student_data.email)
+ */
+type ErrorValue = string | string[] | Record<string, string | string[]>;
+
+/**
+ * Normalized error model - single source of truth
+ */
+export interface NormalizedError {
+  message: string;
+  fieldErrors: Record<string, string>;
+  nonFieldErrors: string[];
+  statusCode?: number;
+  isValidation: boolean;
+}
+
+// ============================================================================
+// Core Parser - Parse Once, Use Everywhere
+// ============================================================================
+
+/**
+ * Recursively flatten nested error objects
+ * Handles cases like: { student_data: { email: ["error"] } }
+ * Returns: { "student_data.email": "error" }
+ */
+function flattenErrors(
+  errors: Record<string, ErrorValue>,
+  prefix = ''
+): { fieldErrors: Record<string, string>; nonFieldErrors: string[] } {
+  const result = {
+    fieldErrors: {} as Record<string, string>,
+    nonFieldErrors: [] as string[],
+  };
+
+  Object.entries(errors).forEach(([key, value]) => {
+    const fullKey = prefix ? `${prefix}.${key}` : key;
+
+    // Check if this is a non-field error key
+    if (key === 'non_field_errors' || key === 'non_field_error') {
+      // Add to non-field errors
+      if (Array.isArray(value)) {
+        result.nonFieldErrors.push(...(value as string[]));
+      } else if (typeof value === 'string') {
+        result.nonFieldErrors.push(value);
+      }
+      return;
+    }
+
+    // Handle array of strings (simple field error)
+    if (Array.isArray(value)) {
+      if (value.length > 0 && typeof value[0] === 'string') {
+        result.fieldErrors[fullKey] = value[0];
+      }
+      return;
+    }
+
+    // Handle single string
+    if (typeof value === 'string') {
+      result.fieldErrors[fullKey] = value;
+      return;
+    }
+
+    // Handle nested object (recurse)
+    if (typeof value === 'object' && value !== null) {
+      const nested = flattenErrors(value as Record<string, ErrorValue>, fullKey);
+      Object.assign(result.fieldErrors, nested.fieldErrors);
+      result.nonFieldErrors.push(...nested.nonFieldErrors);
+    }
+  });
+
+  return result;
+}
+
+/**
+ * Parse any error into normalized structure
+ * This is the ONLY function that touches raw errors
+ * All other functions consume NormalizedError
+ */
+export function parseError(error: unknown): NormalizedError {
+  const result: NormalizedError = {
+    message: 'An unexpected error occurred',
+    fieldErrors: {},
+    nonFieldErrors: [],
+    isValidation: false,
+  };
+
+  // Handle null/undefined
+  if (!error) return result;
 
   // Handle string errors
   if (typeof error === 'string') {
-    try {
-      const parsed = JSON.parse(error);
-      return extractErrorMessage(parsed, defaultMessage);
-    } catch {
-      return error || defaultMessage;
-    }
+    result.message = error;
+    return result;
   }
 
   // Handle Error instances
   if (error instanceof Error) {
-    return error.message || defaultMessage;
-  }
-
-  // Handle object errors
-  if (typeof error === 'object') {
-    return extractErrorMessage(error, defaultMessage);
-  }
-
-  return defaultMessage;
-}
-
-/**
- * Extract error message from error object
- */
-function extractErrorMessage(errorObj: unknown, defaultMessage: string): string {
-  const err = errorObj as BackendError;
-
-  // Check for direct detail field
-  if (err.detail && typeof err.detail === 'string') {
-    return err.detail;
-  }
-
-  // Check for message field
-  if (err.message) {
-    return err.message;
-  }
-
-  // Check for non_field_errors
-  if (err.non_field_errors && Array.isArray(err.non_field_errors)) {
-    return err.non_field_errors[0] || defaultMessage;
-  }
-
-  // Check for errors object
-  if (err.errors) {
-    if (typeof err.errors === 'string') {
-      return err.errors;
-    }
-
-    if (typeof err.errors === 'object') {
-      const errorKeys = Object.keys(err.errors);
-      if (errorKeys.length > 0) {
-        const firstError = err.errors[errorKeys[0]];
-        if (Array.isArray(firstError) && firstError.length > 0) {
-          return `${formatFieldName(errorKeys[0])}: ${firstError[0]}`;
-        }
-        if (typeof firstError === 'string') {
-          return firstError;
-        }
+    // Check if it's an axios error with response data
+    if ('response' in error && typeof error === 'object') {
+      const axiosError = error as AxiosErrorWrapper;
+      if (axiosError.response?.data) {
+        // Recursively parse the response data
+        return parseError(axiosError.response.data);
       }
     }
+    result.message = error.message;
+    return result;
   }
 
-  return defaultMessage;
+  // Handle object errors (axios response or backend error)
+  if (typeof error === 'object') {
+    // Try to extract as axios wrapper first
+    const possibleAxiosError = error as AxiosErrorWrapper;
+    const possibleBackendError = error as BackendErrorResponse;
+
+    // If it has response.data, it's an axios wrapper
+    const errorData = possibleAxiosError.response?.data || possibleBackendError;
+
+    // Debug logging (remove in production)
+    if (import.meta.env.DEV) {
+      console.info('[Error Handler] Parsing error:', {
+        hasResponse: !!possibleAxiosError.response,
+        errorData,
+        errors: errorData.errors,
+      });
+    }
+
+    // Get status code
+    if (possibleAxiosError.response?.status) {
+      result.statusCode = possibleAxiosError.response.status;
+    } else if (errorData.code) {
+      result.statusCode = errorData.code;
+    }
+
+    // Extract main message
+    result.message = errorData.message || errorData.detail || result.message;
+
+    // Check for simple detail-only errors (like auth errors)
+    if (errorData.detail && !errorData.errors) {
+      result.message = errorData.detail;
+      return result;
+    }
+
+    // Parse errors object (supports nested structures)
+    if (errorData.errors && typeof errorData.errors === 'object') {
+      result.isValidation = true;
+
+      const flattened = flattenErrors(errorData.errors);
+      result.fieldErrors = flattened.fieldErrors;
+      result.nonFieldErrors = flattened.nonFieldErrors;
+
+      // Debug logging
+      if (import.meta.env.DEV) {
+        console.info('[Error Handler] Flattened errors:', {
+          fieldErrors: result.fieldErrors,
+          nonFieldErrors: result.nonFieldErrors,
+        });
+      }
+    }
+
+    // If we have validation errors but no message, set a better default
+    if (result.isValidation && result.message === 'An unexpected error occurred') {
+      result.message = 'Validation error occurred';
+    }
+
+    // Special case: If success=false but no other message, use that
+    if (errorData.success === false && result.message === 'An unexpected error occurred') {
+      result.message = 'Request failed';
+    }
+  }
+
+  return result;
 }
 
+// ============================================================================
+// Public API - All functions consume NormalizedError
+// ============================================================================
+
 /**
- * Format field name from snake_case to Title Case
+ * Get user-friendly error message for display
+ * Use this for toast messages
  */
-function formatFieldName(field: string): string {
-  return field.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+export function getErrorMessage(error: unknown, fallback?: string): string {
+  const normalized = parseError(error);
+
+  // Priority: non-field errors > field errors > message > fallback
+  if (normalized.nonFieldErrors.length > 0) {
+    return normalized.nonFieldErrors[0];
+  }
+
+  const fieldErrorKeys = Object.keys(normalized.fieldErrors);
+  if (fieldErrorKeys.length > 0 && Object.keys(normalized.fieldErrors).length === 1) {
+    // Single field error - show it
+    return normalized.fieldErrors[fieldErrorKeys[0]];
+  }
+
+  return normalized.message || fallback || 'An unexpected error occurred';
 }
 
 /**
- * Parse backend validation errors and set them on form fields
- * Returns comprehensive error information including field errors and non-field errors
- *
- * @returns Object containing:
- *  - hasFieldError: Whether any field-specific errors were found
- *  - fieldErrors: Array of field-specific error messages
- *  - nonFieldErrors: Array of non-field error messages (applies_to_all_roles, etc.)
- *  - allErrors: Combined array of all error messages
- *  - shouldShowToast: Whether to show a toast notification
+ * Apply field errors to react-hook-form
+ * Sets errors on form fields and returns summary for toast
+ */
+export function applyFieldErrors<TFieldValues extends FieldValues>(
+  error: unknown,
+  setError: UseFormSetError<TFieldValues>,
+  fieldMap?: Record<string, Path<TFieldValues>>
+): {
+  /** Whether any field errors were set */
+  hasFieldErrors: boolean;
+  /** Number of fields with errors */
+  fieldErrorCount: number;
+  /** Message to show in toast (non-field errors or summary) */
+  toastMessage: string;
+  /** All field error messages */
+  fieldErrorMessages: string[];
+} {
+  const normalized = parseError(error);
+
+  const result = {
+    hasFieldErrors: false,
+    fieldErrorCount: 0,
+    toastMessage: '',
+    fieldErrorMessages: [] as string[],
+  };
+
+  // Apply field errors to form
+  Object.entries(normalized.fieldErrors).forEach(([field, message]) => {
+    try {
+      const formField = fieldMap?.[field] || (field as Path<TFieldValues>);
+      setError(formField, {
+        type: 'manual',
+        message: message,
+      });
+      result.hasFieldErrors = true;
+      result.fieldErrorCount++;
+      result.fieldErrorMessages.push(message);
+    } catch (err) {
+      // If field doesn't exist in form, treat as non-field error
+      console.warn(`Failed to set error on field "${field}":`, err);
+      normalized.nonFieldErrors.push(`${field}: ${message}`);
+    }
+  });
+
+  // Determine toast message
+  if (normalized.nonFieldErrors.length > 0) {
+    // Show non-field errors in toast
+    result.toastMessage = normalized.nonFieldErrors[0];
+  } else if (result.hasFieldErrors) {
+    // Show validation summary if only field errors
+    result.toastMessage = normalized.message || 'Please check the form fields for errors';
+  } else {
+    // Show generic message
+    result.toastMessage = normalized.message;
+  }
+
+  return result;
+}
+
+/**
+ * Get field errors without react-hook-form
+ * Use for vanilla state management
+ */
+export function getFieldErrors(error: unknown): Record<string, string> {
+  const normalized = parseError(error);
+  return normalized.fieldErrors;
+}
+
+/**
+ * Get non-field errors
+ * Use when you need just the general validation errors
+ */
+export function getNonFieldErrors(error: unknown): string[] {
+  const normalized = parseError(error);
+  return normalized.nonFieldErrors;
+}
+
+/**
+ * Check if error is a validation error
+ */
+export function isValidationError(error: unknown): boolean {
+  const normalized = parseError(error);
+  return normalized.isValidation;
+}
+
+/**
+ * Check if error is a network error
+ */
+export function isNetworkError(error: unknown): boolean {
+  if (error instanceof Error) {
+    const msg = error.message.toLowerCase();
+    return msg.includes('network') || msg.includes('fetch') || msg.includes('connection');
+  }
+  return false;
+}
+
+/**
+ * Get error title based on status code
+ */
+export function getErrorTitle(error: unknown): string {
+  const normalized = parseError(error);
+  const code = normalized.statusCode;
+
+  if (!code) return 'Error';
+  if (code >= 500) return 'Server Error';
+  if (code === 404) return 'Not Found';
+  if (code === 403) return 'Access Denied';
+  if (code === 401) return 'Authentication Required';
+  if (code === 400 && normalized.isValidation) return 'Validation Error';
+  if (code >= 400) return 'Request Error';
+
+  return 'Error';
+}
+
+// ============================================================================
+// Backward Compatibility (deprecated, use new API above)
+// ============================================================================
+
+/**
+ * @deprecated Use getErrorMessage() instead
+ */
+export function parseApiError(error: unknown, defaultMessage?: string): string {
+  return getErrorMessage(error, defaultMessage);
+}
+
+/**
+ * @deprecated Use applyFieldErrors() instead
  */
 export function setFormFieldErrors<TFieldValues extends FieldValues>(
   error: unknown,
@@ -124,134 +377,37 @@ export function setFormFieldErrors<TFieldValues extends FieldValues>(
   allErrors: string[];
   shouldShowToast: boolean;
 } {
-  const errorData = parseBackendValidationError(error);
-
-  if (!errorData || !errorData.errors) {
-    return {
-      hasFieldError: false,
-      fieldErrors: [],
-      nonFieldErrors: [],
-      allErrors: [],
-      shouldShowToast: true,
-    };
-  }
-
-  let hasFieldError = false;
-  const fieldErrors: string[] = [];
-  const nonFieldErrors: string[] = [];
-
-  Object.entries(errorData.errors).forEach(([field, messages]) => {
-    const messageArray = Array.isArray(messages) ? messages : [messages];
-
-    if (messageArray.length > 0) {
-      const errorMessage = messageArray[0];
-
-      // Try to set the error on the form field
-      try {
-        const formField = fieldMap?.[field] || (field as Path<TFieldValues>);
-
-        setError(formField, {
-          type: 'manual',
-          message: errorMessage,
-        });
-
-        hasFieldError = true;
-        fieldErrors.push(errorMessage);
-      } catch {
-        // If setting on field fails, treat as non-field error
-        nonFieldErrors.push(errorMessage);
-      }
-    }
-  });
-
-  // Also check for non_field_errors from backend
-  if (errorData.non_field_errors && Array.isArray(errorData.non_field_errors)) {
-    nonFieldErrors.push(...errorData.non_field_errors);
-  }
-
-  const allErrors = [...fieldErrors, ...nonFieldErrors];
-  const shouldShowToast = nonFieldErrors.length > 0 || fieldErrors.length > 0;
+  const result = applyFieldErrors(error, setError, fieldMap);
+  const normalized = parseError(error);
 
   return {
-    hasFieldError,
-    fieldErrors,
-    nonFieldErrors,
-    allErrors,
-    shouldShowToast,
+    hasFieldError: result.hasFieldErrors,
+    fieldErrors: result.fieldErrorMessages,
+    nonFieldErrors: normalized.nonFieldErrors,
+    allErrors: [...result.fieldErrorMessages, ...normalized.nonFieldErrors],
+    shouldShowToast: result.hasFieldErrors || normalized.nonFieldErrors.length > 0,
   };
 }
 
 /**
- * Parse backend validation error response
+ * @deprecated Use getFieldErrors() instead
  */
-function parseBackendValidationError(error: unknown): BackendError | null {
-  try {
-    // Check if error has response.data structure (from axios)
-    if (error && typeof error === 'object' && 'response' in error) {
-      const responseError = error as { response?: { data?: BackendError } };
-      if (responseError.response?.data?.errors) {
-        return responseError.response.data;
-      }
-    }
-
-    // Check if error directly has errors property
-    if (error && typeof error === 'object' && 'errors' in error) {
-      const errorObj = error as BackendError;
-      if (errorObj.errors && typeof errorObj.errors === 'object') {
-        return errorObj;
-      }
-    }
-
-    // Try to parse from error message
-    const errorText = (error as { message?: string })?.message || '';
-    const jsonMatch = errorText.match(/\{[\s\S]*\}/);
-
-    if (jsonMatch) {
-      const errorData = JSON.parse(jsonMatch[0]) as BackendError;
-      if (errorData.errors && typeof errorData.errors === 'object') {
-        return errorData;
-      }
-    }
-  } catch {
-    return null;
-  }
-
-  return null;
+export function extractFieldErrors(error: unknown): Record<string, string> {
+  return getFieldErrors(error);
 }
 
 /**
- * Get user-friendly error title based on HTTP status code
+ * @deprecated Use parseError() instead
  */
-export function getErrorTitle(code?: number): string {
-  if (!code) return 'Error';
-
-  if (code >= 500) return 'Server Error';
-  if (code === 404) return 'Not Found';
-  if (code === 403) return 'Access Denied';
-  if (code === 401) return 'Authentication Required';
-  if (code >= 400) return 'Request Error';
-
-  return 'Error';
-}
-
-/**
- * Check if error is a network error
- */
-export function isNetworkError(error: unknown): boolean {
-  if (error instanceof Error) {
-    return (
-      error.message.toLowerCase().includes('network') ||
-      error.message.toLowerCase().includes('fetch') ||
-      error.message.toLowerCase().includes('connection')
-    );
-  }
-  return false;
-}
-
-/**
- * Check if error is a validation error
- */
-export function isValidationError(error: unknown): boolean {
-  const parsed = parseBackendValidationError(error);
-  return parsed !== null && !!parsed.errors;
+export function extractValidationErrors(error: unknown): {
+  fieldErrors: Record<string, string>;
+  nonFieldErrors: string[];
+  message: string;
+} {
+  const normalized = parseError(error);
+  return {
+    fieldErrors: normalized.fieldErrors,
+    nonFieldErrors: normalized.nonFieldErrors,
+    message: normalized.message,
+  };
 }

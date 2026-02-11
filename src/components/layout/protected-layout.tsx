@@ -1,10 +1,12 @@
 import { Outlet } from 'react-router-dom';
 import { DashboardHeader } from './dashboard-header';
+import { DashboardLayout } from './dashboard-layout';
 import { useAuth } from '../../hooks/use-auth';
+import { getSidebarConfig } from '@/lib/utils/sidebar-utils';
 
 /**
  * Protected Layout - Renders once for all authenticated pages
- * Provides consistent header across all dashboard pages without re-rendering
+ * Provides consistent header and sidebar across all dashboard pages without re-rendering
  */
 export function ProtectedLayout() {
   const { user, organization } = useAuth();
@@ -21,8 +23,11 @@ export function ProtectedLayout() {
         notificationCount={3}
       />
 
-      {/* Page Content - Each page renders here */}
-      <Outlet />
+      {/* Sidebar + Content - Rendered once, sidebar based on user role */}
+      <DashboardLayout sidebarSections={getSidebarConfig()}>
+        {/* Page Content - Each page renders here */}
+        <Outlet />
+      </DashboardLayout>
     </div>
   );
 }

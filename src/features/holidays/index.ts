@@ -10,8 +10,7 @@ export { HolidayCalendar } from './components/holiday-calendar';
 export {
   CalendarView,
   TableView,
-  AddHolidayDialog,
-  EditHolidayDialog,
+  HolidayFormDialog,
   BulkUploadDialog,
   DateActionDialog,
 } from './components';
@@ -22,14 +21,15 @@ export * from './api/holidays-api';
 // Types
 export type * from './types';
 
-// Hooks
+// Hooks - Mutations
 export {
   useCreateHoliday,
   useCreateHolidaysBulk,
   useUpdateHoliday,
   useDeleteHoliday,
   useBulkUploadHolidays,
-} from './hooks/use-holiday-mutations';
+  type MutationOptions,
+} from './hooks/mutations';
 
 // Utilities
 export * from './utils/holiday-utils';

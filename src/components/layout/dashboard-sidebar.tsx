@@ -18,9 +18,10 @@ export interface SidebarSection {
 interface DashboardSidebarProps {
   sections: SidebarSection[];
   footer?: React.ReactNode;
+  onNavigate?: () => void;
 }
 
-export function DashboardSidebar({ sections, footer }: DashboardSidebarProps) {
+export function DashboardSidebar({ sections, footer, onNavigate }: DashboardSidebarProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Navigation */}
@@ -37,6 +38,7 @@ export function DashboardSidebar({ sections, footer }: DashboardSidebarProps) {
                 <NavLink
                   key={item.id}
                   to={item.path}
+                  onClick={onNavigate}
                   className={({ isActive }) =>
                     cn(
                       'flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150',

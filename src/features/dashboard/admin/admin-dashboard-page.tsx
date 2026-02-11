@@ -14,12 +14,10 @@ import {
   CheckCircle2,
   Sliders,
 } from 'lucide-react';
-import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { StatsCard } from '@/components/dashboard/stats-card';
 import { QuickActions, type QuickAction } from '@/components/dashboard/quick-actions';
 import { LeaveRequestsList, type LeaveRequest } from '@/components/dashboard/leave-requests-list';
 import { UpcomingEvents, type UpcomingEvent } from '@/components/dashboard/upcoming-events';
-import { adminSidebarConfig } from './sidebar-config';
 import { useStorageListener } from '@/hooks/use-storage-listener';
 import { ROUTES } from '@/constants/app-config';
 
@@ -220,7 +218,7 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <DashboardLayout sidebarSections={adminSidebarConfig}>
+    <>
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         {stats.map((stat, index) => (
@@ -248,6 +246,6 @@ export default function AdminDashboardPage() {
 
       {/* Upcoming Events */}
       <UpcomingEvents events={upcomingEvents} onViewCalendar={() => navigate(ROUTES.CALENDAR)} />
-    </DashboardLayout>
+    </>
   );
 }

@@ -37,7 +37,7 @@ export function DashboardLayout({ children, sidebarSections }: DashboardLayoutPr
           overflow-y-auto mt-[64px] sm:mt-[80px] lg:mt-0
         `}
       >
-        <DashboardSidebar sections={sidebarSections} />
+        <DashboardSidebar sections={sidebarSections} onNavigate={() => setIsSidebarOpen(false)} />
       </aside>
 
       {/* Mobile Menu Button - Top Left Corner */}

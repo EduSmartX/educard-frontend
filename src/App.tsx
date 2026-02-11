@@ -37,6 +37,9 @@ const PreferencesPage = lazy(() => import('./features/preferences/pages/preferen
 // Holidays
 const HolidayCalendarPage = lazy(() => import('./pages/holidays-page'));
 
+// Exceptional Work Policy
+const ExceptionalWorkPage = lazy(() => import('./pages/exceptional-work-page'));
+
 function App() {
   return (
     <div className="min-h-screen bg-background font-sans antialiased">
@@ -65,6 +68,9 @@ function App() {
 
             {/* Holiday Calendar */}
             <Route path={ROUTES.HOLIDAYS} element={<HolidayCalendarPage />} />
+
+            {/* Exceptional Work Policy */}
+            <Route path={ROUTES.EXCEPTIONAL_WORK} element={<ExceptionalWorkPage />} />
 
             {/* Leave Management (with nested layout) */}
             <Route element={<LeaveLayout />}>

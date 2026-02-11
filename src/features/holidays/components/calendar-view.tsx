@@ -24,11 +24,11 @@ import {
   formatHolidayType,
   isWeekendHoliday,
   filterNonWeekendHolidays,
+  getOngoingHolidays,
   getUpcomingHolidays,
   calculateDuration,
-  filterWeekendTypes,
 } from '../utils/holiday-utils';
-import { AddHolidayDialog } from './add-holiday-dialog';
+import { HolidayFormDialog } from './holiday-form-dialog';
 import { DateActionDialog } from './date-action-dialog';
 
 interface CalendarViewProps {
@@ -80,11 +80,10 @@ export function CalendarView({ currentDate, holidays }: CalendarViewProps) {
     return days;
   }, [currentDate, holidays, today]);
 
-  // Get unique holiday types (excluding weekends)
-  const holidayTypes = useMemo(() => {
-    const types = new Set(holidays.map((h) => h.holiday_type));
-    return filterWeekendTypes(Array.from(types));
-  }, [holidays]);
+  // Get ongoing holidays
+  const ongoingHolidays = useMemo(() => {
+    return getOngoingHolidays(holidays, today);
+  }, [holidays, today]);
 
   // Get upcoming holidays
   const upcomingHolidays = useMemo(() => {
@@ -107,22 +106,6 @@ export function CalendarView({ currentDate, holidays }: CalendarViewProps) {
 
   return (
     <div className="space-y-6">
-      {/* Legend */}
-      {holidayTypes.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-lg bg-white px-4 py-3 border-2 border-gray-200 shadow-sm">
-          <div className="text-xs font-semibold text-gray-900">Legend:</div>
-          {holidayTypes.map((type) => {
-            const colors = getHolidayTypeColor(type);
-            return (
-              <div key={type} className="flex items-center gap-2">
-                <div className={cn('h-3 w-3 rounded-full shadow-sm', colors.badge)} />
-                <span className="text-xs font-medium text-gray-700">{formatHolidayType(type)}</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Calendar Grid */}
         <div className="lg:col-span-3">
@@ -242,6 +225,60 @@ export function CalendarView({ currentDate, holidays }: CalendarViewProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
+              {/* Ongoing Holidays Section */}
+              {ongoingHolidays.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-3 flex items-center gap-1">
+                    <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    Ongoing Now
+                  </h4>
+                  <div className="space-y-3">
+                    {ongoingHolidays.map((holiday) => {
+                      const colors = getHolidayTypeColor(holiday.holiday_type);
+                      const duration = calculateDuration(holiday.start_date, holiday.end_date);
+                      return (
+                        <div
+                          key={holiday.public_id}
+                          className="rounded-lg border-2 border-green-200 bg-green-50 p-3 shadow-sm"
+                        >
+                          <div className="flex items-start gap-2 mb-2">
+                            <div
+                              className={cn(
+                                'h-2 w-2 rounded-full mt-1.5 flex-shrink-0 shadow-sm',
+                                colors.badge
+                              )}
+                            />
+                            <span className="text-sm font-semibold text-gray-900 flex-1">
+                              {holiday.description}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-600 mb-2">
+                            {format(parseISO(holiday.start_date), 'MMM dd, yyyy')}
+                            {duration > 1 &&
+                              ` - ${format(parseISO(holiday.end_date), 'MMM dd, yyyy')}`}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant="secondary"
+                              className="text-xs px-2 py-0 bg-gray-100 text-gray-700 border border-gray-300"
+                            >
+                              {duration} {duration === 1 ? 'Day' : 'Days'}
+                            </Badge>
+                            <Badge
+                              className={cn(colors.badge, 'text-xs px-2 py-0 border-0 shadow-sm')}
+                            >
+                              {formatHolidayType(holiday.holiday_type)}
+                            </Badge>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="border-t border-gray-200 my-4"></div>
+                </div>
+              )}
+
+              {/* Upcoming Holidays Section */}
               {upcomingHolidays.length > 0 ? (
                 <div className="space-y-3">
                   {upcomingHolidays.map((holiday) => {
@@ -286,10 +323,12 @@ export function CalendarView({ currentDate, holidays }: CalendarViewProps) {
                   })}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <CalendarIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-sm text-gray-500">No upcoming holidays</p>
-                </div>
+                !ongoingHolidays.length && (
+                  <div className="text-center py-8">
+                    <CalendarIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-sm text-gray-500">No upcoming holidays</p>
+                  </div>
+                )
               )}
             </CardContent>
           </Card>
@@ -297,7 +336,8 @@ export function CalendarView({ currentDate, holidays }: CalendarViewProps) {
       </div>
 
       {/* Dialogs */}
-      <AddHolidayDialog
+      <HolidayFormDialog
+        mode="create"
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
         defaultDate={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : undefined}

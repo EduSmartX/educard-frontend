@@ -50,7 +50,7 @@ interface DataTableProps<T> {
   };
   getRowKey: (row: T, index: number) => string | number;
   onRowClick?: (row: T) => void;
-  maxHeight?: string; // Optional: custom max height (default: 500px)
+  maxHeight?: string; // Optional: maximum table height (default: 500px)
   minWidth?: string; // Optional: minimum table width (default: 1200px)
   // Pagination props
   pagination?: PaginationInfo;

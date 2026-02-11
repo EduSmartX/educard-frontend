@@ -12,6 +12,7 @@ import {
   Settings,
   Building2,
   Sliders,
+  AlertTriangle,
 } from 'lucide-react';
 import type { SidebarSection } from '@/components/layout/dashboard-sidebar';
 import { ROUTES } from '@/constants/app-config';
@@ -94,6 +95,12 @@ export const adminSidebarConfig: SidebarSection[] = [
         label: 'Holiday Calendar',
         icon: CalendarDays,
         path: ROUTES.HOLIDAYS,
+      },
+      {
+        id: 'exceptional-work',
+        label: 'Exceptional Work Policy',
+        icon: AlertTriangle,
+        path: ROUTES.EXCEPTIONAL_WORK,
       },
       {
         id: 'preferences',

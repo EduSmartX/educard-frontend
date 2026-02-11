@@ -37,13 +37,17 @@ export function DatePicker({
         onClick={onClick}
         disabled={disabled}
         className={cn(
-          'w-full justify-start text-left font-normal bg-white',
-          !value && 'text-muted-foreground',
+          'w-full h-12 px-4 justify-start text-left font-normal bg-white border-gray-300',
+          'hover:bg-gray-50 hover:border-gray-400 transition-colors',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
+          !value && 'text-gray-400',
+          value && 'text-gray-900',
+          disabled && 'opacity-50 cursor-not-allowed',
           className
         )}
       >
-        <CalendarIcon className="mr-2 h-4 w-4" />
-        {value || placeholder}
+        <CalendarIcon className="mr-3 h-5 w-5 text-gray-500 flex-shrink-0" />
+        <span className="text-base">{value || placeholder}</span>
       </Button>
     )
   );
@@ -68,6 +72,7 @@ export function DatePicker({
       calendarClassName="professional-calendar"
       popperClassName="date-picker-popper"
       showPopperArrow={false}
+      popperPlacement="bottom-start"
     />
   );
 }

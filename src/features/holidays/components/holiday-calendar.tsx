@@ -26,7 +26,7 @@ import { generateWeekendHolidays } from '../utils/holiday-utils';
 import { CalendarView } from './calendar-view';
 import { TableView } from './table-view';
 import { BulkUploadDialog } from './bulk-upload-dialog';
-import { AddHolidayDialog } from './add-holiday-dialog';
+import { HolidayFormDialog } from './holiday-form-dialog';
 
 /**
  * Main Holiday Calendar Component
@@ -113,7 +113,7 @@ export function HolidayCalendar() {
       >
         <div className="flex items-center gap-3">
           <BulkUploadDialog />
-          <AddHolidayDialog />
+          <HolidayFormDialog mode="create" showTrigger={true} />
         </div>
       </PageHeader>
 

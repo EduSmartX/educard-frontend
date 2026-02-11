@@ -65,6 +65,11 @@ export const QUERY_KEYS = {
     my: (filters?: unknown) => ['attendance', 'my', filters],
     exceptions: (filters?: unknown) => ['attendance', 'exceptions', filters],
   },
+  // Calendar Exceptions
+  calendarExceptions: {
+    list: (filters?: unknown) => ['calendar-exceptions', 'list', filters],
+    detail: (id: string) => ['calendar-exception', id],
+  },
   // Leave
   leave: {
     requests: (filters?: unknown) => ['leave', 'requests', filters],
@@ -196,6 +201,7 @@ export const ROUTES = {
   },
   HOLIDAYS: '/holidays',
   PREFERENCES: '/preferences',
+  EXCEPTIONAL_WORK: '/exceptional-work',
   // Role-specific routes (legacy - kept for backward compatibility)
   ADMIN: {
     ORGANIZATION: '/admin/organization',

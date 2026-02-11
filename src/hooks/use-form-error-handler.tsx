@@ -6,7 +6,7 @@
 import { toast } from 'sonner';
 import { AlertCircle } from 'lucide-react';
 import { type UseFormSetError, type FieldValues } from 'react-hook-form';
-import { setFormFieldErrors, parseApiError } from '@/lib/utils/error-handler';
+import { applyFieldErrors, getErrorMessage } from '@/lib/utils/error-handler';
 
 interface UseFormErrorHandlerOptions {
   /**
@@ -74,42 +74,25 @@ export function useFormErrorHandler<TFieldValues extends FieldValues>(
   } = options;
 
   return (error: unknown) => {
-    // Try to parse and set field-level errors
-    const errorResult = setFormFieldErrors(error, setError, fieldMap);
+    // Apply field errors to form and get toast message
+    const result = applyFieldErrors(error, setError, fieldMap);
 
     if (!showToast) {
-      return errorResult;
+      return result;
     }
 
-    // Determine what to show in toast
-    if (errorResult.shouldShowToast) {
-      if (errorResult.allErrors.length > 0) {
-        // Show the first error message (usually the most relevant)
-        const primaryError = errorResult.allErrors[0];
+    // Show toast with appropriate message
+    if (result.toastMessage) {
+      const title = result.hasFieldErrors ? validationErrorTitle : generalErrorTitle;
 
-        // If there are multiple errors, indicate that in the description
-        const description =
-          errorResult.allErrors.length > 1
-            ? `${primaryError} (${errorResult.allErrors.length - 1} more error${errorResult.allErrors.length > 2 ? 's' : ''})`
-            : primaryError;
-
-        toast.error(validationErrorTitle, {
-          description,
-          icon: <AlertCircle className="h-4 w-4" />,
-          duration: toastDuration,
-        });
-      } else {
-        // No specific errors found, show generic message
-        const errorMessage = parseApiError(error, defaultErrorMessage);
-        toast.error(generalErrorTitle, {
-          description: errorMessage,
-          icon: <AlertCircle className="h-4 w-4" />,
-          duration: toastDuration,
-        });
-      }
+      toast.error(title, {
+        description: result.toastMessage || getErrorMessage(error, defaultErrorMessage),
+        icon: <AlertCircle className="h-4 w-4" />,
+        duration: toastDuration,
+      });
     }
 
-    return errorResult;
+    return result;
   };
 }
 
@@ -130,7 +113,7 @@ export function useApiErrorHandler(options: Omit<UseFormErrorHandlerOptions, 'fi
       return;
     }
 
-    const errorMessage = parseApiError(error, defaultErrorMessage);
+    const errorMessage = getErrorMessage(error, defaultErrorMessage);
     toast.error(generalErrorTitle, {
       description: errorMessage,
       icon: <AlertCircle className="h-4 w-4" />,

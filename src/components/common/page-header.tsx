@@ -22,6 +22,7 @@ import {
   Bell,
   Briefcase,
   Home,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -32,6 +33,8 @@ const PAGE_ICON_MAP: Record<string, LucideIcon> = {
   holiday: Calendar,
   calendar: Calendar,
   'working day': CalendarDays,
+  'exceptional work': AlertTriangle,
+  exception: AlertTriangle,
 
   // Leave Management
   'leave allocation': Briefcase,

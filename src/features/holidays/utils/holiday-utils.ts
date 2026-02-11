@@ -125,6 +125,22 @@ export function isHolidayPast(holiday: Holiday, today: Date): boolean {
 }
 
 /**
+ * Get ongoing holidays (excluding weekends)
+ */
+export function getOngoingHolidays(holidays: Holiday[], currentDate: Date): Holiday[] {
+  const today = startOfDay(currentDate);
+
+  const ongoing = holidays.filter((h) => {
+    if (isWeekendHoliday(h)) return false;
+    const startDate = startOfDay(parseISO(h.start_date));
+    const endDate = startOfDay(parseISO(h.end_date));
+    return startDate <= today && endDate >= today;
+  });
+
+  return sortHolidaysByDate(ongoing);
+}
+
+/**
  * Get upcoming holidays (excluding weekends)
  */
 export function getUpcomingHolidays(
@@ -226,11 +242,16 @@ export function generateWeekendHolidays(options: GenerateWeekendHolidaysOptions)
 /**
  * Get default form data for creating a holiday
  */
-export function getDefaultHolidayFormData() {
+export function getDefaultHolidayFormData(): {
+  start_date: string;
+  end_date: string;
+  holiday_type: Exclude<import('../types').HolidayType, 'SUNDAY' | 'SATURDAY'>;
+  description: string;
+} {
   return {
     start_date: '',
     end_date: '',
-    holiday_type: 'NATIONAL_HOLIDAY' as const,
+    holiday_type: 'NATIONAL_HOLIDAY',
     description: '',
   };
 }

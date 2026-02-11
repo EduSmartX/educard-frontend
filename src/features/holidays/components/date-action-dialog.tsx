@@ -26,8 +26,8 @@ import {
   calculateDuration,
   filterNonWeekendHolidays,
 } from '../utils/holiday-utils';
-import { useDeleteHoliday } from '../hooks/use-holiday-mutations';
-import { EditHolidayDialog } from './edit-holiday-dialog';
+import { useDeleteHoliday } from '../hooks';
+import { HolidayFormDialog } from './holiday-form-dialog';
 import { DeleteConfirmationDialog } from '@/components/common/delete-confirmation-dialog';
 
 interface DateActionDialogProps {
@@ -221,7 +221,8 @@ export function DateActionDialog({
       </Dialog>
 
       {/* Edit Dialog */}
-      <EditHolidayDialog
+      <HolidayFormDialog
+        mode="edit"
         holiday={editingHoliday}
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
