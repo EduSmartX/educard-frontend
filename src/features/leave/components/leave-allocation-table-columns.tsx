@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { Column } from '@/components/ui/data-table';
 import type { LeaveAllocation } from '@/lib/api/leave-api';
-import { createActionsColumn } from '@/components/tables/common-columns';
+import { createCommonColumns } from '@/components/tables/common-columns';
 
 interface CreateColumnsParams {
   onView: (allocation: LeaveAllocation) => void;
@@ -118,41 +118,55 @@ export function createLeaveAllocationColumns({
     {
       header: 'Effective Period',
       accessor: (row) => {
-        const academicYear = row.academic_year || 'N/A';
+        // Format date range from effective_from and effective_to
+        const formatDate = (dateStr: string | null) => {
+          if (!dateStr) return null;
+          try {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+            });
+          } catch {
+            return dateStr;
+          }
+        };
 
-        if (academicYear === 'N/A') {
+        const fromDate = formatDate(row.effective_from);
+        const toDate = formatDate(row.effective_to);
+
+        if (!fromDate && !toDate) {
           return <span className="text-sm text-muted-foreground">N/A</span>;
         }
 
-        // Check if it's a range (contains '-') or a "From" date
-        const isRange = academicYear.includes(' - ');
+        const displayText =
+          fromDate && toDate ? `${fromDate} - ${toDate}` : fromDate || toDate || 'N/A';
+        const hasRange = fromDate && toDate;
 
         return (
           <div className="text-sm">
-            {isRange ? (
-              // Range format: "01 May 2025 - 30 Apr 2026"
-              <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-md">
-                <span className="font-medium text-blue-900">{academicYear}</span>
-              </div>
-            ) : (
-              // From date format or plain text
-              <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-50 border border-gray-200 rounded-md">
-                <span className="font-medium text-gray-900">{academicYear}</span>
-              </div>
-            )}
+            <div
+              className={`inline-flex items-center gap-1 px-2.5 py-1 ${
+                hasRange ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50 border border-gray-200'
+              } rounded-md`}
+            >
+              <span className={`font-medium ${hasRange ? 'text-blue-900' : 'text-gray-900'}`}>
+                {displayText}
+              </span>
+            </div>
           </div>
         );
       },
     },
-    createActionsColumn<LeaveAllocation>(
+    // Common columns: Created, Updated, Actions
+    ...createCommonColumns<LeaveAllocation>(
+      { onView, onEdit, onDelete },
       {
-        onView,
-        onEdit,
-        onDelete,
-      },
-      {
-        variant: 'buttons',
-        align: 'right',
+        actionsOptions: {
+          variant: 'buttons',
+          align: 'right',
+        },
       }
     ),
   ];

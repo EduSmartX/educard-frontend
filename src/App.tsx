@@ -24,6 +24,25 @@ const DashboardRouter = lazy(() => import('./features/dashboard/dashboard-router
 
 // Student pages
 const StudentsListPage = lazy(() => import('./features/students/pages/students-list-page'));
+const StudentFormPage = lazy(() => import('./features/students/pages/student-form-page'));
+
+// Teachers pages
+const TeachersPage = lazy(() =>
+  import('./features/teachers/pages').then((m) => ({ default: m.TeachersPage }))
+);
+const TeacherFormPage = lazy(() => import('./features/teachers/pages/teacher-form-page'));
+
+// Classes pages
+const ClassesPage = lazy(() =>
+  import('./features/classes/pages').then((m) => ({ default: m.ClassesPage }))
+);
+const ClassFormPage = lazy(() => import('./features/classes/pages/class-form-page'));
+
+// Subjects pages
+const SubjectsPage = lazy(() =>
+  import('./features/subjects/pages').then((m) => ({ default: m.SubjectsPage }))
+);
+const SubjectFormPage = lazy(() => import('./features/subjects/pages/subject-form-page'));
 
 // Leave management - Unified page with layout
 const LeaveLayout = lazy(() =>
@@ -62,6 +81,24 @@ function App() {
 
             {/* Students */}
             <Route path={ROUTES.STUDENTS} element={<StudentsListPage />} />
+            <Route path={ROUTES.STUDENTS_NEW} element={<StudentFormPage />} />
+            <Route path={ROUTES.STUDENTS_EDIT} element={<StudentFormPage />} />
+
+            {/* Teachers */}
+            <Route path={ROUTES.TEACHERS} element={<TeachersPage />} />
+            <Route path={ROUTES.TEACHERS_NEW} element={<TeacherFormPage />} />
+            <Route path={ROUTES.TEACHERS_VIEW} element={<TeacherFormPage />} />
+            <Route path={ROUTES.TEACHERS_EDIT} element={<TeacherFormPage />} />
+
+            {/* Classes */}
+            <Route path={ROUTES.CLASSES} element={<ClassesPage />} />
+            <Route path={ROUTES.CLASSES_NEW} element={<ClassFormPage />} />
+            <Route path={ROUTES.CLASSES_EDIT} element={<ClassFormPage />} />
+
+            {/* Subjects */}
+            <Route path={ROUTES.SUBJECTS} element={<SubjectsPage />} />
+            <Route path={ROUTES.SUBJECTS_NEW} element={<SubjectFormPage />} />
+            <Route path={ROUTES.SUBJECTS_EDIT} element={<SubjectFormPage />} />
 
             {/* Organization Preferences */}
             <Route path={ROUTES.PREFERENCES} element={<PreferencesPage />} />

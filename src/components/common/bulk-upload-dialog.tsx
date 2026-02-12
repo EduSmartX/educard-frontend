@@ -10,7 +10,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -384,21 +384,21 @@ export function BulkUploadDialog({
         {/* Content area */}
         <div className="overflow-y-auto max-h-[calc(90vh-280px)] px-6 py-6">
           <div className="space-y-4">
-            {/* Minimal Fields Checkbox */}
+            {/* Minimal Fields Toggle */}
             {showMinimalFieldsCheckbox && (
-              <div className="flex items-center space-x-2 rounded-lg border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 p-4 shadow-sm">
-                <Checkbox
-                  id="minimal-fields-checkbox"
-                  checked={isMinimalFields}
-                  onCheckedChange={(checked) => onMinimalFieldsChange?.(checked as boolean)}
-                  className="border-purple-400"
-                />
+              <div className="flex items-center justify-between rounded-lg border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 p-4 shadow-sm">
                 <Label
-                  htmlFor="minimal-fields-checkbox"
-                  className="cursor-pointer text-sm font-medium leading-none text-purple-900"
+                  htmlFor="minimal-fields-toggle"
+                  className="cursor-pointer text-sm font-semibold leading-none text-purple-900"
                 >
                   {minimalFieldsLabel}
                 </Label>
+                <Switch
+                  id="minimal-fields-toggle"
+                  checked={isMinimalFields}
+                  onCheckedChange={(checked) => onMinimalFieldsChange?.(checked)}
+                  className="data-[state=checked]:bg-purple-600"
+                />
               </div>
             )}
 

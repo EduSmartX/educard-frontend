@@ -175,10 +175,22 @@ export function parseError(error: unknown): NormalizedError {
     // Extract main message
     result.message = errorData.message || errorData.detail || result.message;
 
-    // Check for simple detail-only errors (like auth errors)
+    // Check for simple detail-only errors (like auth errors or 404s)
     if (errorData.detail && !errorData.errors) {
       result.message = errorData.detail;
       return result;
+    }
+
+    // Check if errors object contains a detail field (e.g., {"errors": {"detail": "..."}})
+    if (errorData.errors && typeof errorData.errors === 'object') {
+      const errorsObj = errorData.errors as Record<string, ErrorValue>;
+      if ('detail' in errorsObj && typeof errorsObj.detail === 'string') {
+        result.message = errorsObj.detail;
+        // If detail is the only error, return early
+        if (Object.keys(errorsObj).length === 1) {
+          return result;
+        }
+      }
     }
 
     // Parse errors object (supports nested structures)
@@ -244,7 +256,7 @@ export function getErrorMessage(error: unknown, fallback?: string): string {
 export function applyFieldErrors<TFieldValues extends FieldValues>(
   error: unknown,
   setError: UseFormSetError<TFieldValues>,
-  fieldMap?: Record<string, Path<TFieldValues>>
+  fieldMap?: Record<string, string>
 ): {
   /** Whether any field errors were set */
   hasFieldErrors: boolean;
@@ -267,7 +279,7 @@ export function applyFieldErrors<TFieldValues extends FieldValues>(
   // Apply field errors to form
   Object.entries(normalized.fieldErrors).forEach(([field, message]) => {
     try {
-      const formField = fieldMap?.[field] || (field as Path<TFieldValues>);
+      const formField = (fieldMap?.[field] || field) as Path<TFieldValues>;
       setError(formField, {
         type: 'manual',
         message: message,
@@ -410,4 +422,99 @@ export function extractValidationErrors(error: unknown): {
     nonFieldErrors: normalized.nonFieldErrors,
     message: normalized.message,
   };
+}
+
+// ============================================================================
+// Deleted Duplicate Error Helpers
+// ============================================================================
+
+/**
+ * Check if error indicates a deleted duplicate record exists
+ */
+export function isDeletedDuplicateError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const axiosError = error as AxiosErrorWrapper;
+  const data = axiosError.response?.data;
+
+  if (!data || !data.errors) {
+    return false;
+  }
+
+  const errors = data.errors;
+
+  // Check for has_deleted_duplicate flag
+  const hasDuplicate = errors.has_deleted_duplicate;
+  if (
+    hasDuplicate === 'true' ||
+    hasDuplicate === 'True' ||
+    (Array.isArray(hasDuplicate) &&
+      hasDuplicate.length > 0 &&
+      (hasDuplicate[0] === 'True' || hasDuplicate[0] === 'true'))
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Extract user-friendly message from deleted duplicate error
+ */
+export function getDeletedDuplicateMessage(error: unknown): string {
+  const axiosError = error as AxiosErrorWrapper;
+  const data = axiosError.response?.data;
+
+  if (!data || !data.errors) {
+    return 'A deleted record with the same details already exists.';
+  }
+
+  const errors = data.errors;
+
+  // Check non_field_errors for the message
+  if (Array.isArray(errors.non_field_errors) && errors.non_field_errors.length > 0) {
+    return errors.non_field_errors[0];
+  }
+
+  if (typeof errors.non_field_errors === 'string') {
+    return errors.non_field_errors;
+  }
+
+  // Check detail field
+  if (typeof errors.detail === 'string') {
+    return errors.detail;
+  }
+
+  if (Array.isArray(errors.detail) && errors.detail.length > 0) {
+    return errors.detail[0] as string;
+  }
+
+  return 'A deleted record with the same details already exists.';
+}
+
+/**
+ * Extract deleted record ID from deleted duplicate error
+ */
+export function getDeletedRecordId(error: unknown): string | null {
+  const axiosError = error as AxiosErrorWrapper;
+  const data = axiosError.response?.data;
+
+  if (!data || !data.errors) {
+    return null;
+  }
+
+  const errors = data.errors;
+
+  // Check for deleted_record_id field
+  if (typeof errors.deleted_record_id === 'string') {
+    return errors.deleted_record_id;
+  }
+
+  if (Array.isArray(errors.deleted_record_id) && errors.deleted_record_id.length > 0) {
+    return errors.deleted_record_id[0] as string;
+  }
+
+  return null;
 }

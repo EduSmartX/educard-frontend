@@ -68,13 +68,48 @@ export function DeleteConfirmationDialog({
           <AlertDialogDescription className="text-base text-gray-700">
             {description || (
               <>
-                Are you sure you want to delete{' '}
-                {itemName && <strong className="text-gray-900 font-semibold">{itemName}</strong>}?
-                <span className="block mt-2 text-orange-600 font-medium">
-                  {isSoftDelete
-                    ? 'This item will be archived and can be restored later.'
-                    : 'This action cannot be undone.'}
-                </span>
+                <div>
+                  Are you sure you want to delete{' '}
+                  {itemName && <strong className="text-gray-900 font-semibold">{itemName}</strong>}?
+                </div>
+                <div className="mt-3 flex items-start gap-2">
+                  <span className={`mt-0.5 ${isSoftDelete ? 'text-blue-600' : 'text-orange-600'}`}>
+                    {isSoftDelete ? (
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        />
+                      </svg>
+                    )}
+                  </span>
+                  <span className={`text-sm ${isSoftDelete ? 'text-blue-600' : 'text-orange-600'}`}>
+                    {isSoftDelete
+                      ? 'You can restore this item from the "Deleted" tab if needed.'
+                      : 'This action cannot be undone.'}
+                  </span>
+                </div>
               </>
             )}
           </AlertDialogDescription>

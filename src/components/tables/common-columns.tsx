@@ -62,50 +62,25 @@ export interface ActionsColumnOptions {
 function formatDateForDisplay(dateString: string): string {
   try {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
+    const formatted = date.toLocaleDateString('en-US', {
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      month: 'short',
+      year: 'numeric',
     });
+    return `(${formatted})`;
   } catch {
     return dateString;
   }
 }
 
 /**
- * Creates the "Created By" column
+ * Action button configuration
  */
-export function createCreatedByColumn<T extends CommonRowData>(): Column<T> {
-  return {
-    header: 'Created By',
-    accessor: (row) => (
-      <div className="text-sm">
-        <div className="font-medium text-gray-900">{row.created_by_name || 'System'}</div>
-        <div className="text-xs text-muted-foreground">{formatDateForDisplay(row.created_at)}</div>
-      </div>
-    ),
-    sortable: true,
-    sortKey: 'created_by_name',
-  };
-}
-
-/**
- * Creates the "Last Updated" column
- */
-export function createLastUpdatedColumn<T extends CommonRowData>(): Column<T> {
-  return {
-    header: 'Last Updated',
-    accessor: (row) => (
-      <div className="text-sm">
-        <div className="font-medium text-gray-900">{row.updated_by_name || 'System'}</div>
-        <div className="text-xs text-muted-foreground">{formatDateForDisplay(row.updated_at)}</div>
-      </div>
-    ),
-    sortable: true,
-    sortKey: 'updated_at',
-  };
+interface ActionButtonConfig {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  onClick: () => void;
+  colorClass: string;
 }
 
 /**
@@ -119,62 +94,65 @@ function createButtonActions<T>(
   const { onView, onEdit, onDelete, onCustomAction } = callbacks;
   const { showLabels = false, customActions = [] } = options || {};
 
+  const actionButtons: ActionButtonConfig[] = [];
+
+  if (onView) {
+    actionButtons.push({
+      icon: Eye,
+      label: 'View',
+      onClick: () => onView(row),
+      colorClass: 'text-blue-600 hover:text-blue-700 hover:bg-blue-50',
+    });
+  }
+
+  if (onEdit) {
+    actionButtons.push({
+      icon: Edit,
+      label: 'Edit',
+      onClick: () => onEdit(row),
+      colorClass: 'text-green-600 hover:text-green-700 hover:bg-green-50',
+    });
+  }
+
+  if (onDelete) {
+    actionButtons.push({
+      icon: Trash2,
+      label: 'Delete',
+      onClick: () => onDelete(row),
+      colorClass: 'text-red-600 hover:text-red-700 hover:bg-red-50',
+    });
+  }
+
+  const variantClasses = {
+    default: 'text-gray-600 hover:text-gray-700 hover:bg-gray-50',
+    destructive: 'text-red-600 hover:text-red-700 hover:bg-red-50',
+    success: 'text-green-600 hover:text-green-700 hover:bg-green-50',
+    warning: 'text-amber-600 hover:text-amber-700 hover:bg-amber-50',
+  };
+
   return (
     <div className="flex items-center gap-1">
-      {onView && (
-        <Button
-          variant="ghost"
-          size={showLabels ? 'sm' : 'icon'}
-          onClick={(e) => {
-            e.stopPropagation();
-            onView(row);
-          }}
-          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-          title="View details"
-        >
-          <Eye className="h-4 w-4" />
-          {showLabels && <span className="ml-2">View</span>}
-        </Button>
-      )}
-      {onEdit && (
-        <Button
-          variant="ghost"
-          size={showLabels ? 'sm' : 'icon'}
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit(row);
-          }}
-          className="text-green-600 hover:text-green-700 hover:bg-green-50"
-          title="Edit"
-        >
-          <Edit className="h-4 w-4" />
-          {showLabels && <span className="ml-2">Edit</span>}
-        </Button>
-      )}
-      {onDelete && (
-        <Button
-          variant="ghost"
-          size={showLabels ? 'sm' : 'icon'}
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(row);
-          }}
-          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-          title="Delete"
-        >
-          <Trash2 className="h-4 w-4" />
-          {showLabels && <span className="ml-2">Delete</span>}
-        </Button>
-      )}
+      {actionButtons.map((action) => {
+        const Icon = action.icon;
+        return (
+          <Button
+            key={action.label}
+            variant="ghost"
+            size={showLabels ? 'sm' : 'icon'}
+            onClick={(e) => {
+              e.stopPropagation();
+              action.onClick();
+            }}
+            className={action.colorClass}
+            title={action.label}
+          >
+            <Icon className="h-4 w-4" />
+            {showLabels && <span className="ml-2">{action.label}</span>}
+          </Button>
+        );
+      })}
       {customActions.map((action) => {
         const Icon = action.icon;
-        const variantClasses = {
-          default: 'text-gray-600 hover:text-gray-700 hover:bg-gray-50',
-          destructive: 'text-red-600 hover:text-red-700 hover:bg-red-50',
-          success: 'text-green-600 hover:text-green-700 hover:bg-green-50',
-          warning: 'text-amber-600 hover:text-amber-700 hover:bg-amber-50',
-        };
-
         return (
           <Button
             key={action.key}
@@ -296,26 +274,60 @@ export function createActionsColumn<T>(
 }
 
 /**
- * Creates all common columns (Created By, Updated By, Actions)
+ * Creates the "Created" column (name and timestamp)
+ */
+export function createCreatedAtColumn<T extends CommonRowData>(): Column<T> {
+  return {
+    header: 'Created',
+    accessor: (row) => (
+      <div className="text-sm">
+        <div className="font-medium text-gray-900">{row.created_by_name || 'System'}</div>
+        <div className="text-xs text-muted-foreground">{formatDateForDisplay(row.created_at)}</div>
+      </div>
+    ),
+    sortable: true,
+    sortKey: 'created_at',
+  };
+}
+
+/**
+ * Creates the "Updated" column (name and timestamp)
+ */
+export function createUpdatedAtColumn<T extends CommonRowData>(): Column<T> {
+  return {
+    header: 'Updated',
+    accessor: (row) => (
+      <div className="text-sm">
+        <div className="font-medium text-gray-900">{row.updated_by_name || 'System'}</div>
+        <div className="text-xs text-muted-foreground">{formatDateForDisplay(row.updated_at)}</div>
+      </div>
+    ),
+    sortable: true,
+    sortKey: 'updated_at',
+  };
+}
+
+/**
+ * Creates all common columns (Created, Updated, Actions)
  */
 export function createCommonColumns<T extends CommonRowData>(
   callbacks: ActionCallbacks<T>,
   options?: {
-    includeCreatedBy?: boolean;
-    includeUpdatedBy?: boolean;
+    includeCreated?: boolean;
+    includeUpdated?: boolean;
     actionsOptions?: ActionsColumnOptions;
   }
 ): Column<T>[] {
-  const { includeCreatedBy = true, includeUpdatedBy = true, actionsOptions } = options || {};
+  const { includeCreated = true, includeUpdated = true, actionsOptions } = options || {};
 
   const columns: Column<T>[] = [];
 
-  if (includeCreatedBy) {
-    columns.push(createCreatedByColumn<T>());
+  if (includeCreated) {
+    columns.push(createCreatedAtColumn<T>());
   }
 
-  if (includeUpdatedBy) {
-    columns.push(createLastUpdatedColumn<T>());
+  if (includeUpdated) {
+    columns.push(createUpdatedAtColumn<T>());
   }
 
   columns.push(createActionsColumn<T>(callbacks, actionsOptions));

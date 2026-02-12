@@ -221,7 +221,7 @@ export function ExceptionalWorkManagement() {
       >
         <Button
           onClick={() => setShowAddDialog(true)}
-          className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700"
+          className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 shadow-sm hover:shadow-md transition-all"
         >
           <Plus className="mr-2 h-4 w-4" />
           Add Exception
@@ -336,7 +336,6 @@ export function ExceptionalWorkManagement() {
               fields={filterFields}
               onFilter={handleFilter}
               onReset={handleResetFilters}
-              defaultValues={filters}
             />
           </div>
         )}

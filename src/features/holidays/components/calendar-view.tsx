@@ -106,9 +106,9 @@ export function CalendarView({ currentDate, holidays }: CalendarViewProps) {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calendar Grid */}
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-2">
           <div className="overflow-hidden rounded-xl border-2 border-blue-100 shadow-lg">
             {/* Weekday Headers */}
             <div className="grid grid-cols-7 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600">
@@ -130,7 +130,6 @@ export function CalendarView({ currentDate, holidays }: CalendarViewProps) {
                   ? getHolidayTypeColor(primaryHoliday.holiday_type)
                   : null;
                 const nonWeekendHolidays = filterNonWeekendHolidays(day.holidays);
-                const hasHolidays = nonWeekendHolidays.length > 0;
 
                 return (
                   <div
@@ -142,8 +141,7 @@ export function CalendarView({ currentDate, holidays }: CalendarViewProps) {
                       'hover:shadow-inner hover:ring-2 hover:ring-blue-300',
                       !day.isCurrentMonth &&
                         'bg-gray-50/50 text-gray-400 cursor-default hover:shadow-none hover:ring-0',
-                      day.isToday && !hasHolidays && 'ring-2 ring-blue-500 bg-blue-50/50',
-                      day.isToday && hasHolidays && 'ring-2 ring-blue-600',
+                      day.isToday && 'ring-2 ring-blue-500 ring-inset',
                       colors && day.isCurrentMonth && !day.isToday && colors.bg,
                       'last:border-r-0'
                     )}
@@ -167,10 +165,7 @@ export function CalendarView({ currentDate, holidays }: CalendarViewProps) {
                       <div
                         className={cn(
                           'mb-1 text-sm font-semibold',
-                          day.isToday && !hasHolidays && 'text-blue-700 text-base',
-                          day.isToday &&
-                            hasHolidays &&
-                            'inline-flex items-center justify-center rounded-full bg-blue-600 text-white w-6 h-6 text-sm',
+                          day.isToday && 'text-blue-700 text-base',
                           !day.isToday && !day.isCurrentMonth && 'text-gray-400'
                         )}
                       >
@@ -189,10 +184,10 @@ export function CalendarView({ currentDate, holidays }: CalendarViewProps) {
                               <div
                                 key={holiday.public_id}
                                 className={cn(
-                                  'truncate rounded-md px-1.5 py-0.5 text-[10px] leading-tight border',
+                                  'truncate rounded-md px-1.5 py-0.5 text-[10px] leading-tight font-medium border shadow-sm',
                                   holidayColors.text,
                                   holidayColors.border,
-                                  'bg-white/80'
+                                  holidayColors.badge
                                 )}
                                 title={holiday.description}
                               >

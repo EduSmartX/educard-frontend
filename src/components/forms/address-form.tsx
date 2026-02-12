@@ -7,6 +7,15 @@ import { getCurrentLocationAddress } from '@/lib/location-utils';
 import { MapPin, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+interface FieldNames {
+  streetAddress?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+}
+
 interface AddressFormProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   form: any; // UseFormReturn from react-hook-form
@@ -15,6 +24,8 @@ interface AddressFormProps {
   showHeader?: boolean;
   compact?: boolean; // For smaller layouts
   showLocationButton?: boolean; // Show "Use My Location" button
+  fieldNames?: FieldNames; // Custom field names (for snake_case compatibility)
+  disabled?: boolean; // Disable all fields
 }
 
 export function AddressForm({
@@ -24,10 +35,28 @@ export function AddressForm({
   showHeader = true,
   compact = false,
   showLocationButton = true,
+  fieldNames,
+  disabled = false,
 }: AddressFormProps) {
   const [isLoadingLocation, setIsLoadingLocation] = React.useState(false);
 
-  const getFieldName = (field: string) => (fieldPrefix ? `${fieldPrefix}.${field}` : field);
+  // Default field names (camelCase)
+  const defaultFieldNames: Required<FieldNames> = {
+    streetAddress: 'streetAddress',
+    addressLine2: 'addressLine2',
+    city: 'city',
+    state: 'state',
+    zipCode: 'zipCode',
+    country: 'country',
+  };
+
+  // Merge custom field names with defaults
+  const fields = { ...defaultFieldNames, ...fieldNames };
+
+  const getFieldName = (field: keyof FieldNames) => {
+    const fieldName = fields[field];
+    return fieldPrefix ? `${fieldPrefix}.${fieldName}` : fieldName;
+  };
 
   const inputHeight = compact ? 'h-12' : 'h-14';
   const labelSize = compact ? 'text-xs' : 'text-sm';
@@ -39,7 +68,7 @@ export function AddressForm({
       const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
       const locationData = await getCurrentLocationAddress(apiKey);
 
-      // Fill form fields with location data
+      // Fill form fields with location data using mapped field names
       form.setValue(getFieldName('streetAddress'), locationData.streetAddress, {
         shouldValidate: true,
       });
@@ -107,15 +136,12 @@ export function AddressForm({
           htmlFor={getFieldName('streetAddress')}
           className={`${labelSize} font-semibold text-gray-700 flex items-center gap-2`}
         >
-          <span className="flex items-center justify-center w-6 h-6 bg-green-100 rounded-full text-green-700 text-xs font-bold">
-            🏠
-          </span>
-          Street Address
-          {required && <span className="text-red-500">*</span>}
+          Address Line 1{required && <span className="text-red-500">*</span>}
         </Label>
         <Input
           id={getFieldName('streetAddress')}
           placeholder="123 Main Street"
+          disabled={disabled}
           className={`${inputHeight} text-base border-2 border-gray-200 rounded-xl focus:border-green-400 focus:ring-4 focus:ring-green-50 transition-all`}
           error={form.formState.errors[getFieldName('streetAddress')]?.message as string}
           {...form.register(getFieldName('streetAddress'))}
@@ -133,6 +159,7 @@ export function AddressForm({
         <Input
           id={getFieldName('addressLine2')}
           placeholder="Suite, Building, Floor"
+          disabled={disabled}
           className={`${inputHeight} text-base border-2 border-gray-200 rounded-xl focus:border-gray-400 focus:ring-4 focus:ring-gray-50 transition-all`}
           {...form.register(getFieldName('addressLine2'))}
         />
@@ -151,6 +178,7 @@ export function AddressForm({
           <Input
             id={getFieldName('city')}
             placeholder="City"
+            disabled={disabled}
             className={`${inputHeight} text-base border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:ring-4 focus:ring-teal-50 transition-all`}
             error={form.formState.errors[getFieldName('city')]?.message as string}
             {...form.register(getFieldName('city'))}
@@ -168,6 +196,7 @@ export function AddressForm({
           <Input
             id={getFieldName('state')}
             placeholder="State"
+            disabled={disabled}
             className={`${inputHeight} text-base border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:ring-4 focus:ring-teal-50 transition-all`}
             error={form.formState.errors[getFieldName('state')]?.message as string}
             {...form.register(getFieldName('state'))}
@@ -188,6 +217,7 @@ export function AddressForm({
           <Input
             id={getFieldName('zipCode')}
             placeholder="12345"
+            disabled={disabled}
             className={`${inputHeight} text-base border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:ring-4 focus:ring-teal-50 transition-all`}
             error={form.formState.errors[getFieldName('zipCode')]?.message as string}
             {...form.register(getFieldName('zipCode'))}
@@ -204,6 +234,7 @@ export function AddressForm({
           <Input
             id={getFieldName('country')}
             defaultValue="India"
+            disabled={disabled}
             className={`${inputHeight} text-base border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:ring-4 focus:ring-teal-50 transition-all`}
             {...form.register(getFieldName('country'))}
           />

@@ -5,7 +5,7 @@
  */
 
 import { Filter, RotateCcw, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Combobox } from '@/components/ui/combobox';
@@ -56,10 +56,8 @@ export function ResourceFilter({
 }: ResourceFilterProps) {
   const [filters, setFilters] = useState<Record<string, string | string[]>>(defaultValues);
 
-  // Sync internal state with defaultValues prop changes
-  useEffect(() => {
-    setFilters(defaultValues);
-  }, [defaultValues]);
+  // No need for useEffect sync - the component manages its own state
+  // If you need to reset externally, use the onReset callback
 
   const handleFilterChange = (name: string, value: string | string[]) => {
     setFilters((prev) => {

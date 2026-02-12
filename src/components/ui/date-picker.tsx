@@ -37,8 +37,8 @@ export function DatePicker({
         onClick={onClick}
         disabled={disabled}
         className={cn(
-          'w-full h-12 px-4 justify-start text-left font-normal bg-white border-gray-300',
-          'hover:bg-gray-50 hover:border-gray-400 transition-colors',
+          'w-full h-10 px-3 justify-start text-left font-normal bg-gray-50 border-gray-300',
+          'hover:bg-white hover:border-gray-400 focus:bg-white transition-colors',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
           !value && 'text-gray-400',
           value && 'text-gray-900',
@@ -46,33 +46,35 @@ export function DatePicker({
           className
         )}
       >
-        <CalendarIcon className="mr-3 h-5 w-5 text-gray-500 flex-shrink-0" />
-        <span className="text-base">{value || placeholder}</span>
+        <CalendarIcon className="mr-2 h-4 w-4 text-gray-500 flex-shrink-0" />
+        <span className="text-sm">{value || placeholder}</span>
       </Button>
     )
   );
   CustomInput.displayName = 'CustomInput';
 
   return (
-    <ReactDatePicker
-      selected={value}
-      onChange={onChange}
-      customInput={<CustomInput />}
-      dateFormat="MMMM d, yyyy"
-      minDate={minDate}
-      maxDate={maxDate}
-      disabled={disabled}
-      showMonthDropdown
-      showYearDropdown
-      dropdownMode="select"
-      yearDropdownItemNumber={100}
-      scrollableYearDropdown
-      placeholderText={placeholder}
-      className="w-full"
-      calendarClassName="professional-calendar"
-      popperClassName="date-picker-popper"
-      showPopperArrow={false}
-      popperPlacement="bottom-start"
-    />
+    <div className="w-full">
+      <ReactDatePicker
+        selected={value}
+        onChange={onChange}
+        customInput={<CustomInput />}
+        dateFormat="MMMM d, yyyy"
+        minDate={minDate}
+        maxDate={maxDate}
+        disabled={disabled}
+        showMonthDropdown
+        showYearDropdown
+        dropdownMode="select"
+        yearDropdownItemNumber={100}
+        scrollableYearDropdown
+        placeholderText={placeholder}
+        className="w-full"
+        calendarClassName="professional-calendar"
+        popperClassName="date-picker-popper"
+        showPopperArrow={false}
+        popperPlacement="bottom-start"
+      />
+    </div>
   );
 }
