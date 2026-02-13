@@ -46,17 +46,7 @@ export function OrganizationRoleField<T extends FieldValues>({
   disabled = false,
   defaultRoleCode = 'TEACHER',
 }: OrganizationRoleFieldProps<T>) {
-  const { data: orgRoles = [], isLoading, error } = useOrganizationRoles();
-
-  // Debug logging
-  useEffect(() => {
-    if (orgRoles.length > 0) {
-      console.info('Organization roles loaded:', orgRoles.length, 'roles');
-    }
-    if (error) {
-      console.error('Error loading organization roles:', error);
-    }
-  }, [orgRoles, error]);
+  const { data: orgRoles = [], isLoading } = useOrganizationRoles();
 
   return (
     <FormField
@@ -69,7 +59,6 @@ export function OrganizationRoleField<T extends FieldValues>({
           if (!field.value && defaultRoleCode && orgRoles.length > 0) {
             const defaultRole = orgRoles.find((role) => role.code === defaultRoleCode);
             if (defaultRole) {
-              console.info('Auto-filling organization role:', defaultRole.name);
               field.onChange(defaultRoleCode);
             }
           }

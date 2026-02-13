@@ -31,8 +31,7 @@ export function useOrganizationUsers() {
           await apiClient.get<ApiResponse<OrganizationUser[]>>('/users/supervisors/');
         // API response structure: { success, message, data: [...users], code }
         return response.data?.data || [];
-      } catch (error) {
-        console.error('Error fetching supervisors:', error);
+      } catch {
         return [];
       }
     },

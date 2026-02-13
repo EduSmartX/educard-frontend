@@ -138,8 +138,8 @@ export const authApi = {
           refresh: refreshToken,
         });
       }
-    } catch (error) {
-      console.error('Logout API error:', error);
+    } catch {
+      // Ignore logout API errors
     } finally {
       // Clear all localStorage
       localStorage.removeItem('access_token');

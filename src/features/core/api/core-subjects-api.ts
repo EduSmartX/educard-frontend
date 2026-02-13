@@ -31,6 +31,5 @@ export async function fetchCoreSubjects(): Promise<CoreSubject[]> {
     return (response.data as { data: CoreSubject[] }).data;
   }
 
-  console.error('Unexpected core subjects response format:', response.data);
   return [];
 }

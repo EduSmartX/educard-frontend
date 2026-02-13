@@ -156,15 +156,6 @@ export function parseError(error: unknown): NormalizedError {
     // If it has response.data, it's an axios wrapper
     const errorData = possibleAxiosError.response?.data || possibleBackendError;
 
-    // Debug logging (remove in production)
-    if (import.meta.env.DEV) {
-      console.info('[Error Handler] Parsing error:', {
-        hasResponse: !!possibleAxiosError.response,
-        errorData,
-        errors: errorData.errors,
-      });
-    }
-
     // Get status code
     if (possibleAxiosError.response?.status) {
       result.statusCode = possibleAxiosError.response.status;
@@ -200,14 +191,6 @@ export function parseError(error: unknown): NormalizedError {
       const flattened = flattenErrors(errorData.errors);
       result.fieldErrors = flattened.fieldErrors;
       result.nonFieldErrors = flattened.nonFieldErrors;
-
-      // Debug logging
-      if (import.meta.env.DEV) {
-        console.info('[Error Handler] Flattened errors:', {
-          fieldErrors: result.fieldErrors,
-          nonFieldErrors: result.nonFieldErrors,
-        });
-      }
     }
 
     // If we have validation errors but no message, set a better default
@@ -287,9 +270,8 @@ export function applyFieldErrors<TFieldValues extends FieldValues>(
       result.hasFieldErrors = true;
       result.fieldErrorCount++;
       result.fieldErrorMessages.push(message);
-    } catch (err) {
+    } catch {
       // If field doesn't exist in form, treat as non-field error
-      console.warn(`Failed to set error on field "${field}":`, err);
       normalized.nonFieldErrors.push(`${field}: ${message}`);
     }
   });

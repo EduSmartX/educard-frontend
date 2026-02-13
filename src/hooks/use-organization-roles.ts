@@ -33,8 +33,7 @@ async function fetchOrganizationRoles(): Promise<OrganizationRole[]> {
     );
     // API response structure: { success, message, data: [...roles], code }
     return response.data?.data || [];
-  } catch (error) {
-    console.error('Error fetching organization roles:', error);
+  } catch {
     return [];
   }
 }

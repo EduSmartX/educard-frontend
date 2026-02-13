@@ -60,8 +60,7 @@ export async function getCurrentWorkingDayPolicy(): Promise<WorkingDayPolicy | n
       return response.data.data[0];
     }
     return null;
-  } catch (error) {
-    console.error('Failed to fetch working day policy:', error);
+  } catch {
     return null;
   }
 }

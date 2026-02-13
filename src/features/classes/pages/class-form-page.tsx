@@ -97,7 +97,6 @@ export default function ClassFormPage() {
 
   // Populate form when editing/viewing
   useEffect(() => {
-    console.info('ClassForm useEffect triggered - mode:', mode, 'id:', id, 'classItem:', classItem);
     if (mode !== 'create' && classItem && id) {
       const formData = {
         class_master: classItem.class_master?.id?.toString() || '',
@@ -106,19 +105,11 @@ export default function ClassFormPage() {
         info: classItem.info || '',
         capacity: classItem.capacity?.toString() || '',
       };
-      console.info('ClassForm - ID:', id);
-      console.info('ClassForm - Mode:', mode);
-      console.info('ClassForm - classItem full object:', JSON.stringify(classItem, null, 2));
-      console.info('ClassForm - Resetting form with data:', formData);
-      console.info('ClassForm - classItem.class_master:', classItem.class_master);
-      console.info('ClassForm - Current form values before reset:', form.getValues());
 
       // Reset form with new data and trigger re-render
       form.reset(formData, {
         keepDefaultValues: false,
       });
-
-      console.info('ClassForm - Form values after reset:', form.getValues());
     }
   }, [classItem, mode, id, form]);
 
@@ -328,47 +319,40 @@ export default function ClassFormPage() {
                   <FormField
                     control={form.control}
                     name="class_master"
-                    render={({ field, fieldState }) => {
-                      console.info('ClassForm - class_master field value:', field.value);
-                      console.info(
-                        'ClassForm - Available coreClasses:',
-                        coreClasses?.map((c) => ({ id: c.id, name: c.name }))
-                      );
-                      return (
-                        <FormItem
-                          ref={fieldState.error && !firstErrorRef.current ? firstErrorRef : null}
+                    render={({ field, fieldState }) => (
+                      <FormItem
+                        ref={fieldState.error && !firstErrorRef.current ? firstErrorRef : null}
+                      >
+                        <FormLabel>
+                          Class <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <Select
+                          key={`class-master-${classItem?.public_id || 'new'}-${field.value}`}
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={isPending || mode === 'view' || mode === 'edit'}
                         >
-                          <FormLabel>
-                            Class <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <Select
-                            key={`class-master-${classItem?.public_id || 'new'}-${field.value}`}
-                            onValueChange={field.onChange}
-                            value={field.value}
-                            disabled={isPending || mode === 'view' || mode === 'edit'}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select class" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {coreClasses?.map((coreClass) => (
-                                <SelectItem key={coreClass.id} value={coreClass.id.toString()}>
-                                  {coreClass.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {mode === 'edit' && (
-                            <p className="text-sm text-muted-foreground">
-                              Class cannot be changed after creation
-                            </p>
-                          )}
-                          <FormMessage />
-                        </FormItem>
-                      );
-                    }}
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select class" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {coreClasses?.map((coreClass) => (
+                              <SelectItem key={coreClass.id} value={coreClass.id.toString()}>
+                                {coreClass.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {mode === 'edit' && (
+                          <p className="text-sm text-muted-foreground">
+                            Class cannot be changed after creation
+                          </p>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
 
                   {/* Section Name */}

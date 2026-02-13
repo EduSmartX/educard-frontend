@@ -37,8 +37,7 @@ export async function getCurrentAcademicYear(): Promise<AcademicYear | null> {
       '/organization-preferences/current-academic-year/'
     );
     return response.data.data;
-  } catch (error) {
-    console.error('Failed to fetch current academic year:', error);
+  } catch {
     return null;
   }
 }

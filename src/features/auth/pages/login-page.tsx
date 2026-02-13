@@ -55,9 +55,8 @@ export default function LoginPage() {
 
       // Redirect to dashboard (role-based routing handled by DashboardRouter)
       navigate(ROUTES.DASHBOARD);
-    } catch (error: unknown) {
+    } catch {
       // Error handling is done in api.ts interceptor
-      console.error('Login error:', error);
     } finally {
       setIsLoading(false);
     }

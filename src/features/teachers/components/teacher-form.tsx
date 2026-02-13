@@ -206,11 +206,10 @@ export function TeacherForm({
       duplicateHandler.closeDialog();
       onSuccess(); // Refresh the list or close the form
     },
-    onError: (error) => {
+    onError: () => {
       toast.error('Failed to Reactivate', {
         description: 'Could not reactivate the teacher. Please try again.',
       });
-      console.error('Reactivation error:', error);
     },
   });
 

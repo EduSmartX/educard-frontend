@@ -32,7 +32,7 @@ export default tseslint.config(
       ],
       '@typescript-eslint/no-empty-object-type': 'error',
       '@typescript-eslint/no-require-imports': 'error',
-      'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
+      'no-console': ['error', { allow: ['warn', 'error'] }],
       'prefer-const': 'error',
       'no-var': 'error',
       eqeqeq: ['error', 'always'],

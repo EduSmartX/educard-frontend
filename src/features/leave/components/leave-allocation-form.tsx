@@ -89,11 +89,7 @@ export function LeaveAllocationForm({
   });
 
   // Fetch current academic year from backend (optional - graceful fallback)
-  const {
-    data: academicYearData,
-    isLoading: loadingAcademicYear,
-    isError: academicYearError,
-  } = useQuery({
+  const { data: academicYearData, isLoading: loadingAcademicYear } = useQuery({
     queryKey: ['academic-year'],
     queryFn: getCurrentAcademicYear,
     staleTime: 30 * 60 * 1000, // Cache for 30 minutes
@@ -141,13 +137,6 @@ export function LeaveAllocationForm({
       }
     }
   }, [academicYearData, mode, form]);
-
-  // Log academic year availability
-  useEffect(() => {
-    if (mode === 'create' && academicYearError) {
-      console.info('Academic year endpoint not available - using manual date selection');
-    }
-  }, [mode, academicYearError]);
 
   // Create mutation
   const createMutation = useMutation({

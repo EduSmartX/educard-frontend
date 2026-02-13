@@ -8,6 +8,7 @@ import { sendOtps, verifyOtp } from '@/lib/api/otp-api';
 import { registerOrganization } from '@/lib/api/organization-api';
 import { parseOtpErrors } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { getErrorMessage } from '@/lib/utils/error-handler';
 import { ROUTES } from '@/constants/app-config';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -196,8 +197,6 @@ export default function SignupPage() {
         toast.error(`Failed to send OTP to: ${failedEmails.map((r) => r.email).join(', ')}`);
       }
     } catch (error: unknown) {
-      console.error('Send OTP error:', error);
-
       // Parse OTP validation errors
       const otpErrors = parseOtpErrors(error);
 
@@ -219,7 +218,7 @@ export default function SignupPage() {
         });
       } else {
         // Show generic error as toast
-        toast.error(error?.message || 'Failed to send verification codes. Please try again.');
+        toast.error(getErrorMessage(error, 'Failed to send verification codes. Please try again.'));
       }
     } finally {
       setIsLoading(false);
@@ -245,8 +244,7 @@ export default function SignupPage() {
         toast.error(response.message || 'Invalid OTP. Please try again.');
       }
     } catch (error: unknown) {
-      console.error('Verify admin OTP error:', error);
-      toast.error(error?.message || 'Failed to verify OTP. Please try again.');
+      toast.error(getErrorMessage(error, 'Failed to verify OTP. Please try again.'));
     } finally {
       setVerifyingAdmin(false);
     }
@@ -270,8 +268,7 @@ export default function SignupPage() {
         toast.error(response.message || 'Invalid OTP. Please try again.');
       }
     } catch (error: unknown) {
-      console.error('Verify org OTP error:', error);
-      toast.error(error?.message || 'Failed to verify OTP. Please try again.');
+      toast.error(getErrorMessage(error, 'Failed to verify OTP. Please try again.'));
     } finally {
       setVerifyingOrg(false);
     }
@@ -371,7 +368,7 @@ export default function SignupPage() {
         });
       }
     } catch (error: unknown) {
-      toast.error(error?.message || 'Failed to register. Please try again.');
+      toast.error(getErrorMessage(error, 'Failed to register. Please try again.'));
     } finally {
       setIsLoading(false);
     }

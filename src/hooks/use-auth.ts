@@ -29,8 +29,8 @@ export function useAuth() {
     if (userStr) {
       try {
         return JSON.parse(userStr);
-      } catch (e) {
-        console.error('Failed to parse user data:', e);
+      } catch {
+        return null;
       }
     }
     return null;
@@ -41,8 +41,8 @@ export function useAuth() {
     if (orgStr) {
       try {
         return JSON.parse(orgStr);
-      } catch (e) {
-        console.error('Failed to parse organization data:', e);
+      } catch {
+        return null;
       }
     }
     return null;

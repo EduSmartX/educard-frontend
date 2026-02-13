@@ -105,7 +105,6 @@ export function isDetailResponse<T>(response: unknown): response is ApiDetailRes
 export function handleListResponse<T>(response: unknown, context?: string): T[] {
   if (!isValidApiResponse(response)) {
     const errorContext = context ? ` (${context})` : '';
-    console.error('Invalid API response format' + errorContext, response);
     throw new Error(
       `Invalid API response format${errorContext}. Expected { success, message, data, code } but got: ${JSON.stringify(response)}`
     );
@@ -119,7 +118,6 @@ export function handleListResponse<T>(response: unknown, context?: string): T[] 
 
   if (!Array.isArray(apiResponse.data)) {
     const errorContext = context ? ` (${context})` : '';
-    console.error('Expected array in data field' + errorContext, response);
     throw new Error(
       `Expected array in data field${errorContext}, but got: ${typeof apiResponse.data}`
     );
@@ -135,7 +133,6 @@ export function handleListResponse<T>(response: unknown, context?: string): T[] 
 export function handleDetailResponse<T>(response: unknown, context?: string): T {
   if (!isValidApiResponse(response)) {
     const errorContext = context ? ` (${context})` : '';
-    console.error('Invalid API response format' + errorContext, response);
     throw new Error(
       `Invalid API response format${errorContext}. Expected { success, message, data, code } but got: ${JSON.stringify(response)}`
     );
@@ -165,7 +162,6 @@ export function handlePaginatedResponse<T>(
 ): ApiListResponse<T> {
   if (!isValidApiResponse(response)) {
     const errorContext = context ? ` (${context})` : '';
-    console.error('Invalid API response format' + errorContext, response);
     throw new Error(
       `Invalid API response format${errorContext}. Expected { success, message, data, code } but got: ${JSON.stringify(response)}`
     );
@@ -179,7 +175,6 @@ export function handlePaginatedResponse<T>(
 
   if (!Array.isArray(apiResponse.data)) {
     const errorContext = context ? ` (${context})` : '';
-    console.error('Expected array in data field' + errorContext, response);
     throw new Error(
       `Expected array in data field${errorContext}, but got: ${typeof apiResponse.data}`
     );
@@ -187,7 +182,6 @@ export function handlePaginatedResponse<T>(
 
   if (!apiResponse.pagination) {
     const errorContext = context ? ` (${context})` : '';
-    console.error('Missing pagination in response' + errorContext, response);
     throw new Error(`Missing pagination in list response${errorContext}`);
   }
 
@@ -243,12 +237,6 @@ export function validateAxiosResponse(response: Record<string, unknown>) {
   if (isValidApiResponse(data)) {
     return response;
   }
-
-  // Log warning for invalid format
-  console.warn('API response does not match expected format:', {
-    url: (response.config as Record<string, unknown>)?.url,
-    data,
-  });
 
   return response;
 }

@@ -76,15 +76,12 @@ export function AcademicYearSettingsForm() {
   // Set initial values when data loads
   useEffect(() => {
     if (academicYear) {
-      console.info('Academic Year Data:', academicYear);
       form.reset({
         name: academicYear.name,
         start_date: new Date(academicYear.start_date),
         end_date: new Date(academicYear.end_date),
         is_current: academicYear.is_current,
       });
-    } else {
-      console.info('No academic year data available');
     }
   }, [academicYear, form]);
 
