@@ -4,7 +4,7 @@
 
 // Components
 export { TeachersManagement } from './components/teachers-management';
-export { TeacherFormDialog } from './components/teacher-form-dialog';
+export { TeacherForm } from './components/teacher-form';
 export { BulkUploadTeachersDialog } from './components/bulk-upload-dialog';
 
 // Hooks

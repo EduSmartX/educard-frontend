@@ -1,26 +1,10 @@
 import api from '../api';
+import type { ApiListResponse, ApiDetailResponse } from '@/lib/utils/api-response-handler';
 import type { SaturdayOffPatternType } from '@/constants/attendance';
 
 // ============================================================================
 // TypeScript Interfaces
 // ============================================================================
-
-export interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-  code: number;
-}
-
-export interface ApiListResponse<T> {
-  success: boolean;
-  message: string;
-  data: T[];
-  code: number;
-  count?: number;
-  next?: string | null;
-  previous?: string | null;
-}
 
 export interface WorkingDayPolicy {
   public_id: string;
@@ -67,8 +51,8 @@ export async function fetchWorkingDayPolicy(): Promise<WorkingDayPolicyResponse>
  */
 export async function createWorkingDayPolicy(
   payload: CreateWorkingDayPolicyPayload
-): Promise<ApiResponse<WorkingDayPolicy>> {
-  const response = await api.post<ApiResponse<WorkingDayPolicy>>(
+): Promise<ApiDetailResponse<WorkingDayPolicy>> {
+  const response = await api.post<ApiDetailResponse<WorkingDayPolicy>>(
     '/attendance/working-day-policy/',
     payload
   );
@@ -86,8 +70,8 @@ export async function createWorkingDayPolicy(
 export async function updateWorkingDayPolicy(
   publicId: string,
   payload: Partial<CreateWorkingDayPolicyPayload>
-): Promise<ApiResponse<WorkingDayPolicy>> {
-  const response = await api.patch<ApiResponse<WorkingDayPolicy>>(
+): Promise<ApiDetailResponse<WorkingDayPolicy>> {
+  const response = await api.patch<ApiDetailResponse<WorkingDayPolicy>>(
     `/attendance/working-day-policy/${publicId}/`,
     payload
   );
