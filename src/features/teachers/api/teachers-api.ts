@@ -36,8 +36,11 @@ export async function fetchTeachers(
 /**
  * Fetch a single teacher by ID
  */
-export async function fetchTeacher(publicId: string): Promise<TeacherDetail> {
-  const response = await api.get<ApiResponse<TeacherDetail>>(`${BASE_URL}${publicId}/`);
+export async function fetchTeacher(publicId: string, isDeleted?: boolean): Promise<TeacherDetail> {
+  const params = isDeleted ? { is_deleted: 'true' } : {};
+  const response = await api.get<ApiResponse<TeacherDetail>>(`${BASE_URL}${publicId}/`, {
+    params,
+  });
   return response.data.data;
 }
 

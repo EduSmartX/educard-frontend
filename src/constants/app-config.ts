@@ -190,6 +190,7 @@ export const ROUTES = {
   TEACHERS_EDIT: '/teachers/:id/edit',
   CLASSES: '/classes',
   CLASSES_NEW: '/classes/new',
+  CLASSES_VIEW: '/classes/:id',
   CLASSES_EDIT: '/classes/:id/edit',
   SUBJECTS: '/subjects',
   SUBJECTS_NEW: '/subjects/new',

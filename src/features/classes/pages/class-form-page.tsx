@@ -2,14 +2,14 @@
  * Class Form Page - Add/Edit/View Class
  */
 
-import { useEffect, useRef } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Edit } from 'lucide-react';
-import { PageHeader } from '@/components/common';
-import { Button } from '@/components/ui/button';
+import { Edit, X, Plus, Eye } from 'lucide-react';
+import { toast } from 'sonner';
+import { PageHeader, DeleteConfirmationDialog } from '@/components/common';
+import { FormActions } from '@/components/form/form-actions';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Form,
@@ -27,72 +27,114 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { useCreateClass, useUpdateClass } from '../hooks/mutations';
+import { Textarea } from '@/components/ui/textarea';
+import { useCreateClass, useUpdateClass, useDeleteClass } from '../hooks/mutations';
 import { useClass } from '../hooks/use-classes';
 import { useTeachers } from '@/features/teachers/hooks/use-teachers';
+import { useCoreClasses } from '@/features/core/hooks/use-core-classes';
 import { ROUTES } from '@/constants/app-config';
-
-const STANDARDS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
-const SECTIONS = ['A', 'B', 'C', 'D', 'E', 'F'];
-const currentYear = new Date().getFullYear();
-const ACADEMIC_YEARS = [
-  `${currentYear - 1}-${currentYear}`,
-  `${currentYear}-${currentYear + 1}`,
-  `${currentYear + 1}-${currentYear + 2}`,
-];
-
-const classSchema = z.object({
-  standard: z.string().min(1, 'Standard is required'),
-  section: z.string().min(1, 'Section is required'),
-  academic_year: z.string().min(1, 'Academic year is required'),
-  class_teacher: z.string().optional(),
-  capacity: z.string().optional(),
-});
-
-type ClassFormData = z.infer<typeof classSchema>;
+import {
+  getErrorMessage,
+  isDeletedDuplicateError,
+  getDeletedDuplicateMessage,
+} from '@/lib/utils/error-handler';
+import { DeletedDuplicateDialog } from '@/components/common';
+import { useDeletedDuplicateHandler } from '@/hooks/use-deleted-duplicate-handler';
+import { classFormSchema, type ClassFormData } from '../schemas/class-form-schema';
 
 export default function ClassFormPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams<{ id: string }>();
-  const [searchParams] = useSearchParams();
-  const mode = searchParams.get('mode') || 'edit';
-  const isViewMode = mode === 'view';
-  const isEditing = !!id && mode !== 'view';
+
+  // Determine mode based on URL path
+  const getMode = (): 'create' | 'edit' | 'view' => {
+    if (!id) return 'create';
+    if (location.pathname.endsWith('/edit')) return 'edit';
+    return 'view';
+  };
+
+  const mode = getMode();
   const firstErrorRef = useRef<HTMLDivElement>(null);
 
+  // Navigation handlers
+  const handleBackToList = () => {
+    navigate(ROUTES.CLASSES);
+  };
+
+  const handleSwitchToEdit = () => {
+    if (id) {
+      navigate(ROUTES.CLASSES_EDIT.replace(':id', id));
+    }
+  };
+
+  // Duplicate handling
+  const duplicateHandler = useDeletedDuplicateHandler();
+
+  // Delete dialog state
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
   // Fetch class data if editing/viewing
-  const { data: classItem } = useClass(id);
+  const { data: classItem, isLoading: _isLoading, error: _error } = useClass(id);
+
+  // Fetch core classes for dropdown
+  const { data: coreClasses } = useCoreClasses();
 
   // Fetch teachers for dropdown
   const { data: teachersResponse } = useTeachers({ page_size: 1000 });
-  const teachers = teachersResponse?.results || [];
+  const teachers = teachersResponse?.data || [];
 
   const form = useForm<ClassFormData>({
-    resolver: zodResolver(classSchema),
+    resolver: zodResolver(classFormSchema),
     defaultValues: {
-      standard: '',
-      section: '',
-      academic_year: ACADEMIC_YEARS[1],
+      class_master: '',
+      name: '',
       class_teacher: '',
+      info: '',
       capacity: '',
     },
   });
 
   // Populate form when editing/viewing
   useEffect(() => {
-    if ((isEditing || isViewMode) && classItem) {
-      form.reset({
-        standard: classItem.standard.toString(),
-        section: classItem.section,
-        academic_year: classItem.academic_year,
+    console.info('ClassForm useEffect triggered - mode:', mode, 'id:', id, 'classItem:', classItem);
+    if (mode !== 'create' && classItem && id) {
+      const formData = {
+        class_master: classItem.class_master?.id?.toString() || '',
+        name: classItem.name || '',
         class_teacher: classItem.class_teacher?.public_id || '',
+        info: classItem.info || '',
         capacity: classItem.capacity?.toString() || '',
+      };
+      console.info('ClassForm - ID:', id);
+      console.info('ClassForm - Mode:', mode);
+      console.info('ClassForm - classItem full object:', JSON.stringify(classItem, null, 2));
+      console.info('ClassForm - Resetting form with data:', formData);
+      console.info('ClassForm - classItem.class_master:', classItem.class_master);
+      console.info('ClassForm - Current form values before reset:', form.getValues());
+
+      // Reset form with new data and trigger re-render
+      form.reset(formData, {
+        keepDefaultValues: false,
       });
+
+      console.info('ClassForm - Form values after reset:', form.getValues());
     }
-  }, [classItem, isEditing, isViewMode, form]);
+  }, [classItem, mode, id, form]);
 
   // Error handler
-  const handleFormErrors = (_error: Error, fieldErrors?: Record<string, string | undefined>) => {
+  const handleFormErrors = (error: Error, fieldErrors?: Record<string, string | undefined>) => {
+    // Check for deleted duplicate error
+    if (isDeletedDuplicateError(error)) {
+      const message = getDeletedDuplicateMessage(error);
+      duplicateHandler.openDialog(message, form.getValues());
+      return;
+    }
+
+    // Show toast for general errors
+    const errorMessage = getErrorMessage(error);
+    toast.error(errorMessage);
+
     if (fieldErrors) {
       Object.entries(fieldErrors).forEach(([field, message]) => {
         if (message) {
@@ -114,64 +156,163 @@ export default function ClassFormPage() {
 
   // Mutations
   const createMutation = useCreateClass({
-    onSuccess: () => navigate(ROUTES.CLASSES),
+    onSuccess: () => {
+      toast.success('Class created successfully');
+      navigate(ROUTES.CLASSES);
+    },
     onError: handleFormErrors,
   });
 
   const updateMutation = useUpdateClass({
-    onSuccess: () => navigate(ROUTES.CLASSES),
+    onSuccess: () => {
+      toast.success('Class updated successfully');
+      navigate(ROUTES.CLASSES);
+    },
     onError: handleFormErrors,
   });
 
+  const deleteMutation = useDeleteClass({
+    onSuccess: () => {
+      toast.success('Class deleted successfully');
+      navigate(ROUTES.CLASSES);
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to delete class: ${error.message}`);
+    },
+  });
+
+  // Delete handlers
+  const handleDelete = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = () => {
+    setShowDeleteDialog(false);
+    if (classItem) {
+      deleteMutation.mutate(classItem.public_id);
+    }
+  };
+
+  // Handle reactivate from duplicate dialog
+  const handleReactivate = () => {
+    duplicateHandler.closeDialog();
+    navigate(`${ROUTES.CLASSES}?showDeleted=true`);
+  };
+
+  // Handle force create from duplicate dialog
+  const handleForceCreate = () => {
+    const pendingData = duplicateHandler.pendingData as ClassFormData | null;
+    if (pendingData) {
+      createMutation.mutate({
+        payload: {
+          class_master: Number(pendingData.class_master),
+          name: pendingData.name,
+          class_teacher: pendingData.class_teacher || undefined,
+          info: pendingData.info || undefined,
+          capacity: pendingData.capacity ? Number(pendingData.capacity) : undefined,
+        },
+        forceCreate: true,
+      });
+      duplicateHandler.closeDialog();
+    }
+  };
+
   // Form submission
   const onSubmit = (data: ClassFormData) => {
-    if (isEditing && classItem) {
+    if (mode === 'edit' && classItem) {
+      // Don't send class_master in edit mode - it can't be changed
       updateMutation.mutate({
         publicId: classItem.public_id,
         payload: {
-          standard: Number(data.standard),
-          section: data.section,
+          name: data.name,
           class_teacher: data.class_teacher || undefined,
-          academic_year: data.academic_year,
+          info: data.info || undefined,
           capacity: data.capacity ? Number(data.capacity) : undefined,
         },
       });
     } else {
       createMutation.mutate({
-        standard: Number(data.standard),
-        section: data.section,
-        class_teacher: data.class_teacher || undefined,
-        academic_year: data.academic_year,
-        capacity: data.capacity ? Number(data.capacity) : undefined,
+        payload: {
+          class_master: Number(data.class_master),
+          name: data.name,
+          class_teacher: data.class_teacher || undefined,
+          info: data.info || undefined,
+          capacity: data.capacity ? Number(data.capacity) : undefined,
+        },
       });
     }
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
 
+  // Get page configuration based on mode
+  const getPageConfig = () => {
+    if (mode === 'create') {
+      return {
+        title: 'Add New Class',
+        description: 'Fill in the details to create a new class',
+        icon: Plus,
+        actions: [
+          {
+            label: 'Cancel',
+            onClick: handleBackToList,
+            variant: 'outline' as const,
+            icon: X,
+            className: 'border-2 border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700',
+          },
+        ],
+      };
+    }
+
+    if (mode === 'view') {
+      return {
+        title: 'View Class Details',
+        description: 'View class information and details',
+        icon: Eye,
+        actions: [
+          {
+            label: 'Close',
+            onClick: handleBackToList,
+            variant: 'outline' as const,
+            icon: X,
+            className: 'border-2 border-gray-400 text-gray-700 hover:bg-gray-100',
+          },
+          {
+            label: 'Edit',
+            onClick: handleSwitchToEdit,
+            variant: 'default' as const,
+            icon: Edit,
+          },
+        ],
+      };
+    }
+
+    // Edit mode
+    return {
+      title: 'Edit Class',
+      description: 'Update class information',
+      icon: Edit,
+      actions: [
+        {
+          label: 'Cancel',
+          onClick: handleBackToList,
+          variant: 'outline' as const,
+          icon: X,
+          className: 'border-2 border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700',
+        },
+      ],
+    };
+  };
+
+  const pageConfig = getPageConfig();
+
   return (
     <div className="space-y-6">
       <PageHeader
-        title={isViewMode ? 'View Class' : isEditing ? 'Edit Class' : 'Add New Class'}
-        description={
-          isViewMode
-            ? 'View class information'
-            : isEditing
-              ? 'Update the class information below'
-              : 'Fill in the details to create a new class'
-        }
-        actions={
-          isViewMode && id
-            ? [
-                {
-                  label: 'Edit',
-                  onClick: () => navigate(ROUTES.CLASSES_EDIT.replace(':id', id)),
-                  variant: 'outline',
-                  icon: Edit,
-                },
-              ]
-            : undefined
-        }
+        title={pageConfig.title}
+        description={pageConfig.description}
+        icon={pageConfig.icon}
+        actions={pageConfig.actions}
       />
 
       <Card>
@@ -183,69 +324,71 @@ export default function ClassFormPage() {
                 <h3 className="text-lg font-semibold text-gray-900">Class Information</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Standard */}
+                  {/* Class Master (from core) */}
                   <FormField
                     control={form.control}
-                    name="standard"
-                    render={({ field, fieldState }) => (
-                      <FormItem
-                        ref={fieldState.error && !firstErrorRef.current ? firstErrorRef : null}
-                      >
-                        <FormLabel>
-                          Standard <span className="text-red-500">*</span>
-                        </FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                          disabled={isPending || isViewMode}
+                    name="class_master"
+                    render={({ field, fieldState }) => {
+                      console.info('ClassForm - class_master field value:', field.value);
+                      console.info(
+                        'ClassForm - Available coreClasses:',
+                        coreClasses?.map((c) => ({ id: c.id, name: c.name }))
+                      );
+                      return (
+                        <FormItem
+                          ref={fieldState.error && !firstErrorRef.current ? firstErrorRef : null}
                         >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select standard" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {STANDARDS.map((std) => (
-                              <SelectItem key={std} value={std}>
-                                Standard {std}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                          <FormLabel>
+                            Class <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <Select
+                            key={`class-master-${classItem?.public_id || 'new'}-${field.value}`}
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={isPending || mode === 'view' || mode === 'edit'}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select class" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {coreClasses?.map((coreClass) => (
+                                <SelectItem key={coreClass.id} value={coreClass.id.toString()}>
+                                  {coreClass.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {mode === 'edit' && (
+                            <p className="text-sm text-muted-foreground">
+                              Class cannot be changed after creation
+                            </p>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
                   />
 
-                  {/* Section */}
+                  {/* Section Name */}
                   <FormField
                     control={form.control}
-                    name="section"
+                    name="name"
                     render={({ field, fieldState }) => (
                       <FormItem
                         ref={fieldState.error && !firstErrorRef.current ? firstErrorRef : null}
                       >
                         <FormLabel>
-                          Section <span className="text-red-500">*</span>
+                          Section Name <span className="text-red-500">*</span>
                         </FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                          disabled={isPending || isViewMode}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select section" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {SECTIONS.map((sec) => (
-                              <SelectItem key={sec} value={sec}>
-                                Section {sec}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., A, B, Section A"
+                            disabled={isPending || mode === 'view'}
+                            {...field}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -253,40 +396,6 @@ export default function ClassFormPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Academic Year */}
-                  <FormField
-                    control={form.control}
-                    name="academic_year"
-                    render={({ field, fieldState }) => (
-                      <FormItem
-                        ref={fieldState.error && !firstErrorRef.current ? firstErrorRef : null}
-                      >
-                        <FormLabel>
-                          Academic Year <span className="text-red-500">*</span>
-                        </FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                          disabled={isPending || isViewMode}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select academic year" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {ACADEMIC_YEARS.map((year) => (
-                              <SelectItem key={year} value={year}>
-                                {year}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
                   {/* Capacity */}
                   <FormField
                     control={form.control}
@@ -301,7 +410,7 @@ export default function ClassFormPage() {
                             type="number"
                             min="1"
                             placeholder="Enter class capacity"
-                            disabled={isPending || isViewMode}
+                            disabled={isPending || mode === 'view'}
                             {...field}
                           />
                         </FormControl>
@@ -309,36 +418,62 @@ export default function ClassFormPage() {
                       </FormItem>
                     )}
                   />
+
+                  {/* Class Teacher */}
+                  <FormField
+                    control={form.control}
+                    name="class_teacher"
+                    render={({ field, fieldState }) => (
+                      <FormItem
+                        ref={fieldState.error && !firstErrorRef.current ? firstErrorRef : null}
+                      >
+                        <FormLabel>Class Teacher (Optional)</FormLabel>
+                        <Select
+                          key={`class-teacher-${classItem?.public_id || 'new'}-${field.value}`}
+                          onValueChange={(value) => {
+                            // Allow clearing the selection
+                            field.onChange(value === 'none' ? '' : value);
+                          }}
+                          value={field.value || 'none'}
+                          disabled={isPending || mode === 'view'}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select class teacher" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {teachers.map((teacher) => (
+                              <SelectItem key={teacher.public_id} value={teacher.public_id}>
+                                {teacher.full_name} ({teacher.employee_id})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
-                {/* Class Teacher */}
+                {/* Info/Description */}
                 <FormField
                   control={form.control}
-                  name="class_teacher"
+                  name="info"
                   render={({ field, fieldState }) => (
                     <FormItem
                       ref={fieldState.error && !firstErrorRef.current ? firstErrorRef : null}
                     >
-                      <FormLabel>Class Teacher (Optional)</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={isPending || isViewMode}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select class teacher" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="">None</SelectItem>
-                          {teachers.map((teacher) => (
-                            <SelectItem key={teacher.public_id} value={teacher.public_id}>
-                              {teacher.user.full_name} ({teacher.employee_id})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormLabel>Additional Information (Optional)</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Enter any additional information about this class section"
+                          disabled={isPending || mode === 'view'}
+                          rows={3}
+                          {...field}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -346,25 +481,41 @@ export default function ClassFormPage() {
               </div>
 
               {/* Form Actions */}
-              {!isViewMode && (
-                <div className="flex justify-end gap-3 pt-4 border-t">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => navigate(ROUTES.CLASSES)}
-                    disabled={isPending}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isPending}>
-                    {isPending ? 'Saving...' : isEditing ? 'Update Class' : 'Create Class'}
-                  </Button>
-                </div>
-              )}
+              <FormActions
+                mode={mode}
+                isSubmitting={isPending}
+                onCancel={() => navigate(ROUTES.CLASSES)}
+                onDelete={mode === 'edit' || mode === 'view' ? handleDelete : undefined}
+                showDelete={mode === 'edit' || mode === 'view'}
+                submitLabel={mode === 'edit' ? 'Update Class' : 'Create Class'}
+              />
             </form>
           </Form>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={confirmDelete}
+        title="Delete Class"
+        itemName={
+          classItem ? `${classItem.class_master?.name || 'Class'} - ${classItem.name}` : undefined
+        }
+        isSoftDelete={true}
+        isDeleting={deleteMutation.isPending}
+      />
+
+      {/* Deleted Duplicate Dialog */}
+      <DeletedDuplicateDialog
+        open={duplicateHandler.isOpen}
+        onOpenChange={(open) => !open && duplicateHandler.closeDialog()}
+        message={duplicateHandler.message}
+        onReactivate={handleReactivate}
+        onCreateNew={handleForceCreate}
+        onCancel={duplicateHandler.closeDialog}
+      />
     </div>
   );
 }

@@ -93,6 +93,7 @@ function App() {
             {/* Classes */}
             <Route path={ROUTES.CLASSES} element={<ClassesPage />} />
             <Route path={ROUTES.CLASSES_NEW} element={<ClassFormPage />} />
+            <Route path={ROUTES.CLASSES_VIEW} element={<ClassFormPage />} />
             <Route path={ROUTES.CLASSES_EDIT} element={<ClassFormPage />} />
 
             {/* Subjects */}

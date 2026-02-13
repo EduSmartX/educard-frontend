@@ -77,7 +77,9 @@ export function TeachersManagement() {
 
   // Navigation handlers
   const handleView = (teacher: Teacher) => {
-    navigate(ROUTES.TEACHERS_VIEW.replace(':id', teacher.public_id));
+    const path = ROUTES.TEACHERS_VIEW.replace(':id', teacher.public_id);
+    // Add query param if viewing deleted teacher
+    navigate(showDeleted ? `${path}?deleted=true` : path);
   };
 
   const handleEdit = (teacher: Teacher) => {

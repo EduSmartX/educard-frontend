@@ -21,10 +21,10 @@ export function useTeachers(params: FetchTeachersParams = {}) {
 /**
  * Hook to fetch a single teacher
  */
-export function useTeacher(publicId: string | undefined) {
+export function useTeacher(publicId: string | undefined, isDeleted?: boolean) {
   return useQuery({
-    queryKey: ['teachers', publicId],
-    queryFn: () => fetchTeacher(publicId!),
+    queryKey: ['teachers', publicId, isDeleted],
+    queryFn: () => fetchTeacher(publicId!, isDeleted),
     enabled: !!publicId,
   });
 }

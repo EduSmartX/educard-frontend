@@ -13,32 +13,44 @@ export interface ClassTeacher {
 }
 
 /**
- * Class model
+ * Class model - Updated to match backend response
  */
 export interface Class {
   public_id: string;
-  name: string; // e.g., "10-A"
-  standard: number; // 1-12
-  section: string; // A-Z
-  class_teacher: ClassTeacher | null;
-  academic_year: string;
-  division: string;
+  class_master: {
+    id: number;
+    name: string;
+    code: string;
+    display_order: number;
+  };
+  name: string; // Section name (e.g., "A", "B")
+  organization: number;
+  class_teacher: {
+    public_id: string;
+    email: string;
+    full_name: string;
+    employee_id: string;
+  } | null;
+  info: string;
   capacity: number;
   student_count: number;
   created_at: string;
   updated_at: string;
-  is_deleted: boolean;
+  created_by_public_id: string;
+  created_by_name: string;
+  updated_by_public_id: string;
+  updated_by_name: string;
+  is_deleted?: boolean;
 }
 
 /**
  * Create class payload
  */
 export interface CreateClassPayload {
-  standard: number;
-  section: string;
+  class_master: number; // id from core classes
+  name: string; // section name (e.g., "A", "B", "Section A")
   class_teacher?: string; // public_id
-  academic_year: string;
-  division?: string;
+  info?: string;
   capacity?: number;
 }
 
@@ -46,11 +58,10 @@ export interface CreateClassPayload {
  * Update class payload
  */
 export interface UpdateClassPayload {
-  standard?: number;
-  section?: string;
+  class_master?: number;
+  name?: string;
   class_teacher?: string;
-  academic_year?: string;
-  division?: string;
+  info?: string;
   capacity?: number;
 }
 
@@ -83,16 +94,25 @@ export interface BulkUploadResponse {
 }
 
 /**
- * Paginated response structure
+ * Pagination metadata from backend
+ */
+export interface PaginationMeta {
+  current_page: number;
+  total_pages: number;
+  count: number;
+  page_size: number;
+  has_next: boolean;
+  has_previous: boolean;
+  next_page: number | null;
+  previous_page: number | null;
+}
+
+/**
+ * Paginated response structure - Updated to match backend
  */
 export interface PaginatedResponse<T> {
-  results: T[];
-  count: number;
-  next: string | null;
-  previous: string | null;
-  page: number;
-  page_size: number;
-  total_pages: number;
+  data: T[];
+  pagination: PaginationMeta;
 }
 
 /**
@@ -100,10 +120,11 @@ export interface PaginatedResponse<T> {
  */
 export interface ApiResponse<T> {
   success: boolean;
-  message?: string;
+  message: string;
   data: T;
+  code: number;
 }
 
-export type ClassesResponse = ApiResponse<PaginatedResponse<Class>>;
+export type ClassesResponse = ApiResponse<Class[]> & { pagination: PaginationMeta };
 export type ClassResponse = ApiResponse<Class>;
 export type ClassBulkUploadResponse = ApiResponse<BulkUploadResponse['data']>;

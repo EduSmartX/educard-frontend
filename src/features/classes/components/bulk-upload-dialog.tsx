@@ -37,6 +37,7 @@ export function BulkUploadDialog() {
       description="Upload multiple classes at once using an Excel template"
       triggerLabel="Bulk Upload"
       triggerVariant="outline"
+      triggerClassName="border-2 border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
       downloadTemplate={downloadClassesTemplate}
       uploadFile={uploadClassesFile}
       invalidateQueryKeys={['classes']}

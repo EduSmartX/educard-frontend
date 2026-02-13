@@ -1,116 +1,127 @@
 /**
- * Class Table Columns Configuration
+ * Class Table Columns Configuration for DataTable
+ * Creates column definitions for the classes list table
  */
 
-import type { ColumnDef } from '@tanstack/react-table';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Eye, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import type { Column } from '@/components/ui/data-table';
 import type { Class } from '../types';
+import { createCommonColumns } from '@/components/tables/common-columns';
 
-interface GetColumnsOptions {
+interface CreateColumnsParams {
   onView: (classItem: Class) => void;
   onEdit: (classItem: Class) => void;
-  onDelete: (classItem: Class) => void;
+  onDelete?: (classItem: Class) => void;
   isDeletedView?: boolean;
 }
 
-export function getClassColumns({
+export function createClassListColumns({
   onView,
   onEdit,
   onDelete,
   isDeletedView = false,
-}: GetColumnsOptions): ColumnDef<Class>[] {
+}: CreateColumnsParams): Column<Class>[] {
   return [
     {
-      accessorKey: 'name',
-      header: 'Class Name',
-      cell: ({ row }) => <span className="font-medium text-gray-900">{row.original.name}</span>,
-    },
-    {
-      id: 'standard_section',
-      header: 'Standard - Section',
-      cell: ({ row }) => (
+      header: 'Class',
+      accessor: (row) => (
         <div className="flex items-center gap-2">
-          <Badge variant="outline">{row.original.standard}</Badge>
+          <Badge variant="outline" className="font-medium">
+            {row.class_master.name}
+          </Badge>
           <span className="text-gray-500">-</span>
-          <Badge variant="outline">{row.original.section}</Badge>
+          <Badge variant="outline">{row.name}</Badge>
         </div>
       ),
+      sortable: true,
+      sortKey: 'class_master__name',
+      width: 200,
     },
     {
-      id: 'class_teacher',
       header: 'Class Teacher',
-      cell: ({ row }) => (
+      accessor: (row) => (
         <div className="flex flex-col">
-          {row.original.class_teacher ? (
+          {row.class_teacher ? (
             <>
-              <span className="font-medium text-gray-900">
-                {row.original.class_teacher.full_name}
-              </span>
-              <span className="text-sm text-gray-500">
-                {row.original.class_teacher.employee_id}
-              </span>
+              <span className="font-medium text-gray-900">{row.class_teacher.full_name}</span>
+              <span className="text-sm text-gray-500">{row.class_teacher.employee_id}</span>
             </>
           ) : (
             <span className="text-gray-400">Not assigned</span>
           )}
         </div>
       ),
+      width: 200,
     },
     {
-      accessorKey: 'academic_year',
-      header: 'Academic Year',
-      cell: ({ row }) => <span className="text-gray-700">{row.original.academic_year}</span>,
+      header: 'Capacity',
+      accessor: (row) => <span className="text-gray-700">{row.capacity || '—'}</span>,
+      sortable: true,
+      sortKey: 'capacity',
+      width: 100,
     },
     {
-      id: 'students',
       header: 'Students',
-      cell: ({ row }) => (
-        <div className="flex flex-col">
-          <span className="font-medium text-gray-900">{row.original.student_count}</span>
-          {row.original.capacity && (
-            <span className="text-xs text-gray-500">of {row.original.capacity}</span>
-          )}
-        </div>
-      ),
+      accessor: (row) => <span className="font-medium text-gray-900">{row.student_count}</span>,
+      sortable: true,
+      sortKey: 'student_count',
+      width: 100,
     },
-    {
-      id: 'actions',
-      header: 'Actions',
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onView(row.original)}
-            className="h-8 w-8 p-0"
-          >
-            <Eye className="h-4 w-4" />
-            <span className="sr-only">View</span>
-          </Button>
-          {!isDeletedView && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onEdit(row.original)}
-              className="h-8 w-8 p-0"
-            >
-              <Pencil className="h-4 w-4" />
-              <span className="sr-only">Edit</span>
-            </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDelete(row.original)}
-            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-          >
-            <Trash2 className="h-4 w-4" />
-            <span className="sr-only">{isDeletedView ? 'Restore' : 'Delete'}</span>
-          </Button>
-        </div>
-      ),
-    },
+    // Common columns: Created, Updated, Actions
+    ...(isDeletedView
+      ? [
+          {
+            header: 'Actions',
+            accessor: (classItem) => (
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onView(classItem);
+                  }}
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  title="View details"
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+                {onDelete && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(classItem);
+                    }}
+                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                    title="Restore Class"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ),
+            headerClassName: 'text-left',
+          } as Column<Class>,
+        ]
+      : createCommonColumns<Class>(
+          {
+            onView,
+            onEdit,
+            onDelete,
+          },
+          {
+            includeCreated: true,
+            includeUpdated: true,
+            actionsOptions: {
+              variant: 'buttons',
+              showLabels: false,
+              align: 'left',
+            },
+          }
+        )),
   ];
 }

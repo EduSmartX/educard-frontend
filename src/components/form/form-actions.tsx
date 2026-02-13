@@ -32,9 +32,35 @@ export function FormActions({
   showDelete = false,
   className,
 }: FormActionsProps) {
-  // Don't show anything in view mode
+  // In view mode, only show delete button if enabled
   if (mode === 'view') {
-    return null;
+    if (!showDelete || !onDelete) {
+      return null;
+    }
+    return (
+      <Card
+        className={cn(
+          'border-2 border-purple-100 bg-gradient-to-br from-purple-50 to-pink-50',
+          className
+        )}
+      >
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between gap-3">
+            {/* Delete button for view mode */}
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={onDelete}
+              className="shadow-md hover:shadow-lg transition-all"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              {deleteLabel}
+            </Button>
+            <div className="flex-1" />
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   const getDefaultSubmitLabel = () => {

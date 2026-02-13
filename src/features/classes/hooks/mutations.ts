@@ -7,7 +7,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getErrorMessage, getFieldErrors } from '@/lib/utils/error-handler';
 import type { CreateClassPayload, UpdateClassPayload } from '../types';
-import { createClass, updateClass, deleteClass, bulkUploadClasses } from '../api/classes-api';
+import {
+  createClass,
+  updateClass,
+  deleteClass,
+  reactivateClass,
+  bulkUploadClasses,
+} from '../api/classes-api';
 
 export interface ClassFieldErrors {
   standard?: string;
@@ -27,7 +33,13 @@ export function useCreateClass(options?: MutationOptions) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: CreateClassPayload) => createClass(payload),
+    mutationFn: ({
+      payload,
+      forceCreate,
+    }: {
+      payload: CreateClassPayload;
+      forceCreate?: boolean;
+    }) => createClass(payload, forceCreate),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['classes'] });
       toast.success('Class Created', {
@@ -43,6 +55,29 @@ export function useCreateClass(options?: MutationOptions) {
         duration: 5000,
       });
       options?.onError?.(error, fieldErrors);
+    },
+  });
+}
+
+export function useReactivateClass(options?: MutationOptions) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (publicId: string) => reactivateClass(publicId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      toast.success('Class Reactivated', {
+        description: 'The class has been reactivated successfully.',
+      });
+      options?.onSuccess?.();
+    },
+    onError: (error: Error) => {
+      const errorMessage = getErrorMessage(error, 'Failed to reactivate class. Please try again.');
+      toast.error('Error Reactivating Class', {
+        description: errorMessage,
+        duration: 5000,
+      });
+      options?.onError?.(error);
     },
   });
 }

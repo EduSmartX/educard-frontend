@@ -3,13 +3,18 @@
  * Wrapper for create, edit, and view modes with navigation
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Edit, Trash2, X, AlertCircle, UserPlus, Eye } from 'lucide-react';
+import { Edit, X, AlertCircle, UserPlus, Eye, Trash2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
-import { PageHeader } from '@/components/common';
+import {
+  PageHeader,
+  DeleteConfirmationDialog,
+  ReactivateConfirmationDialog,
+} from '@/components/common';
 import { ROUTES } from '@/constants/app-config';
 import { useTeacher } from '../hooks/use-teachers';
+import { useDeleteTeacher, useReactivateTeacher } from '../hooks/mutations';
 import { TeacherForm } from '../components/teacher-form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getErrorMessage } from '@/lib/utils/error-handler';
@@ -18,6 +23,14 @@ export default function TeacherFormPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showReactivateDialog, setShowReactivateDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isReactivating, setIsReactivating] = useState(false);
+
+  // Check if viewing deleted teacher (from query param)
+  const searchParams = new URLSearchParams(location.search);
+  const isViewingDeleted = searchParams.get('deleted') === 'true';
 
   // Determine mode based on URL path
   const getMode = (): 'create' | 'edit' | 'view' => {
@@ -28,19 +41,18 @@ export default function TeacherFormPage() {
 
   const mode = getMode();
 
-  // Fetch teacher data if editing or viewing
-  const { data: teacher, isLoading, error } = useTeacher(id);
+  // Fetch teacher data if editing or viewing (pass isDeleted flag)
+  const { data: teacher, isLoading, error } = useTeacher(id, isViewingDeleted);
 
-  // Show toast notification when error occurs
   useEffect(() => {
-    if (error && mode !== 'create') {
+    if (error && mode !== 'create' && !isDeleting && !isReactivating) {
       const errorMessage = getErrorMessage(error, 'Failed to load teacher data');
       toast.error('Error Loading Teacher', {
         description: errorMessage,
         duration: 5000,
       });
     }
-  }, [error, mode]);
+  }, [error, mode, isDeleting, isReactivating]);
 
   const handleBackToList = () => {
     navigate(ROUTES.TEACHERS);
@@ -56,11 +68,64 @@ export default function TeacherFormPage() {
     }
   };
 
-  const handleDelete = () => {
+  // Delete mutation
+  const deleteMutation = useDeleteTeacher({
+    onSuccess: () => {
+      toast.success('Teacher deleted successfully');
+      // Navigate immediately to avoid refetching deleted resource
+      navigate(ROUTES.TEACHERS, { replace: true });
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to delete teacher: ${error.message}`);
+    },
+  });
+
+  // Reactivate mutation
+  const reactivateMutation = useReactivateTeacher({
+    onSuccess: () => {
+      toast.success('Teacher reactivated successfully');
+      navigate(ROUTES.TEACHERS, { replace: true });
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to reactivate teacher: ${error.message}`);
+    },
+  });
+
+  // Open delete confirmation dialog
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true);
+  };
+
+  // Open reactivate confirmation dialog
+  const handleReactivateClick = () => {
+    setShowReactivateDialog(true);
+  };
+
+  // Confirm and execute reactivate
+  const handleReactivateConfirm = () => {
     if (id) {
-      // TODO: Implement actual delete mutation
-      console.info('Delete teacher:', id);
-      navigate(ROUTES.TEACHERS);
+      // Set reactivating flag to prevent error toast
+      setIsReactivating(true);
+      // Close dialog and navigate immediately to avoid refetching deleted resource
+      setShowReactivateDialog(false);
+      // Navigate away first
+      navigate(ROUTES.TEACHERS, { replace: true });
+      // Then execute reactivate mutation
+      reactivateMutation.mutate(id);
+    }
+  };
+
+  // Confirm and execute delete
+  const handleDeleteConfirm = () => {
+    if (id) {
+      // Set deleting flag to prevent error toast
+      setIsDeleting(true);
+      // Close dialog and navigate immediately to avoid refetching deleted resource
+      setShowDeleteDialog(false);
+      // Navigate away first
+      navigate(ROUTES.TEACHERS, { replace: true });
+      // Then execute delete mutation
+      deleteMutation.mutate(id);
     }
   };
 
@@ -139,6 +204,32 @@ export default function TeacherFormPage() {
     }
 
     if (mode === 'view') {
+      // If viewing deleted teacher, show Reactivate button instead of Edit/Delete
+      if (isViewingDeleted) {
+        return {
+          title: 'View Deleted Teacher',
+          description: 'View deleted teacher information',
+          icon: Eye,
+          actions: [
+            {
+              label: 'Close',
+              onClick: handleBackToList,
+              variant: 'outline' as const,
+              icon: X,
+              className: 'border-2 border-gray-400 text-gray-700 hover:bg-gray-100',
+            },
+            {
+              label: 'Reactivate',
+              onClick: handleReactivateClick,
+              variant: 'default' as const,
+              icon: RefreshCw,
+              className: 'bg-green-600 hover:bg-green-700',
+            },
+          ],
+        };
+      }
+
+      // Normal view mode (active teacher)
       return {
         title: 'View Teacher Details',
         description: 'View teacher information and details',
@@ -152,16 +243,16 @@ export default function TeacherFormPage() {
             className: 'border-2 border-gray-400 text-gray-700 hover:bg-gray-100',
           },
           {
+            label: 'Delete',
+            onClick: handleDeleteClick,
+            variant: 'destructive' as const,
+            icon: Trash2,
+          },
+          {
             label: 'Edit',
             onClick: handleSwitchToEdit,
             variant: 'default' as const,
             icon: Edit,
-          },
-          {
-            label: 'Delete',
-            onClick: handleDelete,
-            variant: 'destructive' as const,
-            icon: Trash2,
           },
         ],
       };
@@ -204,7 +295,35 @@ export default function TeacherFormPage() {
         isLoading={isLoading}
         onSuccess={handleFormSuccess}
         onCancel={handleBackToList}
-        onDelete={mode === 'edit' ? handleDelete : undefined}
+        onDelete={mode === 'edit' ? handleDeleteClick : undefined}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Teacher"
+        itemName={
+          teacher
+            ? `${teacher.user.first_name} ${teacher.user.last_name} (${teacher.employee_id})`
+            : undefined
+        }
+        isSoftDelete={true}
+      />
+
+      {/* Reactivate Confirmation Dialog */}
+      <ReactivateConfirmationDialog
+        open={showReactivateDialog}
+        onOpenChange={setShowReactivateDialog}
+        onConfirm={handleReactivateConfirm}
+        title="Reactivate Teacher"
+        itemName={
+          teacher
+            ? `${teacher.user.first_name} ${teacher.user.last_name} (${teacher.employee_id})`
+            : undefined
+        }
+        description="Are you sure you want to reactivate this teacher? They will be restored to active status."
       />
     </div>
   );

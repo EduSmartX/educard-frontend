@@ -502,7 +502,8 @@ export function TeacherForm({
           <FormActions
             mode={mode}
             onCancel={onCancel}
-            onDelete={isEditMode ? handleDelete : undefined}
+            onDelete={isEditMode && onDelete ? handleDelete : undefined}
+            showDelete={isEditMode && !!onDelete}
             isSubmitting={isLoading}
             submitLabel={mode === 'create' ? 'Create Teacher' : 'Update Teacher'}
           />
@@ -515,7 +516,11 @@ export function TeacherForm({
         onOpenChange={setShowDeleteDialog}
         onConfirm={confirmDelete}
         title="Delete Teacher"
-        description="Are you sure you want to delete this teacher? This action can be undone by reactivating the teacher later."
+        itemName={
+          initialData
+            ? `${initialData.user.first_name} ${initialData.user.last_name} (${initialData.employee_id})`
+            : undefined
+        }
         isSoftDelete={true}
       />
 
