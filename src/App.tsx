@@ -99,6 +99,7 @@ function App() {
             {/* Subjects */}
             <Route path={ROUTES.SUBJECTS} element={<SubjectsPage />} />
             <Route path={ROUTES.SUBJECTS_NEW} element={<SubjectFormPage />} />
+            <Route path={ROUTES.SUBJECTS_VIEW} element={<SubjectFormPage />} />
             <Route path={ROUTES.SUBJECTS_EDIT} element={<SubjectFormPage />} />
 
             {/* Organization Preferences */}

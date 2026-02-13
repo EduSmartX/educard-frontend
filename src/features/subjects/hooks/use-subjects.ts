@@ -1,23 +1,28 @@
 /**
- * Subject Query Hooks
+ * React Query hooks for subjects
  */
 
 import { useQuery } from '@tanstack/react-query';
 import { fetchSubjects, fetchSubject } from '../api/subjects-api';
-import type { FetchSubjectsParams } from '../types';
+import type { SubjectListParams } from '../types/subject';
 
-export function useSubjects(params: FetchSubjectsParams = {}) {
+/**
+ * Hook to fetch list of subjects
+ */
+export function useSubjects(params?: SubjectListParams) {
   return useQuery({
     queryKey: ['subjects', params],
     queryFn: () => fetchSubjects(params),
-    staleTime: 5 * 60 * 1000,
   });
 }
 
-export function useSubject(publicId: string | undefined) {
+/**
+ * Hook to fetch single subject
+ */
+export function useSubject(publicId?: string, isDeleted = false) {
   return useQuery({
-    queryKey: ['subjects', publicId],
-    queryFn: () => fetchSubject(publicId!),
+    queryKey: ['subject', publicId, isDeleted],
+    queryFn: () => fetchSubject(publicId!, isDeleted),
     enabled: !!publicId,
   });
 }

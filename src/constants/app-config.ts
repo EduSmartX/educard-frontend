@@ -194,6 +194,7 @@ export const ROUTES = {
   CLASSES_EDIT: '/classes/:id/edit',
   SUBJECTS: '/subjects',
   SUBJECTS_NEW: '/subjects/new',
+  SUBJECTS_VIEW: '/subjects/:id',
   SUBJECTS_EDIT: '/subjects/:id/edit',
   ALLOCATIONS: '/allocations',
   CALENDAR: '/calendar',

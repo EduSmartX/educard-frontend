@@ -1,132 +1,96 @@
 /**
  * Subjects Management Page
+ * Main page for managing subjects with table, filters, and CRUD operations
  */
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
-import { PageHeader, DeleteConfirmationDialog } from '@/components/common';
-import { ResourceFilter, type FilterField } from '@/components/filters/resource-filter';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { DataTable } from '@/components/ui/data-table';
+import { toast } from 'sonner';
+import { DeleteConfirmationDialog, ReactivateConfirmationDialog } from '@/components/common';
 import { useSubjects } from '../hooks/use-subjects';
-import { useDeleteSubject } from '../hooks/mutations';
-import { BulkUploadSubjectsDialog } from './bulk-upload-dialog';
+import { useDeleteSubject, useReactivateSubject } from '../hooks/mutations';
+import { SubjectsList } from './index';
 import { ROUTES } from '@/constants/app-config';
+import { useDeletedView } from '@/hooks/use-deleted-view';
 import type { Subject } from '../types';
-import type { ColumnDef } from '@tanstack/react-table';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 
 export function SubjectsManagement() {
   const navigate = useNavigate();
-  const [filters, setFilters] = useState<Record<string, string>>({});
+
+  // Pagination state
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<Record<string, string>>({});
 
+  // Dialog states
   const [subjectToDelete, setSubjectToDelete] = useState<Subject | undefined>();
+  const [subjectToReactivate, setSubjectToReactivate] = useState<Subject | undefined>();
 
-  const { data, isLoading, error, refetch } = useSubjects({
+  // Deleted view management
+  const { showDeleted, toggleDeletedView } = useDeletedView({
+    onPageChange: setPage,
+  });
+
+  // Fetch subjects
+  const { data, isLoading, error } = useSubjects({
     page,
     page_size: pageSize,
-    search: filters.search,
+    search: searchQuery,
+    class_assigned: filters.class_assigned,
+    subject_master: filters.subject_master ? Number(filters.subject_master) : undefined,
+    teacher: filters.teacher,
+    is_deleted: showDeleted,
   });
 
-  const subjects = data?.results || [];
-  const totalCount = data?.count || 0;
+  const subjects = data?.data || [];
+  const pagination = data?.pagination;
 
+  // Delete mutation
   const deleteMutation = useDeleteSubject({
     onSuccess: () => {
+      toast.success('Subject deleted successfully');
       setSubjectToDelete(undefined);
-      refetch();
+    },
+    onError: () => {
+      toast.error('Failed to delete subject');
     },
   });
 
-  const filterFields: FilterField[] = useMemo(
-    () => [
-      {
-        name: 'search',
-        label: 'Search',
-        type: 'text',
-        placeholder: 'Subject name or code...',
-      },
-    ],
-    []
-  );
-
-  // Table columns
-  const columns: ColumnDef<Subject>[] = [
-    {
-      accessorKey: 'subject_code',
-      header: 'Code',
-      cell: ({ row }) => (
-        <Badge variant="outline" className="font-mono">
-          {row.original.subject_code}
-        </Badge>
-      ),
+  // Reactivate mutation
+  const reactivateMutation = useReactivateSubject({
+    onSuccess: () => {
+      toast.success('Subject restored successfully');
+      setSubjectToReactivate(undefined);
     },
-    {
-      accessorKey: 'subject_name',
-      header: 'Subject Name',
-      cell: ({ row }) => (
-        <span className="font-medium text-gray-900">{row.original.subject_name}</span>
-      ),
+    onError: () => {
+      toast.error('Failed to restore subject');
     },
-    {
-      accessorKey: 'description',
-      header: 'Description',
-      cell: ({ row }) => <span className="text-gray-700">{row.original.description || '—'}</span>,
-    },
-    {
-      id: 'actions',
-      header: 'Actions',
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate(`/subjects/${row.original.public_id}?mode=view`)}
-            className="h-8 w-8 p-0"
-          >
-            <Eye className="h-4 w-4" />
-            <span className="sr-only">View</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate(ROUTES.SUBJECTS_EDIT.replace(':id', row.original.public_id))}
-            className="h-8 w-8 p-0"
-          >
-            <Pencil className="h-4 w-4" />
-            <span className="sr-only">Edit</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSubjectToDelete(row.original)}
-            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-          >
-            <Trash2 className="h-4 w-4" />
-            <span className="sr-only">Delete</span>
-          </Button>
-        </div>
-      ),
-    },
-  ];
+  });
 
-  const handleFilter = (newFilters: Record<string, string>) => {
-    setFilters(newFilters);
-    setPage(1);
-  };
-
-  const handleResetFilters = () => {
-    setFilters({});
-    setPage(1);
-  };
-
-  const handleAddNew = () => {
+  // Handlers
+  const handleCreateNew = () => {
     navigate(ROUTES.SUBJECTS_NEW);
+  };
+
+  const handleView = (subject: Subject) => {
+    const route = showDeleted
+      ? `${ROUTES.SUBJECTS_VIEW.replace(':id', subject.public_id)}?deleted=true`
+      : ROUTES.SUBJECTS_VIEW.replace(':id', subject.public_id);
+    navigate(route);
+  };
+
+  const handleEdit = (subject: Subject) => {
+    navigate(ROUTES.SUBJECTS_EDIT.replace(':id', subject.public_id));
+  };
+
+  const handleDelete = (subject: Subject) => {
+    if (showDeleted) {
+      // In deleted view, clicking "delete" means reactivate
+      setSubjectToReactivate(subject);
+    } else {
+      setSubjectToDelete(subject);
+    }
   };
 
   const handleDeleteConfirm = () => {
@@ -135,76 +99,82 @@ export function SubjectsManagement() {
     }
   };
 
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <PageHeader title="Subjects">
-          <Button onClick={handleAddNew} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Subject
-          </Button>
-        </PageHeader>
+  const handleReactivateConfirm = () => {
+    if (subjectToReactivate) {
+      reactivateMutation.mutate(subjectToReactivate.public_id);
+    }
+  };
 
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <div className="text-center">
-              <h3 className="mb-2 text-lg font-semibold text-red-600">Error Loading Subjects</h3>
-              <p className="mb-4 text-gray-600">Failed to fetch subjects. Please try again.</p>
-              <Button onClick={() => refetch()}>Retry</Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setPage(1);
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setPage(1);
+  };
+
+  const handleFilterChange = (newFilters: Record<string, string>) => {
+    setFilters(newFilters);
+    setPage(1);
+  };
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Subjects" description="Manage academic subjects">
-        <div className="flex gap-2">
-          <BulkUploadSubjectsDialog />
-          <Button onClick={handleAddNew} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Subject
-          </Button>
-        </div>
-      </PageHeader>
-
-      <Card>
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            <ResourceFilter
-              fields={filterFields}
-              onFilter={handleFilter}
-              onReset={handleResetFilters}
-            />
-
-            <DataTable
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              columns={columns as any}
-              data={subjects}
-              isLoading={isLoading}
-              pageIndex={page - 1}
-              pageSize={pageSize}
-              totalCount={totalCount}
-              onPageChange={(newPage) => setPage(newPage + 1)}
-              onPageSizeChange={(newSize) => {
-                setPageSize(newSize);
-                setPage(1);
-              }}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <DeleteConfirmationDialog
-        open={!!subjectToDelete}
-        onOpenChange={(open) => !open && setSubjectToDelete(undefined)}
-        onConfirm={handleDeleteConfirm}
-        title="Delete Subject"
-        description={`Are you sure you want to delete ${subjectToDelete?.subject_name}? This action cannot be undone.`}
-        isDeleting={deleteMutation.isPending}
+    <>
+      <SubjectsList
+        subjects={subjects}
+        isLoading={isLoading}
+        error={error}
+        pagination={pagination}
+        showDeleted={showDeleted}
+        onToggleDeleted={toggleDeletedView}
+        onCreateNew={handleCreateNew}
+        onView={handleView}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+        onSearch={handleSearch}
+        onFilterChange={handleFilterChange}
       />
-    </div>
+
+      {/* Delete Confirmation Dialog */}
+      {!showDeleted && (
+        <DeleteConfirmationDialog
+          open={!!subjectToDelete}
+          onOpenChange={(open) => !open && setSubjectToDelete(undefined)}
+          onConfirm={handleDeleteConfirm}
+          title="Delete Subject"
+          itemName={
+            subjectToDelete
+              ? `${subjectToDelete.subject_info.name} for ${subjectToDelete.class_info.class_master_name}-${subjectToDelete.class_info.name}`
+              : undefined
+          }
+          isSoftDelete={true}
+          isDeleting={deleteMutation.isPending}
+        />
+      )}
+
+      {/* Reactivate Confirmation Dialog */}
+      {showDeleted && (
+        <ReactivateConfirmationDialog
+          open={!!subjectToReactivate}
+          onOpenChange={(open) => !open && setSubjectToReactivate(undefined)}
+          onConfirm={handleReactivateConfirm}
+          title="Restore Subject"
+          itemName={
+            subjectToReactivate
+              ? `${subjectToReactivate.subject_info.name} for ${subjectToReactivate.class_info.class_master_name}-${subjectToReactivate.class_info.name}`
+              : undefined
+          }
+          isReactivating={reactivateMutation.isPending}
+        />
+      )}
+    </>
   );
 }

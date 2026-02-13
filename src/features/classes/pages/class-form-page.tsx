@@ -33,11 +33,7 @@ import { useClass } from '../hooks/use-classes';
 import { useTeachers } from '@/features/teachers/hooks/use-teachers';
 import { useCoreClasses } from '@/features/core/hooks/use-core-classes';
 import { ROUTES } from '@/constants/app-config';
-import {
-  getErrorMessage,
-  isDeletedDuplicateError,
-  getDeletedDuplicateMessage,
-} from '@/lib/utils/error-handler';
+import { isDeletedDuplicateError, getDeletedDuplicateMessage } from '@/lib/utils/error-handler';
 import { DeletedDuplicateDialog } from '@/components/common';
 import { useDeletedDuplicateHandler } from '@/hooks/use-deleted-duplicate-handler';
 import { classFormSchema, type ClassFormData } from '../schemas/class-form-schema';
@@ -122,10 +118,7 @@ export default function ClassFormPage() {
       return;
     }
 
-    // Show toast for general errors
-    const errorMessage = getErrorMessage(error);
-    toast.error(errorMessage);
-
+    // Apply field errors to form (toast already shown by mutation)
     if (fieldErrors) {
       Object.entries(fieldErrors).forEach(([field, message]) => {
         if (message) {
