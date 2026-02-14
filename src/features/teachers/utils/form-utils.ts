@@ -6,6 +6,7 @@
 import type { TeacherFormValues } from '../schemas/teacher-form-schema';
 import type { CreateTeacherPayload, TeacherDetail } from '../types';
 import type { GenderValue, BloodGroupValue } from '@/constants/form-enums';
+import { ADDRESS_TYPE } from '@/constants/address-type';
 
 /**
  * Transform form values to API payload format
@@ -53,6 +54,7 @@ export function transformFormToPayload(values: TeacherFormValues): CreateTeacher
   // Add address if any field is filled
   if (hasAddress) {
     payload.user.address = {
+      address_type: ADDRESS_TYPE.USER_CURRENT,
       street_address: values.street_address || '',
       address_line_2: values.address_line_2 || '',
       city: values.city || '',

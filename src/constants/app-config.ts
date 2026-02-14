@@ -183,6 +183,7 @@ export const ROUTES = {
   ORGANIZATION: '/organization',
   STUDENTS: '/students',
   STUDENTS_NEW: '/students/new',
+  STUDENTS_VIEW: '/students/:id',
   STUDENTS_EDIT: '/students/:id/edit',
   TEACHERS: '/teachers',
   TEACHERS_NEW: '/teachers/new',

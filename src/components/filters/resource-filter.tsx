@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Combobox } from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Select,
   SelectContent,
@@ -149,11 +150,13 @@ export function ResourceFilter({
                       <Label htmlFor={startName} className="text-sm font-medium">
                         From Date
                       </Label>
-                      <Input
-                        id={startName}
-                        type="date"
-                        value={(filters[startName] as string) || ''}
-                        onChange={(e) => handleFilterChange(startName, e.target.value)}
+                      <DatePicker
+                        value={filters[startName] ? new Date(filters[startName] as string) : null}
+                        onChange={(date) => {
+                          const dateString = date ? date.toISOString().split('T')[0] : '';
+                          handleFilterChange(startName, dateString);
+                        }}
+                        placeholder="Select start date"
                         disabled={field.disabled}
                       />
                     </div>
@@ -163,13 +166,17 @@ export function ResourceFilter({
                       <Label htmlFor={endName} className="text-sm font-medium">
                         To Date
                       </Label>
-                      <Input
-                        id={endName}
-                        type="date"
-                        value={(filters[endName] as string) || ''}
-                        onChange={(e) => handleFilterChange(endName, e.target.value)}
-                        min={filters[startName] ? (filters[startName] as string) : undefined}
+                      <DatePicker
+                        value={filters[endName] ? new Date(filters[endName] as string) : null}
+                        onChange={(date) => {
+                          const dateString = date ? date.toISOString().split('T')[0] : '';
+                          handleFilterChange(endName, dateString);
+                        }}
+                        placeholder="Select end date"
                         disabled={field.disabled}
+                        minDate={
+                          filters[startName] ? new Date(filters[startName] as string) : undefined
+                        }
                       />
                     </div>
                   </div>
@@ -320,12 +327,13 @@ export function ResourceFilter({
                   )}
 
                   {field.type === 'date' && (
-                    <Input
-                      id={field.name}
-                      type="date"
-                      value={(filters[field.name] as string) || ''}
-                      onChange={(e) => handleFilterChange(field.name, e.target.value)}
-                      placeholder={field.placeholder}
+                    <DatePicker
+                      value={filters[field.name] ? new Date(filters[field.name] as string) : null}
+                      onChange={(date) => {
+                        const dateString = date ? date.toISOString().split('T')[0] : '';
+                        handleFilterChange(field.name, dateString);
+                      }}
+                      placeholder={field.placeholder || 'Select date'}
                       disabled={field.disabled}
                     />
                   )}

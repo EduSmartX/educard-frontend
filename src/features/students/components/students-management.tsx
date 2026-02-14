@@ -1,161 +1,232 @@
 /**
- * Students Management Page
+ * Students Management Component - Page Orchestrator
+ * Main orchestrator component following teachers-management.tsx pattern
  */
 
-import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
-import { PageHeader, DeleteConfirmationDialog } from '@/components/common';
-import { ResourceFilter, type FilterField } from '@/components/filters/resource-filter';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { DataTable } from '@/components/ui/data-table';
-import { useStudents } from '../hooks/use-students';
-import { useDeleteStudent } from '../hooks/mutations';
-import { BulkUploadStudentsDialog } from './bulk-upload-dialog';
-import { createStudentColumns } from './student-table-columns';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { ROUTES } from '@/constants/app-config';
-import type { Student } from '../types';
+import { useStudents } from '../hooks/use-students';
+import { useDeleteStudent, useReactivateStudent } from '../hooks/mutations';
+import { StudentsList } from './students-list';
+import StudentFormPage from '../pages/student-form-page';
+import type { StudentListItem } from '../types';
+import { DeleteConfirmationDialog, ReactivateConfirmationDialog } from '@/components/common';
+import { useDeletedView } from '@/hooks/use-deleted-view';
+
+type PageMode = 'list' | 'create' | 'edit' | 'view';
 
 export function StudentsManagement() {
   const navigate = useNavigate();
-  const [filters, setFilters] = useState<Record<string, string>>({});
-  const [page, setPage] = useState(1);
+  const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<Record<string, string>>({});
 
-  const [studentToDelete, setStudentToDelete] = useState<Student | undefined>();
+  // Dialog states
+  const [studentToDelete, setStudentToDelete] = useState<StudentListItem | null>(null);
+  const [studentToReactivate, setStudentToReactivate] = useState<StudentListItem | null>(null);
 
-  const { data, isLoading, error, refetch } = useStudents({
-    page,
-    page_size: pageSize,
-    search: filters.search,
+  // Deleted view management
+  const { showDeleted, toggleDeletedView } = useDeletedView({
+    onPageChange: setCurrentPage,
   });
 
-  const students = data?.results || [];
-  const totalCount = data?.count || 0;
+  // Sync filters with URL query params
+  useEffect(() => {
+    const params = Object.fromEntries(searchParams.entries());
+    const newFilters: Record<string, string> = {};
 
-  const deleteMutation = useDeleteStudent({
-    onSuccess: () => {
-      setStudentToDelete(undefined);
-      refetch();
-    },
-  });
+    if (params.class_assigned__public_id)
+      newFilters.class_assigned__public_id = params.class_assigned__public_id;
+    if (params.user__gender) newFilters.user__gender = params.user__gender;
+    if (params.admission_date_from) newFilters.admission_date_from = params.admission_date_from;
+    if (params.admission_date_to) newFilters.admission_date_to = params.admission_date_to;
+    if (params.search) setSearchQuery(params.search);
 
-  const filterFields: FilterField[] = useMemo(
-    () => [
-      {
-        name: 'search',
-        label: 'Search',
-        type: 'text',
-        placeholder: 'Search by name, student ID, or email...',
-      },
-    ],
-    []
-  );
-
-  const columns = createStudentColumns(
-    (student) => {
-      navigate(`/students/${student.public_id}?mode=view`);
-    },
-    (student) => {
-      navigate(ROUTES.STUDENTS_EDIT.replace(':id', student.public_id));
-    },
-    (student) => setStudentToDelete(student)
-  );
-
-  const handleFilter = (newFilters: Record<string, string>) => {
     setFilters(newFilters);
-    setPage(1);
+  }, [searchParams]);
+
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    if (searchQuery) params.set('search', searchQuery);
+
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+    });
+
+    const newSearch = params.toString();
+    if (newSearch !== searchParams.toString()) {
+      setSearchParams(params, { replace: true });
+    }
+  }, [searchQuery, filters, setSearchParams, searchParams]);
+
+  // Determine page mode from URL
+  const mode: PageMode = id
+    ? window.location.pathname.endsWith('/edit')
+      ? 'edit'
+      : 'view'
+    : window.location.pathname.endsWith('/create') || window.location.pathname.endsWith('/new')
+      ? 'create'
+      : 'list';
+
+  // Fetch students (only for list mode)
+  const { data, isLoading, error } = useStudents({
+    search: searchQuery,
+    page: currentPage,
+    page_size: pageSize,
+    class_assigned__public_id: filters.class_assigned__public_id || undefined,
+    user__gender: filters.user__gender || undefined,
+    admission_date_from: filters.admission_date_from || undefined,
+    admission_date_to: filters.admission_date_to || undefined,
+    is_deleted: showDeleted,
+  });
+
+  // Delete mutation
+  const deleteMutation = useDeleteStudent();
+
+  // Reactivate mutation
+  const reactivateMutation = useReactivateStudent();
+
+  // Navigation handlers
+  const handleView = (student: StudentListItem) => {
+    const path = ROUTES.STUDENTS_VIEW.replace(':id', student.public_id);
+    // Add query param if viewing deleted student
+    navigate(showDeleted ? `${path}?deleted=true` : path);
   };
 
-  const handleResetFilters = () => {
-    setFilters({});
-    setPage(1);
+  const handleEdit = (student: StudentListItem) => {
+    navigate(ROUTES.STUDENTS_EDIT.replace(':id', student.public_id));
   };
 
-  const handleAddNew = () => {
-    navigate(ROUTES.STUDENTS_NEW);
-  };
-
-  const handleDeleteConfirm = () => {
-    if (studentToDelete) {
-      deleteMutation.mutate(studentToDelete.public_id);
+  const handleDelete = (student: StudentListItem) => {
+    if (showDeleted) {
+      setStudentToReactivate(student);
+    } else {
+      setStudentToDelete(student);
     }
   };
 
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <PageHeader title="Students">
-          <div className="flex gap-2">
-            <BulkUploadStudentsDialog />
-            <Button onClick={handleAddNew} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Add Student
-            </Button>
-          </div>
-        </PageHeader>
+  const handleConfirmDelete = () => {
+    if (studentToDelete) {
+      deleteMutation.mutate(
+        {
+          classId: studentToDelete.class_id,
+          publicId: studentToDelete.public_id,
+        },
+        {
+          onSuccess: () => {
+            toast.success('Student deleted successfully');
+            setStudentToDelete(null);
+          },
+          onError: (error: Error) => {
+            toast.error(`Failed to delete student: ${error.message}`);
+          },
+        }
+      );
+    }
+  };
 
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <div className="text-center">
-              <h3 className="mb-2 text-lg font-semibold text-red-600">Error Loading Students</h3>
-              <p className="mb-4 text-gray-600">Failed to fetch students. Please try again.</p>
-              <Button onClick={() => refetch()}>Retry</Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  const handleConfirmReactivate = () => {
+    if (studentToReactivate) {
+      reactivateMutation.mutate(
+        {
+          classId: studentToReactivate.class_id,
+          publicId: studentToReactivate.public_id,
+        },
+        {
+          onSuccess: () => {
+            toast.success('Student reactivated successfully');
+            setStudentToReactivate(null);
+          },
+          onError: (error: Error) => {
+            toast.error(`Failed to reactivate student: ${error.message}`);
+          },
+        }
+      );
+    }
+  };
+
+  const handleCreateNew = () => {
+    navigate(ROUTES.STUDENTS_NEW);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1);
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  };
+
+  const handleFilterChange = (newFilters: Record<string, string>) => {
+    setFilters(newFilters);
+    setCurrentPage(1);
+  };
+
+  // Render form modes (create, edit, view)
+  if (mode !== 'list') {
+    return <StudentFormPage />;
   }
 
+  // List mode below
+  const students = data?.data || [];
+  const pagination = data?.pagination;
+
   return (
-    <div className="space-y-6">
-      <PageHeader title="Students" description="Manage student records">
-        <div className="flex gap-2">
-          <BulkUploadStudentsDialog />
-          <Button onClick={handleAddNew} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Student
-          </Button>
-        </div>
-      </PageHeader>
-
-      <Card>
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            <ResourceFilter
-              fields={filterFields}
-              onFilter={handleFilter}
-              onReset={handleResetFilters}
-            />
-
-            <DataTable
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              columns={columns as any}
-              data={students}
-              isLoading={isLoading}
-              pageIndex={page - 1}
-              pageSize={pageSize}
-              totalCount={totalCount}
-              onPageChange={(newPage) => setPage(newPage + 1)}
-              onPageSizeChange={(newSize) => {
-                setPageSize(newSize);
-                setPage(1);
-              }}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <DeleteConfirmationDialog
-        open={!!studentToDelete}
-        onOpenChange={(open) => !open && setStudentToDelete(undefined)}
-        onConfirm={handleDeleteConfirm}
-        title="Delete Student"
-        description={`Are you sure you want to delete ${studentToDelete?.user.full_name}? This action cannot be undone.`}
-        isDeleting={deleteMutation.isPending}
+    <>
+      <StudentsList
+        students={students}
+        isLoading={isLoading}
+        error={error || undefined}
+        pagination={pagination}
+        showDeleted={showDeleted}
+        onToggleDeleted={toggleDeletedView}
+        onCreateNew={handleCreateNew}
+        onView={handleView}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+        onSearch={handleSearch}
+        onFilterChange={handleFilterChange}
       />
-    </div>
+
+      {!showDeleted && (
+        <DeleteConfirmationDialog
+          open={!!studentToDelete}
+          onOpenChange={(open) => !open && setStudentToDelete(null)}
+          onConfirm={handleConfirmDelete}
+          title="Delete Student"
+          itemName={studentToDelete?.full_name}
+          isSoftDelete={true}
+          isDeleting={deleteMutation.isPending}
+        />
+      )}
+
+      {showDeleted && (
+        <ReactivateConfirmationDialog
+          open={!!studentToReactivate}
+          onOpenChange={(open) => !open && setStudentToReactivate(null)}
+          onConfirm={handleConfirmReactivate}
+          title="Reactivate Student"
+          itemName={studentToReactivate?.full_name}
+          isReactivating={reactivateMutation.isPending}
+        />
+      )}
+    </>
   );
 }

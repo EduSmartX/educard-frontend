@@ -2,14 +2,19 @@
  * Subject Form Page - Add/Edit/View Subject
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Edit, X, Plus, Eye } from 'lucide-react';
+import { Edit, X, Plus, Eye, Trash2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
-import { PageHeader, DeletedDuplicateDialog } from '@/components/common';
+import {
+  PageHeader,
+  DeletedDuplicateDialog,
+  DeleteConfirmationDialog,
+  ReactivateConfirmationDialog,
+} from '@/components/common';
 import { FormActions } from '@/components/form/form-actions';
 import { isDeletedDuplicateError, getDeletedDuplicateMessage } from '@/lib/utils/error-handler';
 import { useDeletedDuplicateHandler } from '@/hooks/use-deleted-duplicate-handler';
@@ -30,7 +35,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useCreateSubject, useUpdateSubject } from '../hooks/mutations';
+import {
+  useCreateSubject,
+  useUpdateSubject,
+  useDeleteSubject,
+  useReactivateSubject,
+} from '../hooks/mutations';
 import { useSubject } from '../hooks/use-subjects';
 import { useClasses } from '@/features/classes/hooks/use-classes';
 import { useSubjectMasters } from '@/features/core/hooks/use-subject-masters';
@@ -50,6 +60,10 @@ export default function SubjectFormPage() {
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
 
+  // Check if viewing deleted subject (from query param)
+  const searchParams = new URLSearchParams(location.search);
+  const isViewingDeleted = searchParams.get('deleted') === 'true';
+
   // Determine mode based on URL path
   const getMode = (): 'create' | 'edit' | 'view' => {
     if (!id) return 'create';
@@ -63,8 +77,12 @@ export default function SubjectFormPage() {
   // Duplicate handling
   const duplicateHandler = useDeletedDuplicateHandler();
 
-  // Fetch subject data if editing/viewing
-  const { data: subject } = useSubject(id);
+  // Delete and reactivate dialog states
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showReactivateDialog, setShowReactivateDialog] = useState(false);
+
+  // Fetch subject data if editing/viewing (pass isDeleted flag)
+  const { data: subject } = useSubject(id, isViewingDeleted);
   // Fetch dropdown data
   const { data: classesData } = useClasses({ page_size: 100 });
   const { data: subjectMastersData } = useSubjectMasters({ page_size: 100 });
@@ -141,6 +159,56 @@ export default function SubjectFormPage() {
     },
     onError: handleFormErrors,
   });
+
+  const deleteMutation = useDeleteSubject({
+    onSuccess: () => {
+      toast.success('Subject deleted successfully');
+      navigate(ROUTES.SUBJECTS);
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to delete subject: ${error.message}`);
+    },
+  });
+
+  const reactivateMutation = useReactivateSubject({
+    onSuccess: () => {
+      toast.success('Subject reactivated successfully');
+      // Navigate to the view page without the deleted flag to prevent 404 on refetch
+      if (id) {
+        // Use replace: true to replace the history entry so back button works correctly
+        navigate(ROUTES.SUBJECTS_VIEW.replace(':id', id), { replace: true });
+      } else {
+        navigate(ROUTES.SUBJECTS);
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to reactivate subject: ${error.message}`);
+    },
+  });
+
+  // Delete handlers
+  const handleDelete = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = () => {
+    setShowDeleteDialog(false);
+    if (subject) {
+      deleteMutation.mutate(subject.public_id);
+    }
+  };
+
+  // Reactivate handlers
+  const handleReactivateClick = () => {
+    setShowReactivateDialog(true);
+  };
+
+  const confirmReactivate = () => {
+    setShowReactivateDialog(false);
+    if (subject) {
+      reactivateMutation.mutate(subject.public_id);
+    }
+  };
 
   // Handle reactivate from duplicate dialog
   const handleReactivate = () => {
@@ -220,6 +288,32 @@ export default function SubjectFormPage() {
     }
 
     if (mode === 'view') {
+      // Viewing deleted subject
+      if (isViewingDeleted) {
+        return {
+          title: 'View Deleted Subject',
+          description: 'This subject has been deleted',
+          icon: Eye,
+          actions: [
+            {
+              label: 'Close',
+              onClick: handleBackToList,
+              variant: 'outline' as const,
+              icon: X,
+              className: 'border-2 border-gray-400 text-gray-700 hover:bg-gray-100',
+            },
+            {
+              label: 'Reactivate',
+              onClick: handleReactivateClick,
+              variant: 'default' as const,
+              icon: RefreshCw,
+              className: 'bg-green-600 hover:bg-green-700',
+            },
+          ],
+        };
+      }
+
+      // Viewing active subject
       return {
         title: 'View Subject Details',
         description: 'View subject information and details',
@@ -231,6 +325,13 @@ export default function SubjectFormPage() {
             variant: 'outline' as const,
             icon: X,
             className: 'border-2 border-gray-400 text-gray-700 hover:bg-gray-100',
+          },
+          {
+            label: 'Delete',
+            onClick: handleDelete,
+            variant: 'outline' as const,
+            icon: Trash2,
+            className: 'border-2 border-red-500 text-red-600 hover:bg-red-50',
           },
           {
             label: 'Edit',
@@ -459,6 +560,26 @@ export default function SubjectFormPage() {
         onReactivate={handleReactivate}
         onCreateNew={handleForceCreate}
         onCancel={duplicateHandler.closeDialog}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={confirmDelete}
+        title="Delete Subject"
+        description="Are you sure you want to delete this subject? This action can be undone by reactivating it later."
+        isDeleting={deleteMutation.isPending}
+      />
+
+      {/* Reactivate Confirmation Dialog */}
+      <ReactivateConfirmationDialog
+        open={showReactivateDialog}
+        onOpenChange={setShowReactivateDialog}
+        onConfirm={confirmReactivate}
+        title="Reactivate Subject"
+        description="Are you sure you want to reactivate this subject? It will be available for use again."
+        isReactivating={reactivateMutation.isPending}
       />
     </div>
   );

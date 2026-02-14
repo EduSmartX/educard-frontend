@@ -2,12 +2,21 @@ import * as React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { getCurrentLocationAddress } from '@/lib/location-utils';
 import { MapPin, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ADDRESS_TYPE_OPTIONS } from '@/constants/address-type';
 
 interface FieldNames {
+  addressType?: string;
   streetAddress?: string;
   addressLine2?: string;
   city?: string;
@@ -24,6 +33,7 @@ interface AddressFormProps {
   showHeader?: boolean;
   compact?: boolean; // For smaller layouts
   showLocationButton?: boolean; // Show "Use My Location" button
+  showAddressType?: boolean; // Show address type dropdown
   fieldNames?: FieldNames; // Custom field names (for snake_case compatibility)
   disabled?: boolean; // Disable all fields
 }
@@ -35,6 +45,7 @@ export function AddressForm({
   showHeader = true,
   compact = false,
   showLocationButton = true,
+  showAddressType = true,
   fieldNames,
   disabled = false,
 }: AddressFormProps) {
@@ -42,6 +53,7 @@ export function AddressForm({
 
   // Default field names (camelCase)
   const defaultFieldNames: Required<FieldNames> = {
+    addressType: 'addressType',
     streetAddress: 'streetAddress',
     addressLine2: 'addressLine2',
     city: 'city',
@@ -126,6 +138,42 @@ export function AddressForm({
                 </>
               )}
             </Button>
+          )}
+        </div>
+      )}
+
+      {/* Address Type Dropdown */}
+      {showAddressType && (
+        <div className="space-y-2">
+          <Label
+            htmlFor={getFieldName('addressType')}
+            className={`${labelSize} font-semibold text-gray-700`}
+          >
+            Address Type
+            {required && <span className="text-red-500 ml-1">*</span>}
+          </Label>
+          <Select
+            value={form.watch(getFieldName('addressType'))}
+            onValueChange={(value) => form.setValue(getFieldName('addressType'), value)}
+            disabled={disabled}
+          >
+            <SelectTrigger
+              className={`${inputHeight} text-base border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:ring-4 focus:ring-purple-50 transition-all`}
+            >
+              <SelectValue placeholder="Select address type" />
+            </SelectTrigger>
+            <SelectContent>
+              {ADDRESS_TYPE_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {form.formState.errors[getFieldName('addressType')]?.message && (
+            <p className="text-sm text-red-600">
+              {form.formState.errors[getFieldName('addressType')]?.message as string}
+            </p>
           )}
         </div>
       )}

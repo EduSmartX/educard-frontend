@@ -48,3 +48,18 @@ export const BLOOD_GROUP_ENUM = [
   BLOOD_GROUP_VALUES.O_POSITIVE,
   BLOOD_GROUP_VALUES.O_NEGATIVE,
 ] as const;
+
+/**
+ * Guardian/Parent Relationship Options
+ */
+export const RELATIONSHIP_OPTIONS = [
+  { value: 'Father', label: 'Father' },
+  { value: 'Mother', label: 'Mother' },
+  { value: 'Guardian', label: 'Guardian' },
+  { value: 'Uncle', label: 'Uncle' },
+  { value: 'Aunt', label: 'Aunt' },
+  { value: 'Grandfather', label: 'Grandfather' },
+  { value: 'Grandmother', label: 'Grandmother' },
+  { value: 'Sibling', label: 'Sibling' },
+  { value: 'Other', label: 'Other' },
+] as const;

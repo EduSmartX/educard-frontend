@@ -1,23 +1,18 @@
-/**
- * Student Query Hooks
- */
-
 import { useQuery } from '@tanstack/react-query';
 import { fetchStudents, fetchStudent } from '../api/students-api';
-import type { FetchStudentsParams } from '../types';
+import type { StudentQueryParams } from '../types';
 
-export function useStudents(params: FetchStudentsParams = {}) {
+export function useStudents(params?: StudentQueryParams) {
   return useQuery({
     queryKey: ['students', params],
     queryFn: () => fetchStudents(params),
-    staleTime: 5 * 60 * 1000,
   });
 }
 
-export function useStudent(publicId: string | undefined) {
+export function useStudent(publicId?: string, isDeleted = false) {
   return useQuery({
-    queryKey: ['students', publicId],
-    queryFn: () => fetchStudent(publicId!),
+    queryKey: ['student', publicId, isDeleted],
+    queryFn: () => fetchStudent(publicId!, isDeleted),
     enabled: !!publicId,
   });
 }

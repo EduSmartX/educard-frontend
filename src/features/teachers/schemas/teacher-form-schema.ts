@@ -5,6 +5,7 @@
 
 import { z } from 'zod';
 import { GENDER_ENUM, BLOOD_GROUP_ENUM } from '@/constants/form-enums';
+import { ADDRESS_TYPE } from '@/constants/address-type';
 import {
   emailSchema,
   phoneSchema,
@@ -72,6 +73,13 @@ export const teacherFormSchema = z
     emergency_contact_number: phoneSchema(false),
 
     // Address fields
+    address_type: z
+      .enum([
+        ADDRESS_TYPE.USER_CURRENT,
+        ADDRESS_TYPE.USER_PERMANENT,
+        ADDRESS_TYPE.ORGANIZATION,
+      ] as const)
+      .default(ADDRESS_TYPE.USER_CURRENT),
     street_address: textSchema('Street address', { maxLength: 255 }),
     address_line_2: textSchema('Address line 2', { maxLength: 255 }),
     city: textSchema('City', { maxLength: 100 }),

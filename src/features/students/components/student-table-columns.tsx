@@ -1,107 +1,131 @@
 /**
  * Student Table Columns Configuration
+ * Following the pattern from teacher-table-columns.tsx
  */
 
-import { format } from 'date-fns';
-import type { ColumnDef } from '@tanstack/react-table';
-import { Badge } from '@/components/ui/badge';
+import { Eye, Pencil, Trash2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
-import type { Student } from '../types';
+import { Badge } from '@/components/ui/badge';
+import type { Column } from '@/components/ui/data-table';
+import type { StudentListItem } from '../types';
 
-interface StudentActionsProps {
-  student: Student;
-  onView: (student: Student) => void;
-  onEdit: (student: Student) => void;
-  onDelete: (student: Student) => void;
+interface GetColumnsOptions {
+  onView: (student: StudentListItem) => void;
+  onEdit: (student: StudentListItem) => void;
+  onDelete: (student: StudentListItem) => void;
+  isDeletedView?: boolean;
 }
 
-function StudentActionsCell({ student, onView, onEdit, onDelete }: StudentActionsProps) {
-  return (
-    <div className="flex items-center gap-2">
-      <Button variant="ghost" size="sm" onClick={() => onView(student)} className="h-8 w-8 p-0">
-        <Eye className="h-4 w-4" />
-        <span className="sr-only">View</span>
-      </Button>
-      <Button variant="ghost" size="sm" onClick={() => onEdit(student)} className="h-8 w-8 p-0">
-        <Pencil className="h-4 w-4" />
-        <span className="sr-only">Edit</span>
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => onDelete(student)}
-        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-      >
-        <Trash2 className="h-4 w-4" />
-        <span className="sr-only">Delete</span>
-      </Button>
-    </div>
-  );
-}
-
-export function createStudentColumns(
-  onView: (student: Student) => void,
-  onEdit: (student: Student) => void,
-  onDelete: (student: Student) => void
-): ColumnDef<Student>[] {
+export function getStudentColumns({
+  onView,
+  onEdit,
+  onDelete,
+  isDeletedView = false,
+}: GetColumnsOptions): Column<StudentListItem>[] {
   return [
     {
-      accessorKey: 'student_id',
-      header: 'Student ID',
-      cell: ({ row }) => (
-        <Badge variant="outline" className="font-mono">
-          {row.original.student_id}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: 'user.full_name',
-      header: 'Name',
-      cell: ({ row }) => (
-        <span className="font-medium text-gray-900">{row.original.user.full_name}</span>
-      ),
-    },
-    {
-      accessorKey: 'user.email',
-      header: 'Email',
-      cell: ({ row }) => <span className="text-gray-700">{row.original.user.email}</span>,
-    },
-    {
-      accessorKey: 'user.phone',
-      header: 'Phone',
-      cell: ({ row }) => <span className="text-gray-700">{row.original.user.phone || '—'}</span>,
-    },
-    {
-      accessorKey: 'date_of_birth',
-      header: 'Date of Birth',
-      cell: ({ row }) => (
-        <span className="text-gray-700">
-          {row.original.date_of_birth ? format(new Date(row.original.date_of_birth), 'PP') : '—'}
-        </span>
-      ),
-    },
-    {
-      accessorKey: 'class_name',
       header: 'Class',
-      cell: ({ row }) =>
-        row.original.class_name ? (
-          <Badge variant="secondary">{row.original.class_name}</Badge>
-        ) : (
-          <span className="text-gray-400">—</span>
-        ),
+      accessor: (row) => (
+        <div className="flex flex-col">
+          <span className="font-medium text-gray-900">{row.class_master_name}</span>
+          <span className="text-sm text-gray-500">{row.class_name}</span>
+        </div>
+      ),
+      sortable: true,
+      sortKey: 'class_master_name',
+      width: 150,
     },
     {
-      id: 'actions',
-      header: 'Actions',
-      cell: ({ row }) => (
-        <StudentActionsCell
-          student={row.original}
-          onView={onView}
-          onEdit={onEdit}
-          onDelete={onDelete}
-        />
+      header: 'Roll Number',
+      accessor: 'roll_number',
+      sortable: true,
+      width: 150,
+    },
+    {
+      header: 'Name',
+      accessor: (row) => (
+        <div className="flex flex-col">
+          <span className="font-medium text-gray-900">{row.full_name}</span>
+          {row.email && <span className="text-sm text-gray-500">{row.email}</span>}
+        </div>
       ),
+      sortable: true,
+      sortKey: 'full_name',
+      width: 250,
+    },
+    {
+      header: 'Admission Number',
+      accessor: (row) => (
+        <div className="flex flex-col">
+          <span className="font-medium text-gray-900">{row.admission_number || '—'}</span>
+          {row.admission_date && (
+            <span className="text-sm text-gray-500">
+              ({new Date(row.admission_date).toLocaleDateString('en-GB')})
+            </span>
+          )}
+        </div>
+      ),
+      sortable: true,
+      sortKey: 'admission_number',
+      width: 200,
+    },
+    {
+      header: 'Phone',
+      accessor: (row) => <span className="text-gray-700">{row.phone || '—'}</span>,
+      width: 150,
+    },
+    {
+      header: 'Gender',
+      accessor: (row) => {
+        const gender = row.gender;
+        if (!gender) return <span className="text-gray-400">—</span>;
+
+        const genderLabel = gender === 'M' ? 'Male' : gender === 'F' ? 'Female' : 'Other';
+        const genderColor =
+          gender === 'M'
+            ? 'bg-blue-100 text-blue-800'
+            : gender === 'F'
+              ? 'bg-pink-100 text-pink-800'
+              : 'bg-gray-100 text-gray-800';
+
+        return (
+          <Badge variant="secondary" className={genderColor}>
+            {genderLabel}
+          </Badge>
+        );
+      },
+      width: 120,
+    },
+    {
+      header: 'Actions',
+      accessor: (row) => (
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => onView(row)} className="h-8 w-8 p-0">
+            <Eye className="h-4 w-4" />
+            <span className="sr-only">View</span>
+          </Button>
+          {!isDeletedView && (
+            <Button variant="ghost" size="sm" onClick={() => onEdit(row)} className="h-8 w-8 p-0">
+              <Pencil className="h-4 w-4" />
+              <span className="sr-only">Edit</span>
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDelete(row)}
+            className={
+              isDeletedView
+                ? 'h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50'
+                : 'h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50'
+            }
+          >
+            {isDeletedView ? <RotateCcw className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
+            <span className="sr-only">{isDeletedView ? 'Reactivate' : 'Delete'}</span>
+          </Button>
+        </div>
+      ),
+      width: 150,
     },
   ];
 }

@@ -1,413 +1,336 @@
 /**
- * Student Form Page - Add/Edit/View Student
+ * Student Form Page Component
+ * Wrapper for create, edit, and view modes with navigation
+ * Following CRITICAL PATTERNS from teacher-form-page.tsx
  */
 
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowLeft, CalendarIcon, Edit } from 'lucide-react';
-import { format } from 'date-fns';
-import { PageHeader } from '@/components/common';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { Edit, X, AlertCircle, UserPlus, Eye, Trash2, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useCreateStudent, useUpdateStudent } from '../hooks/mutations';
-import { useStudent } from '../hooks/use-students';
+  PageHeader,
+  DeleteConfirmationDialog,
+  ReactivateConfirmationDialog,
+} from '@/components/common';
 import { ROUTES } from '@/constants/app-config';
-import { cn } from '@/lib/utils';
-
-const studentSchema = z.object({
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
-  student_id: z.string().min(1, 'Student ID is required'),
-  date_of_birth: z.string().min(1, 'Date of birth is required'),
-  email: z.string().email('Invalid email address'),
-  phone: z.string().optional(),
-  parent_name: z.string().optional(),
-  parent_phone: z.string().optional(),
-  parent_email: z.string().email('Invalid parent email').optional().or(z.literal('')),
-});
-
-type StudentFormData = z.infer<typeof studentSchema>;
+import { useStudent } from '../hooks/use-students';
+import { useDeleteStudent, useReactivateStudent } from '../hooks/mutations';
+import { StudentForm } from '../components/student-form';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { getErrorMessage } from '@/lib/utils/error-handler';
 
 export default function StudentFormPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const [searchParams] = useSearchParams();
-  const mode = searchParams.get('mode') || 'edit'; // 'view', 'edit', or 'create'
-  const isViewMode = mode === 'view';
-  const isEditing = !!id && mode !== 'view';
-  const firstErrorRef = useRef<HTMLDivElement>(null);
-  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const location = useLocation();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showReactivateDialog, setShowReactivateDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isReactivating, setIsReactivating] = useState(false);
 
-  // Fetch student data if editing
-  const { data: student } = useStudent(id);
+  // Check if viewing deleted student (from query param)
+  const searchParams = new URLSearchParams(location.search);
+  const isViewingDeleted = searchParams.get('deleted') === 'true';
 
-  const form = useForm<StudentFormData>({
-    resolver: zodResolver(studentSchema),
-    defaultValues: {
-      first_name: '',
-      last_name: '',
-      student_id: '',
-      date_of_birth: '',
-      email: '',
-      phone: '',
-      parent_name: '',
-      parent_phone: '',
-      parent_email: '',
-    },
-  });
+  // Determine mode based on URL path
+  const getMode = (): 'create' | 'edit' | 'view' => {
+    if (!id) return 'create';
+    if (location.pathname.endsWith('/edit')) return 'edit';
+    return 'view';
+  };
+
+  const mode = getMode();
+
+  // Fetch student data if editing or viewing (pass isDeleted flag)
+  const { data: student, isLoading, error } = useStudent(id, isViewingDeleted);
 
   useEffect(() => {
-    if (student && isEditing) {
-      const fullName = student.user.full_name || '';
-      const names = fullName.split(' ');
-      const firstName = names[0] || '';
-      const lastName = names.slice(1).join(' ') || '';
-
-      form.reset({
-        first_name: firstName,
-        last_name: lastName,
-        student_id: student.student_id,
-        date_of_birth: student.date_of_birth,
-        email: student.user.email,
-        phone: student.user.phone || '',
-        parent_name: student.parent_name || '',
-        parent_phone: student.parent_phone || '',
-        parent_email: student.parent_email || '',
+    if (error && mode !== 'create' && !isDeleting && !isReactivating) {
+      const errorMessage = getErrorMessage(error, 'Failed to load student data');
+      toast.error('Error Loading Student', {
+        description: errorMessage,
+        duration: 5000,
       });
     }
-  }, [student, isEditing, form]);
+  }, [error, mode, isDeleting, isReactivating]);
 
-  // Handle form errors
-  const handleFormErrors = (_error: Error, fieldErrors?: Record<string, string | undefined>) => {
-    if (fieldErrors) {
-      Object.entries(fieldErrors).forEach(([field, message]) => {
-        if (message) {
-          form.setError(field as keyof StudentFormData, {
-            type: 'manual',
-            message: String(message),
-          });
+  const handleBackToList = () => {
+    navigate(ROUTES.STUDENTS);
+  };
+
+  const handleFormSuccess = () => {
+    navigate(ROUTES.STUDENTS);
+  };
+
+  const handleSwitchToEdit = () => {
+    if (id) {
+      navigate(ROUTES.STUDENTS_EDIT.replace(':id', id));
+    }
+  };
+
+  // Delete mutation
+  const deleteMutation = useDeleteStudent();
+
+  // Reactivate mutation
+  const reactivateMutation = useReactivateStudent();
+
+  // Open delete confirmation dialog
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true);
+  };
+
+  // Open reactivate confirmation dialog
+  const handleReactivateClick = () => {
+    setShowReactivateDialog(true);
+  };
+
+  // Confirm and execute reactivate
+  const handleReactivateConfirm = () => {
+    if (id && student) {
+      // Set reactivating flag to prevent error toast
+      setIsReactivating(true);
+      // Close dialog and navigate immediately to avoid refetching deleted resource
+      setShowReactivateDialog(false);
+      // Navigate away first
+      navigate(ROUTES.STUDENTS, { replace: true });
+      // Then execute reactivate mutation
+      reactivateMutation.mutate(
+        {
+          classId: student.class_info.public_id,
+          publicId: id,
+        },
+        {
+          onSuccess: () => {
+            toast.success('Student reactivated successfully');
+            setIsReactivating(false);
+          },
+          onError: (error: Error) => {
+            toast.error(`Failed to reactivate student: ${error.message}`);
+            setIsReactivating(false);
+          },
         }
-      });
-
-      // Auto-focus first error field
-      setTimeout(() => {
-        firstErrorRef.current?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        });
-        firstErrorRef.current?.querySelector('input')?.focus();
-      }, 100);
+      );
     }
   };
 
-  // Mutations with callbacks
-  const createMutation = useCreateStudent({
-    onSuccess: () => navigate(ROUTES.STUDENTS),
-    onError: handleFormErrors,
-  });
-
-  const updateMutation = useUpdateStudent({
-    onSuccess: () => navigate(ROUTES.STUDENTS),
-    onError: handleFormErrors,
-  });
-
-  const onSubmit = (data: StudentFormData) => {
-    if (isEditing && student) {
-      updateMutation.mutate({
-        publicId: student.public_id,
-        payload: data,
-      });
-    } else {
-      createMutation.mutate(data);
+  // Confirm and execute delete
+  const handleDeleteConfirm = () => {
+    if (id && student) {
+      // Set deleting flag to prevent error toast
+      setIsDeleting(true);
+      // Close dialog and navigate immediately to avoid refetching deleted resource
+      setShowDeleteDialog(false);
+      // Navigate away first
+      navigate(ROUTES.STUDENTS, { replace: true });
+      // Then execute delete mutation
+      deleteMutation.mutate(
+        {
+          classId: student.class_info.public_id,
+          publicId: id,
+        },
+        {
+          onSuccess: () => {
+            toast.success('Student deleted successfully');
+            setIsDeleting(false);
+          },
+          onError: (error: Error) => {
+            toast.error(`Failed to delete student: ${error.message}`);
+            setIsDeleting(false);
+          },
+        }
+      );
     }
   };
 
-  const isPending = createMutation.isPending || updateMutation.isPending;
+  // Validate ID for edit/view modes
+  if (mode !== 'create' && !id) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Student Not Found"
+          description="Invalid student ID"
+          actions={[
+            {
+              label: 'Back to List',
+              onClick: handleBackToList,
+              variant: 'outline',
+            },
+          ]}
+        />
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center space-y-4">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+            <div>
+              <p className="text-red-600 font-medium">Invalid student ID</p>
+              <p className="text-sm text-gray-500 mt-2">
+                The student you're looking for doesn't exist or the ID is invalid.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error && mode !== 'create') {
+    const errorMessage = getErrorMessage(error, 'Failed to load student data');
+
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Error Loading Student"
+          description="Failed to fetch student data"
+          actions={[
+            {
+              label: 'Back to List',
+              onClick: handleBackToList,
+              variant: 'outline',
+            },
+          ]}
+        />
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  // Get page configuration based on mode
+  const getPageConfig = () => {
+    if (mode === 'create') {
+      return {
+        title: 'Add New Student',
+        description: 'Add a new student to your organization',
+        icon: UserPlus,
+        actions: [
+          {
+            label: 'Cancel',
+            onClick: handleBackToList,
+            variant: 'outline' as const,
+            icon: X,
+            className: 'border-2 border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700',
+          },
+        ],
+      };
+    }
+
+    if (mode === 'view') {
+      // If viewing deleted student, show Reactivate button instead of Edit/Delete
+      if (isViewingDeleted) {
+        return {
+          title: 'View Deleted Student',
+          description: 'View deleted student information',
+          icon: Eye,
+          actions: [
+            {
+              label: 'Close',
+              onClick: handleBackToList,
+              variant: 'outline' as const,
+              icon: X,
+              className: 'border-2 border-gray-400 text-gray-700 hover:bg-gray-100',
+            },
+            {
+              label: 'Reactivate',
+              onClick: handleReactivateClick,
+              variant: 'default' as const,
+              icon: RefreshCw,
+              className: 'bg-green-600 hover:bg-green-700',
+            },
+          ],
+        };
+      }
+
+      // Normal view mode (active student)
+      return {
+        title: 'View Student Details',
+        description: 'View student information and details',
+        icon: Eye,
+        actions: [
+          {
+            label: 'Close',
+            onClick: handleBackToList,
+            variant: 'outline' as const,
+            icon: X,
+            className: 'border-2 border-gray-400 text-gray-700 hover:bg-gray-100',
+          },
+          {
+            label: 'Delete',
+            onClick: handleDeleteClick,
+            variant: 'destructive' as const,
+            icon: Trash2,
+          },
+          {
+            label: 'Edit',
+            onClick: handleSwitchToEdit,
+            variant: 'default' as const,
+            icon: Edit,
+          },
+        ],
+      };
+    }
+
+    // Edit mode
+    return {
+      title: 'Edit Student',
+      description: 'Update student information',
+      icon: Edit,
+      actions: [
+        {
+          label: 'Cancel',
+          onClick: handleBackToList,
+          variant: 'outline' as const,
+          icon: X,
+          className: 'border-2 border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700',
+        },
+      ],
+    };
+  };
+
+  const pageConfig = getPageConfig();
 
   return (
     <div className="space-y-6">
+      {/* Page Header with dynamic title, description, and actions */}
       <PageHeader
-        title={isViewMode ? 'View Student' : isEditing ? 'Edit Student' : 'Add New Student'}
-        description={
-          isViewMode
-            ? 'View student information.'
-            : isEditing
-              ? 'Update the student information below.'
-              : 'Fill in the details to create a new student.'
-        }
-      >
-        <div className="flex gap-2">
-          {isViewMode && (
-            <Button
-              variant="default"
-              onClick={() => navigate(`/students/${id}/edit`)}
-              className="gap-2"
-            >
-              <Edit className="h-4 w-4" />
-              Edit
-            </Button>
-          )}
-          <Button variant="outline" onClick={() => navigate(ROUTES.STUDENTS)} className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Students
-          </Button>
-        </div>
-      </PageHeader>
+        title={pageConfig.title}
+        description={pageConfig.description}
+        icon={pageConfig.icon}
+        actions={pageConfig.actions}
+      />
 
-      <Card>
-        <CardContent className="p-6">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Student Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Student Information</h3>
+      {/* Form Component */}
+      <StudentForm
+        mode={mode}
+        studentId={id}
+        initialData={student}
+        isLoading={isLoading}
+        onSuccess={handleFormSuccess}
+        onCancel={handleBackToList}
+        onDelete={mode === 'edit' ? handleDeleteClick : undefined}
+      />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="first_name"
-                    render={({ field, fieldState }) => (
-                      <FormItem
-                        ref={fieldState.error && !firstErrorRef.current ? firstErrorRef : null}
-                      >
-                        <FormLabel>First Name *</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="John" disabled={isPending || isViewMode} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Student"
+        itemName={student ? `${student.user_info.full_name} (${student.roll_number})` : undefined}
+        isSoftDelete={true}
+      />
 
-                  <FormField
-                    control={form.control}
-                    name="last_name"
-                    render={({ field, fieldState }) => (
-                      <FormItem
-                        ref={fieldState.error && !firstErrorRef.current ? firstErrorRef : null}
-                      >
-                        <FormLabel>Last Name *</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Doe" disabled={isPending || isViewMode} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="student_id"
-                    render={({ field, fieldState }) => (
-                      <FormItem
-                        ref={fieldState.error && !firstErrorRef.current ? firstErrorRef : null}
-                      >
-                        <FormLabel>Student ID *</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="STU001"
-                            disabled={isPending || isViewMode}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="date_of_birth"
-                    render={({ field, fieldState }) => (
-                      <FormItem
-                        ref={fieldState.error && !firstErrorRef.current ? firstErrorRef : null}
-                      >
-                        <FormLabel>Date of Birth *</FormLabel>
-                        <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  'w-full pl-3 text-left font-normal',
-                                  !field.value && 'text-muted-foreground'
-                                )}
-                                disabled={isPending || isViewMode}
-                              >
-                                {field.value ? format(new Date(field.value), 'PPP') : 'Pick a date'}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value ? new Date(field.value) : undefined}
-                              onSelect={(date) => {
-                                field.onChange(date ? format(date, 'yyyy-MM-dd') : '');
-                                setDatePickerOpen(false);
-                              }}
-                              disabled={(date) =>
-                                date > new Date() || date < new Date('1900-01-01')
-                              }
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field, fieldState }) => (
-                      <FormItem
-                        ref={fieldState.error && !firstErrorRef.current ? firstErrorRef : null}
-                      >
-                        <FormLabel>Email *</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type="email"
-                            placeholder="student@example.com"
-                            disabled={isPending || isViewMode}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field, fieldState }) => (
-                      <FormItem
-                        ref={fieldState.error && !firstErrorRef.current ? firstErrorRef : null}
-                      >
-                        <FormLabel>Phone Number</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="+1234567890"
-                            disabled={isPending || isViewMode}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-
-              {/* Parent Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Parent/Guardian Information</h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="parent_name"
-                    render={({ field, fieldState }) => (
-                      <FormItem
-                        ref={fieldState.error && !firstErrorRef.current ? firstErrorRef : null}
-                      >
-                        <FormLabel>Parent/Guardian Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="Jane Doe"
-                            disabled={isPending || isViewMode}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="parent_phone"
-                    render={({ field, fieldState }) => (
-                      <FormItem
-                        ref={fieldState.error && !firstErrorRef.current ? firstErrorRef : null}
-                      >
-                        <FormLabel>Parent/Guardian Phone</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="+1234567890"
-                            disabled={isPending || isViewMode}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="parent_email"
-                  render={({ field, fieldState }) => (
-                    <FormItem
-                      ref={fieldState.error && !firstErrorRef.current ? firstErrorRef : null}
-                    >
-                      <FormLabel>Parent/Guardian Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="email"
-                          placeholder="parent@example.com"
-                          disabled={isPending || isViewMode}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* Form Actions */}
-              {!isViewMode && (
-                <div className="flex justify-end gap-3 pt-4 border-t">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => navigate(ROUTES.STUDENTS)}
-                    disabled={isPending}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isPending}>
-                    {isPending ? 'Saving...' : isEditing ? 'Update Student' : 'Create Student'}
-                  </Button>
-                </div>
-              )}
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+      {/* Reactivate Confirmation Dialog */}
+      <ReactivateConfirmationDialog
+        open={showReactivateDialog}
+        onOpenChange={setShowReactivateDialog}
+        onConfirm={handleReactivateConfirm}
+        title="Reactivate Student"
+        itemName={student ? `${student.user_info.full_name} (${student.roll_number})` : undefined}
+        description="Are you sure you want to reactivate this student? They will be restored to active status."
+      />
     </div>
   );
 }

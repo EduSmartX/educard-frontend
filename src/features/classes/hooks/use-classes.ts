@@ -14,10 +14,10 @@ export function useClasses(params: FetchClassesParams = {}) {
   });
 }
 
-export function useClass(publicId: string | undefined) {
+export function useClass(publicId: string | undefined, isDeleted = false) {
   return useQuery({
-    queryKey: ['classes', publicId],
-    queryFn: () => fetchClass(publicId!),
+    queryKey: ['classes', publicId, isDeleted],
+    queryFn: () => fetchClass(publicId!, isDeleted),
     enabled: !!publicId,
   });
 }

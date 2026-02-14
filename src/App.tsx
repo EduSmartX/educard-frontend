@@ -82,6 +82,7 @@ function App() {
             {/* Students */}
             <Route path={ROUTES.STUDENTS} element={<StudentsListPage />} />
             <Route path={ROUTES.STUDENTS_NEW} element={<StudentFormPage />} />
+            <Route path={ROUTES.STUDENTS_VIEW} element={<StudentFormPage />} />
             <Route path={ROUTES.STUDENTS_EDIT} element={<StudentFormPage />} />
 
             {/* Teachers */}

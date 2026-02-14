@@ -10,6 +10,7 @@ import { parseOtpErrors } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { getErrorMessage } from '@/lib/utils/error-handler';
 import { ROUTES } from '@/constants/app-config';
+import { ADDRESS_TYPE } from '@/constants/address-type';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -341,6 +342,7 @@ export default function SignupPage() {
         completeData.zipCode
           ? {
               address_info: {
+                address_type: ADDRESS_TYPE.ORGANIZATION,
                 street_address: completeData.streetAddress,
                 address_line_2: completeData.addressLine2 || '',
                 city: completeData.city,

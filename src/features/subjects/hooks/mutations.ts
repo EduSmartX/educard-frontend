@@ -100,7 +100,14 @@ export function useDeleteSubject(options?: MutationOptions) {
   return useMutation({
     mutationFn: deleteSubject,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subjects'] });
+      // Only invalidate the list queries, not individual subject queries
+      queryClient.invalidateQueries({
+        queryKey: ['subjects'],
+        exact: true,
+      });
+      toast.success('Subject Deleted', {
+        description: 'The subject has been deleted successfully.',
+      });
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
@@ -125,7 +132,15 @@ export function useReactivateSubject(options?: MutationOptions) {
   return useMutation({
     mutationFn: reactivateSubject,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subjects'] });
+      // Only invalidate the list queries, not individual subject queries
+      // The navigation will handle refreshing the detail view
+      queryClient.invalidateQueries({
+        queryKey: ['subjects'],
+        exact: true,
+      });
+      toast.success('Subject Reactivated', {
+        description: 'The subject has been reactivated successfully.',
+      });
       options?.onSuccess?.();
     },
     onError: (error: Error) => {

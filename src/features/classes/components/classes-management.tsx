@@ -68,7 +68,9 @@ export function ClassesManagement() {
 
   // Navigation handlers
   const handleView = (classItem: Class) => {
-    navigate(ROUTES.CLASSES_VIEW.replace(':id', classItem.public_id));
+    const path = ROUTES.CLASSES_VIEW.replace(':id', classItem.public_id);
+    // Add query param if viewing deleted class
+    navigate(showDeleted ? `${path}?deleted=true` : path);
   };
 
   const handleEdit = (classItem: Class) => {

@@ -6,9 +6,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Edit, X, Plus, Eye } from 'lucide-react';
+import { Edit, X, Plus, Eye, Trash2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
-import { PageHeader, DeleteConfirmationDialog } from '@/components/common';
+import {
+  PageHeader,
+  DeleteConfirmationDialog,
+  ReactivateConfirmationDialog,
+} from '@/components/common';
 import { FormActions } from '@/components/form/form-actions';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -28,7 +32,12 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useCreateClass, useUpdateClass, useDeleteClass } from '../hooks/mutations';
+import {
+  useCreateClass,
+  useUpdateClass,
+  useDeleteClass,
+  useReactivateClass,
+} from '../hooks/mutations';
 import { useClass } from '../hooks/use-classes';
 import { useTeachers } from '@/features/teachers/hooks/use-teachers';
 import { useCoreClasses } from '@/features/core/hooks/use-core-classes';
@@ -42,6 +51,10 @@ export default function ClassFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
+
+  // Check if viewing deleted class (from query param)
+  const searchParams = new URLSearchParams(location.search);
+  const isViewingDeleted = searchParams.get('deleted') === 'true';
 
   // Determine mode based on URL path
   const getMode = (): 'create' | 'edit' | 'view' => {
@@ -69,9 +82,10 @@ export default function ClassFormPage() {
 
   // Delete dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showReactivateDialog, setShowReactivateDialog] = useState(false);
 
-  // Fetch class data if editing/viewing
-  const { data: classItem, isLoading: _isLoading, error: _error } = useClass(id);
+  // Fetch class data if editing/viewing (pass isDeleted flag)
+  const { data: classItem, isLoading: _isLoading, error: _error } = useClass(id, isViewingDeleted);
 
   // Fetch core classes for dropdown
   const { data: coreClasses } = useCoreClasses();
@@ -165,6 +179,22 @@ export default function ClassFormPage() {
     },
   });
 
+  const reactivateMutation = useReactivateClass({
+    onSuccess: () => {
+      toast.success('Class reactivated successfully');
+      // Navigate to the view page without the deleted flag to prevent 404 on refetch
+      if (id) {
+        // Use replace: true to replace the history entry so back button works correctly
+        navigate(ROUTES.CLASSES_VIEW.replace(':id', id), { replace: true });
+      } else {
+        navigate(ROUTES.CLASSES);
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to reactivate class: ${error.message}`);
+    },
+  });
+
   // Delete handlers
   const handleDelete = () => {
     setShowDeleteDialog(true);
@@ -174,6 +204,18 @@ export default function ClassFormPage() {
     setShowDeleteDialog(false);
     if (classItem) {
       deleteMutation.mutate(classItem.public_id);
+    }
+  };
+
+  // Reactivate handlers
+  const handleReactivateClick = () => {
+    setShowReactivateDialog(true);
+  };
+
+  const confirmReactivate = () => {
+    setShowReactivateDialog(false);
+    if (classItem) {
+      reactivateMutation.mutate(classItem.public_id);
     }
   };
 
@@ -249,6 +291,32 @@ export default function ClassFormPage() {
     }
 
     if (mode === 'view') {
+      // If viewing deleted class, show Reactivate button instead of Edit
+      if (isViewingDeleted) {
+        return {
+          title: 'View Deleted Class',
+          description: 'View deleted class information',
+          icon: Eye,
+          actions: [
+            {
+              label: 'Close',
+              onClick: handleBackToList,
+              variant: 'outline' as const,
+              icon: X,
+              className: 'border-2 border-gray-400 text-gray-700 hover:bg-gray-100',
+            },
+            {
+              label: 'Reactivate',
+              onClick: handleReactivateClick,
+              variant: 'default' as const,
+              icon: RefreshCw,
+              className: 'bg-green-600 hover:bg-green-700',
+            },
+          ],
+        };
+      }
+
+      // Normal view mode (active class)
       return {
         title: 'View Class Details',
         description: 'View class information and details',
@@ -260,6 +328,12 @@ export default function ClassFormPage() {
             variant: 'outline' as const,
             icon: X,
             className: 'border-2 border-gray-400 text-gray-700 hover:bg-gray-100',
+          },
+          {
+            label: 'Delete',
+            onClick: handleDelete,
+            variant: 'destructive' as const,
+            icon: Trash2,
           },
           {
             label: 'Edit',
@@ -462,8 +536,12 @@ export default function ClassFormPage() {
                 mode={mode}
                 isSubmitting={isPending}
                 onCancel={() => navigate(ROUTES.CLASSES)}
-                onDelete={mode === 'edit' || mode === 'view' ? handleDelete : undefined}
-                showDelete={mode === 'edit' || mode === 'view'}
+                onDelete={
+                  mode === 'edit' || (mode === 'view' && !isViewingDeleted)
+                    ? handleDelete
+                    : undefined
+                }
+                showDelete={mode === 'edit' || (mode === 'view' && !isViewingDeleted)}
                 submitLabel={mode === 'edit' ? 'Update Class' : 'Create Class'}
               />
             </form>
@@ -482,6 +560,18 @@ export default function ClassFormPage() {
         }
         isSoftDelete={true}
         isDeleting={deleteMutation.isPending}
+      />
+
+      {/* Reactivate Confirmation Dialog */}
+      <ReactivateConfirmationDialog
+        open={showReactivateDialog}
+        onOpenChange={setShowReactivateDialog}
+        onConfirm={confirmReactivate}
+        title="Reactivate Class"
+        itemName={
+          classItem ? `${classItem.class_master?.name || 'Class'} - ${classItem.name}` : undefined
+        }
+        isReactivating={reactivateMutation.isPending}
       />
 
       {/* Deleted Duplicate Dialog */}

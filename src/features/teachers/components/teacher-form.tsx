@@ -16,6 +16,7 @@ import { TextInputField, DateInputField, GenderField, BloodGroupField } from '@/
 import { AddressForm } from '@/components/forms/address-form';
 import { OrganizationRoleField } from '@/components/forms/organization-role-field';
 import { SupervisorField } from '@/components/forms/supervisor-field';
+import { ADDRESS_TYPE } from '@/constants/address-type';
 import { useCreateTeacher, useUpdateTeacher, useReactivateTeacher } from '../hooks/mutations';
 import {
   teacherFormSchema,
@@ -36,6 +37,31 @@ import { FormMetadata } from '@/components/form/form-metadata';
 import { DeleteConfirmationDialog, DeletedDuplicateDialog } from '@/components/common';
 import { useDeletedDuplicateHandler } from '@/hooks/use-deleted-duplicate-handler';
 import type { CreateTeacherPayload } from '../types';
+
+/**
+ * Scroll to the first field with an error
+ * Helps users quickly identify validation issues
+ */
+function scrollToFirstError() {
+  // Small delay to ensure DOM is updated with error messages
+  setTimeout(() => {
+    // Find the first element with an error message
+    const firstError = document.querySelector('[data-error="true"], [aria-invalid="true"]');
+
+    if (firstError) {
+      firstError.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+
+      // Focus on the input if it's focusable
+      const input = firstError.querySelector('input, textarea, select');
+      if (input instanceof HTMLElement) {
+        input.focus();
+      }
+    }
+  }, 100);
+}
 
 interface TeacherFormProps {
   mode: 'create' | 'edit' | 'view';
@@ -85,6 +111,7 @@ export function TeacherForm({
       date_of_birth: undefined,
       joining_date: undefined,
       subjects: [],
+      address_type: ADDRESS_TYPE.USER_CURRENT,
       street_address: '',
       city: '',
       state: '',
@@ -143,6 +170,12 @@ export function TeacherForm({
       } as const;
 
       const result = applyFieldErrors(error, form.setError, fieldMap);
+
+      // Scroll to first error field if there are field errors
+      if (result.hasFieldErrors) {
+        scrollToFirstError();
+      }
+
       if (!result.hasFieldErrors) {
         toast.error('Failed to create teacher. Please try again.');
       } else if (
@@ -184,6 +217,12 @@ export function TeacherForm({
       } as const;
 
       const result = applyFieldErrors(error, form.setError, fieldMap);
+
+      // Scroll to first error field if there are field errors
+      if (result.hasFieldErrors) {
+        scrollToFirstError();
+      }
+
       if (!result.hasFieldErrors) {
         toast.error('Failed to update teacher. Please try again.');
       } else if (
@@ -426,6 +465,12 @@ export function TeacherForm({
                   label="Date of Joining"
                   disabled={isViewMode}
                 />
+                <DateInputField
+                  control={form.control}
+                  name="admission_date"
+                  label="Admission Date"
+                  disabled={isViewMode}
+                />
               </CardContent>
             </Card>
           )}
@@ -480,6 +525,7 @@ export function TeacherForm({
                     form={form}
                     disabled={isViewMode}
                     fieldNames={{
+                      addressType: 'address_type',
                       streetAddress: 'street_address',
                       city: 'city',
                       state: 'state',

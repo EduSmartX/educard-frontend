@@ -1,138 +1,126 @@
-/**
- * Student Mutations
- */
-
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { getErrorMessage, getFieldErrors } from '@/lib/utils/error-handler';
-import type { CreateStudentPayload, UpdateStudentPayload, BulkUploadResponse } from '../types';
+import { useMutation, useQueryClient, type UseMutationOptions } from '@tanstack/react-query';
+import type {
+  CreateStudentPayload,
+  UpdateStudentPayload,
+  BulkUploadResult,
+  Student,
+} from '../types';
 import {
   createStudent,
   updateStudent,
   deleteStudent,
+  reactivateStudent,
   bulkUploadStudents,
 } from '../api/students-api';
 
-export interface StudentFieldErrors {
-  student_id?: string;
-  first_name?: string;
-  last_name?: string;
-  email?: string;
-  phone?: string;
-  date_of_birth?: string;
-  parent_name?: string;
-  parent_phone?: string;
-  parent_email?: string;
-  class_id?: string;
-  [key: string]: string | undefined;
-}
-
-export interface MutationOptions {
-  onSuccess?: () => void;
-  onError?: (error: Error, fieldErrors?: StudentFieldErrors) => void;
-}
-
-export function useCreateStudent(options?: MutationOptions) {
+export function useCreateStudent(
+  options?: Omit<
+    UseMutationOptions<Student, Error, { classId: string; payload: CreateStudentPayload }>,
+    'mutationFn'
+  >
+) {
   const queryClient = useQueryClient();
+  const { onSuccess, ...restOptions } = options || {};
 
   return useMutation({
-    mutationFn: (payload: CreateStudentPayload) => createStudent(payload),
-    onSuccess: () => {
+    ...restOptions,
+    mutationFn: ({ classId, payload }: { classId: string; payload: CreateStudentPayload }) =>
+      createStudent(classId, payload),
+    onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
-      toast.success('Student Created', {
-        description: 'The student has been created successfully.',
-      });
-      options?.onSuccess?.();
-    },
-    onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, 'Failed to create student. Please try again.');
-      const fieldErrors = getFieldErrors(error) as StudentFieldErrors | undefined;
-      toast.error('Error Creating Student', {
-        description: errorMessage,
-        duration: 5000,
-      });
-      options?.onError?.(error, fieldErrors);
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      // Call custom onSuccess if provided
+      onSuccess?.(...args);
     },
   });
 }
 
-export function useUpdateStudent(options?: MutationOptions) {
+export function useUpdateStudent(
+  options?: Omit<
+    UseMutationOptions<
+      Student,
+      Error,
+      { classId: string; publicId: string; payload: UpdateStudentPayload }
+    >,
+    'mutationFn'
+  >
+) {
   const queryClient = useQueryClient();
+  const { onSuccess, ...restOptions } = options || {};
 
   return useMutation({
-    mutationFn: ({ publicId, payload }: { publicId: string; payload: UpdateStudentPayload }) =>
-      updateStudent(publicId, payload),
-    onSuccess: () => {
+    ...restOptions,
+    mutationFn: ({
+      classId,
+      publicId,
+      payload,
+    }: {
+      classId: string;
+      publicId: string;
+      payload: UpdateStudentPayload;
+    }) => updateStudent(classId, publicId, payload),
+    onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
-      toast.success('Student Updated', {
-        description: 'The student has been updated successfully.',
-      });
-      options?.onSuccess?.();
-    },
-    onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, 'Failed to update student. Please try again.');
-      const fieldErrors = getFieldErrors(error) as StudentFieldErrors | undefined;
-      toast.error('Error Updating Student', {
-        description: errorMessage,
-        duration: 5000,
-      });
-      options?.onError?.(error, fieldErrors);
+      queryClient.invalidateQueries({ queryKey: ['student'] });
+      // Call custom onSuccess if provided
+      onSuccess?.(...args);
     },
   });
 }
 
-export function useDeleteStudent(options?: MutationOptions) {
+export function useDeleteStudent(
+  options?: Omit<
+    UseMutationOptions<void, Error, { classId: string; publicId: string }>,
+    'mutationFn'
+  >
+) {
   const queryClient = useQueryClient();
+  const { onSuccess, ...restOptions } = options || {};
 
   return useMutation({
-    mutationFn: (publicId: string) => deleteStudent(publicId),
-    onSuccess: () => {
+    ...restOptions,
+    mutationFn: ({ classId, publicId }: { classId: string; publicId: string }) =>
+      deleteStudent(classId, publicId),
+    onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
-      toast.success('Student Deleted', {
-        description: 'The student has been deleted successfully.',
-      });
-      options?.onSuccess?.();
-    },
-    onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, 'Failed to delete student. Please try again.');
-      toast.error('Error Deleting Student', {
-        description: errorMessage,
-        duration: 5000,
-      });
-      options?.onError?.(error, {});
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      // Call custom onSuccess if provided
+      onSuccess?.(...args);
     },
   });
 }
 
-export function useBulkUploadStudents(options?: MutationOptions) {
+export function useReactivateStudent(
+  options?: Omit<
+    UseMutationOptions<Student, Error, { classId: string; publicId: string }>,
+    'mutationFn'
+  >
+) {
+  const queryClient = useQueryClient();
+  const { onSuccess, ...restOptions } = options || {};
+
+  return useMutation({
+    ...restOptions,
+    mutationFn: ({ classId, publicId }: { classId: string; publicId: string }) =>
+      reactivateStudent(classId, publicId),
+    onSuccess: (...args) => {
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      // Call custom onSuccess if provided
+      onSuccess?.(...args);
+    },
+  });
+}
+
+export function useBulkUploadStudents() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (file: File) => bulkUploadStudents(file),
-    onSuccess: (response: BulkUploadResponse) => {
+    mutationFn: ({ file }: { file: File }) => bulkUploadStudents(file),
+    onSuccess: (response: BulkUploadResult) => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
-      if (response.failed_count > 0) {
-        toast.warning('Upload Completed with Errors', {
-          description: `${response.created_count} students created, ${response.failed_count} failed.`,
-          duration: 6000,
-        });
-      } else {
-        toast.success('Bulk Upload Successful', {
-          description: `${response.created_count} students have been created successfully.`,
-        });
-      }
-      options?.onSuccess?.();
-    },
-    onError: (error: Error) => {
-      const errorMessage = getErrorMessage(
-        error,
-        'Failed to upload students. Please check the file and try again.'
-      );
-      toast.error('Bulk Upload Failed', {
-        description: errorMessage,
-        duration: 5000,
-      });
-      options?.onError?.(error, {});
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      return response;
     },
   });
 }

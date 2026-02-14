@@ -1,4 +1,12 @@
 import { z } from 'zod';
+import { ADDRESS_TYPE } from '@/constants/address-type';
+
+// Valid address type values
+const addressTypeEnum = [
+  ADDRESS_TYPE.USER_CURRENT,
+  ADDRESS_TYPE.USER_PERMANENT,
+  ADDRESS_TYPE.ORGANIZATION,
+] as const;
 
 /**
  * Creates a Zod schema for address validation
@@ -6,6 +14,7 @@ import { z } from 'zod';
  * @returns Object with address field schemas
  */
 export const createAddressSchema = (required: boolean) => ({
+  addressType: z.enum(addressTypeEnum).default(ADDRESS_TYPE.USER_CURRENT),
   streetAddress: required ? z.string().min(1, 'Street address is required') : z.string().optional(),
   addressLine2: z.string().optional(),
   city: required ? z.string().min(1, 'City is required') : z.string().optional(),
@@ -18,6 +27,7 @@ export const createAddressSchema = (required: boolean) => ({
  * Type definition for address form data
  */
 export interface AddressFormData {
+  addressType?: string;
   streetAddress?: string;
   addressLine2?: string;
   city?: string;
@@ -38,12 +48,14 @@ export const clearAddressFields = (
 ) => {
   const getFieldName = (field: string) => (fieldPrefix ? `${fieldPrefix}.${field}` : field);
 
+  form.setValue(getFieldName('addressType'), ADDRESS_TYPE.USER_CURRENT);
   form.setValue(getFieldName('streetAddress'), '');
   form.setValue(getFieldName('addressLine2'), '');
   form.setValue(getFieldName('city'), '');
   form.setValue(getFieldName('state'), '');
   form.setValue(getFieldName('zipCode'), '');
   form.clearErrors([
+    getFieldName('addressType'),
     getFieldName('streetAddress'),
     getFieldName('city'),
     getFieldName('state'),

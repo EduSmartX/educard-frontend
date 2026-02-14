@@ -65,7 +65,12 @@ export function useReactivateClass(options?: MutationOptions) {
   return useMutation({
     mutationFn: (publicId: string) => reactivateClass(publicId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      // Only invalidate the list queries, not individual class queries
+      // The navigation will handle refreshing the detail view
+      queryClient.invalidateQueries({
+        queryKey: ['classes'],
+        exact: true, // Only invalidate the exact list query, not detail queries
+      });
       toast.success('Class Reactivated', {
         description: 'The class has been reactivated successfully.',
       });

@@ -20,7 +20,13 @@ const BASE_URL = '/classes/admin/';
 export async function fetchClasses(
   params: FetchClassesParams = {}
 ): Promise<PaginatedResponse<Class>> {
-  const response = await api.get<ClassesResponse>(BASE_URL, { params });
+  // Add is_deleted=false by default if not explicitly provided
+  const queryParams = {
+    is_deleted: false,
+    ...params,
+  };
+
+  const response = await api.get<ClassesResponse>(BASE_URL, { params: queryParams });
 
   // Transform the response to match our PaginatedResponse structure
   return {
@@ -29,8 +35,9 @@ export async function fetchClasses(
   };
 }
 
-export async function fetchClass(publicId: string): Promise<Class> {
-  const response = await api.get<ClassResponse>(`${BASE_URL}${publicId}/`);
+export async function fetchClass(publicId: string, isDeleted = false): Promise<Class> {
+  const params = isDeleted ? { is_deleted: 'true' } : {};
+  const response = await api.get<ClassResponse>(`${BASE_URL}${publicId}/`, { params });
   return response.data.data;
 }
 

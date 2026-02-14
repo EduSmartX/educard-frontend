@@ -3,6 +3,8 @@
  * TypeScript interfaces for teacher module
  */
 
+import type { AddressTypeValue } from '@/constants/address-type';
+
 /**
  * Teacher user information
  */
@@ -23,6 +25,7 @@ export interface TeacherUser {
     public_id: string;
   };
   address?: {
+    address_type?: AddressTypeValue;
     street_address?: string;
     address_line_2?: string;
     city?: string;
@@ -109,6 +112,7 @@ export interface CreateTeacherPayload {
     date_of_birth?: string;
     supervisor_email?: string;
     address?: {
+      address_type?: AddressTypeValue;
       street_address?: string;
       address_line_2?: string;
       city?: string;
@@ -143,6 +147,7 @@ export interface UpdateTeacherPayload {
     blood_group?: string;
     date_of_birth?: string;
     address?: {
+      address_type?: AddressTypeValue;
       street_address?: string;
       address_line_2?: string;
       city?: string;
