@@ -70,7 +70,6 @@ export function AddressForm({
     return fieldPrefix ? `${fieldPrefix}.${fieldName}` : fieldName;
   };
 
-  const inputHeight = compact ? 'h-12' : 'h-14';
   const labelSize = compact ? 'text-xs' : 'text-sm';
 
   // Handle "Use My Location" button click
@@ -145,10 +144,7 @@ export function AddressForm({
       {/* Address Type Dropdown */}
       {showAddressType && (
         <div className="space-y-2">
-          <Label
-            htmlFor={getFieldName('addressType')}
-            className={`${labelSize} font-semibold text-gray-700`}
-          >
+          <Label htmlFor={getFieldName('addressType')} className={labelSize}>
             Address Type
             {required && <span className="text-red-500 ml-1">*</span>}
           </Label>
@@ -157,9 +153,7 @@ export function AddressForm({
             onValueChange={(value) => form.setValue(getFieldName('addressType'), value)}
             disabled={disabled}
           >
-            <SelectTrigger
-              className={`${inputHeight} text-base border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:ring-4 focus:ring-purple-50 transition-all`}
-            >
+            <SelectTrigger className="bg-gray-50 focus:bg-white">
               <SelectValue placeholder="Select address type" />
             </SelectTrigger>
             <SelectContent>
@@ -182,7 +176,7 @@ export function AddressForm({
       <div className="space-y-2">
         <Label
           htmlFor={getFieldName('streetAddress')}
-          className={`${labelSize} font-semibold text-gray-700 flex items-center gap-2`}
+          className={`${labelSize} flex items-center gap-2`}
         >
           Address Line 1{required && <span className="text-red-500">*</span>}
         </Label>
@@ -190,7 +184,7 @@ export function AddressForm({
           id={getFieldName('streetAddress')}
           placeholder="123 Main Street"
           disabled={disabled}
-          className={`${inputHeight} text-base border-2 border-gray-200 rounded-xl focus:border-green-400 focus:ring-4 focus:ring-green-50 transition-all`}
+          className="bg-gray-50 focus:bg-white"
           error={form.formState.errors[getFieldName('streetAddress')]?.message as string}
           {...form.register(getFieldName('streetAddress'))}
         />
@@ -198,17 +192,14 @@ export function AddressForm({
 
       {/* Address Line 2 */}
       <div className="space-y-2">
-        <Label
-          htmlFor={getFieldName('addressLine2')}
-          className={`${labelSize} font-semibold text-gray-700`}
-        >
-          <span className="text-xs text-gray-500 font-normal">Address Line 2 (Optional)</span>
+        <Label htmlFor={getFieldName('addressLine2')} className={labelSize}>
+          <span className="text-sm text-gray-500 font-normal">Address Line 2 (Optional)</span>
         </Label>
         <Input
           id={getFieldName('addressLine2')}
           placeholder="Suite, Building, Floor"
           disabled={disabled}
-          className={`${inputHeight} text-base border-2 border-gray-200 rounded-xl focus:border-gray-400 focus:ring-4 focus:ring-gray-50 transition-all`}
+          className="bg-gray-50 focus:bg-white"
           {...form.register(getFieldName('addressLine2'))}
         />
       </div>
@@ -216,10 +207,7 @@ export function AddressForm({
       {/* City & State */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label
-            htmlFor={getFieldName('city')}
-            className={`${labelSize} font-semibold text-gray-700`}
-          >
+          <Label htmlFor={getFieldName('city')} className={labelSize}>
             City
             {required && <span className="text-red-500 ml-1">*</span>}
           </Label>
@@ -227,17 +215,14 @@ export function AddressForm({
             id={getFieldName('city')}
             placeholder="City"
             disabled={disabled}
-            className={`${inputHeight} text-base border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:ring-4 focus:ring-teal-50 transition-all`}
+            className="bg-gray-50 focus:bg-white"
             error={form.formState.errors[getFieldName('city')]?.message as string}
             {...form.register(getFieldName('city'))}
           />
         </div>
 
         <div className="space-y-2">
-          <Label
-            htmlFor={getFieldName('state')}
-            className={`${labelSize} font-semibold text-gray-700`}
-          >
+          <Label htmlFor={getFieldName('state')} className={labelSize}>
             State
             {required && <span className="text-red-500 ml-1">*</span>}
           </Label>
@@ -245,7 +230,7 @@ export function AddressForm({
             id={getFieldName('state')}
             placeholder="State"
             disabled={disabled}
-            className={`${inputHeight} text-base border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:ring-4 focus:ring-teal-50 transition-all`}
+            className="bg-gray-50 focus:bg-white"
             error={form.formState.errors[getFieldName('state')]?.message as string}
             {...form.register(getFieldName('state'))}
           />
@@ -255,10 +240,7 @@ export function AddressForm({
       {/* ZIP Code & Country */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label
-            htmlFor={getFieldName('zipCode')}
-            className={`${labelSize} font-semibold text-gray-700`}
-          >
+          <Label htmlFor={getFieldName('zipCode')} className={labelSize}>
             ZIP Code
             {required && <span className="text-red-500 ml-1">*</span>}
           </Label>
@@ -266,24 +248,21 @@ export function AddressForm({
             id={getFieldName('zipCode')}
             placeholder="12345"
             disabled={disabled}
-            className={`${inputHeight} text-base border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:ring-4 focus:ring-teal-50 transition-all`}
+            className="bg-gray-50 focus:bg-white"
             error={form.formState.errors[getFieldName('zipCode')]?.message as string}
             {...form.register(getFieldName('zipCode'))}
           />
         </div>
 
         <div className="space-y-2">
-          <Label
-            htmlFor={getFieldName('country')}
-            className={`${labelSize} font-semibold text-gray-700`}
-          >
+          <Label htmlFor={getFieldName('country')} className={labelSize}>
             Country
           </Label>
           <Input
             id={getFieldName('country')}
             defaultValue="India"
             disabled={disabled}
-            className={`${inputHeight} text-base border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:ring-4 focus:ring-teal-50 transition-all`}
+            className="bg-gray-50 focus:bg-white"
             {...form.register(getFieldName('country'))}
           />
         </div>

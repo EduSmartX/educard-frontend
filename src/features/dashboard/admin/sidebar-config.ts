@@ -118,7 +118,7 @@ export const adminSidebarConfig: SidebarSection[] = [
         id: 'settings',
         label: 'Settings',
         icon: Settings,
-        path: ROUTES.SETTINGS,
+        path: ROUTES.PROFILE,
       },
     ],
   },

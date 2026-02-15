@@ -38,6 +38,13 @@ const ClassesPage = lazy(() =>
 );
 const ClassFormPage = lazy(() => import('./features/classes/pages/class-form-page'));
 
+// Organization pages
+const OrganizationSettingsPage = lazy(() =>
+  import('./features/organizations/pages/organization-settings-page').then((m) => ({
+    default: m.default,
+  }))
+);
+
 // Subjects pages
 const SubjectsPage = lazy(() =>
   import('./features/subjects/pages').then((m) => ({ default: m.SubjectsPage }))
@@ -58,6 +65,9 @@ const HolidayCalendarPage = lazy(() => import('./pages/holidays-page'));
 
 // Exceptional Work Policy
 const ExceptionalWorkPage = lazy(() => import('./pages/exceptional-work-page'));
+
+// Profile
+const ProfilePage = lazy(() => import('./features/profile/pages/profile-page'));
 
 function App() {
   return (
@@ -106,11 +116,17 @@ function App() {
             {/* Organization Preferences */}
             <Route path={ROUTES.PREFERENCES} element={<PreferencesPage />} />
 
+            {/* Organization Settings */}
+            <Route path={ROUTES.ORGANIZATION} element={<OrganizationSettingsPage />} />
+
             {/* Holiday Calendar */}
             <Route path={ROUTES.HOLIDAYS} element={<HolidayCalendarPage />} />
 
             {/* Exceptional Work Policy */}
             <Route path={ROUTES.EXCEPTIONAL_WORK} element={<ExceptionalWorkPage />} />
+
+            {/* Profile */}
+            <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
 
             {/* Leave Management (with nested layout) */}
             <Route element={<LeaveLayout />}>

@@ -12,6 +12,17 @@ export function useStorageListener() {
         // Redirect to login page
         window.location.href = ROUTES.AUTH.LOGIN;
       }
+
+      // Listen for explicit logout events (e.g., password change)
+      if (event.key === 'logout-event') {
+        // Clear all storage
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('organization');
+        // Redirect to login
+        window.location.href = ROUTES.AUTH.LOGIN;
+      }
     };
 
     // Listen for storage events from other tabs

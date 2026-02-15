@@ -154,29 +154,40 @@ export function SelectField<T extends FieldValues>({
     <FormField
       control={control}
       name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>
-            {label} {required && <span className="text-red-500">*</span>}
-          </FormLabel>
-          <Select onValueChange={field.onChange} value={field.value as string} disabled={disabled}>
-            <FormControl>
-              <SelectTrigger className="bg-gray-50 border-gray-300 focus:bg-white disabled:cursor-default disabled:opacity-100 transition-colors">
-                <SelectValue placeholder={placeholder} />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent className="max-h-[300px] overflow-y-auto">
-              {options.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {description && <FormDescription>{description}</FormDescription>}
-          <FormMessage />
-        </FormItem>
-      )}
+      render={({ field }) => {
+        // Get the current value, convert empty string to undefined for placeholder
+        const currentValue = field.value as string;
+        const selectValue = currentValue && currentValue.trim() !== '' ? currentValue : undefined;
+
+        return (
+          <FormItem>
+            <FormLabel>
+              {label} {required && <span className="text-red-500">*</span>}
+            </FormLabel>
+            <Select
+              key={`${name}-${selectValue || 'empty'}`}
+              onValueChange={field.onChange}
+              value={selectValue}
+              disabled={disabled}
+            >
+              <FormControl>
+                <SelectTrigger className="bg-gray-50 border-gray-300 focus:bg-white disabled:cursor-default disabled:opacity-100 transition-colors">
+                  <SelectValue placeholder={placeholder} />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent className="max-h-[300px] overflow-y-auto">
+                {options.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {description && <FormDescription>{description}</FormDescription>}
+            <FormMessage />
+          </FormItem>
+        );
+      }}
     />
   );
 }
@@ -237,7 +248,7 @@ export function DateInputField<T extends FieldValues>({
       control={control}
       name={name}
       render={({ field, fieldState }) => (
-        <FormItem>
+        <FormItem className="w-full">
           <FormLabel>
             {label} {required && <span className="text-red-500">*</span>}
           </FormLabel>

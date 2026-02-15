@@ -200,7 +200,6 @@ export const ROUTES = {
   ALLOCATIONS: '/allocations',
   CALENDAR: '/calendar',
   ANALYTICS: '/analytics',
-  SETTINGS: '/settings',
   ATTENDANCE: {
     STUDENTS: '/attendance/students',
     STAFF: '/attendance/staff',

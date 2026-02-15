@@ -410,7 +410,9 @@ export function ExceptionDialog({
                               >
                                 {isSelected && <div className="h-2.5 w-2.5 rounded-sm bg-white" />}
                               </div>
-                              <span className="flex-1 truncate">{cls.name}</span>
+                              <span className="flex-1 truncate">
+                                {cls.class_master?.name}-{cls.name}
+                              </span>
                             </button>
                           );
                         })}

@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { DashboardHeader } from './dashboard-header';
 import { DashboardLayout } from './dashboard-layout';
 import { useAuth } from '../../hooks/use-auth';
+import { useStorageListener } from '@/hooks/use-storage-listener';
 import { getSidebarConfig } from '@/lib/utils/sidebar-utils';
 
 /**
@@ -10,6 +11,9 @@ import { getSidebarConfig } from '@/lib/utils/sidebar-utils';
  */
 export function ProtectedLayout() {
   const { user, organization } = useAuth();
+
+  // Listen for cross-tab logout events
+  useStorageListener();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-emerald-50/30 to-gray-50">
