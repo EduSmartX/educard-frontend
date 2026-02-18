@@ -1,6 +1,5 @@
 /**
  * Leave Allocation Feature Banner Component
- * Displays information about automatic leave balance creation
  */
 
 import { CheckCircle2 } from 'lucide-react';

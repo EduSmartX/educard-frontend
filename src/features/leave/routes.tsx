@@ -1,33 +1,39 @@
 /**
- * Leave Allocation Routes Configuration
+ * Leave Feature Routes Configuration
  * Add these routes to your App.tsx or router configuration
  */
 
 // Import the pages
-import LeaveAllocationsListPage from '@/features/leave/pages/leave-allocations-list-page';
-import LeaveAllocationCreatePage from '@/features/leave/pages/leave-allocation-create-page';
-import LeaveAllocationEditPage from '@/features/leave/pages/leave-allocation-edit-page';
-import LeaveAllocationViewPage from '@/features/leave/pages/leave-allocation-view-page';
+import LeaveAllocationsListPage from '@/features/leave/pages/leave-allocations-page';
+import LeaveDashboardPage from '@/features/leave/pages/leave-dashboard-page';
+import LeaveRequestFormPage from '@/features/leave/pages/leave-request-form-page';
 
 // Add these routes to your router configuration
 // Example using React Router v6/v7:
 
-export const leaveAllocationRoutes = [
+export const leaveRoutes = [
+  // Leave Allocations (Admin)
   {
     path: '/admin/leave/allocations',
     element: <LeaveAllocationsListPage />,
   },
+
+  // Leave Management (All Users)
   {
-    path: '/admin/leave/allocations/create',
-    element: <LeaveAllocationCreatePage />,
+    path: '/leave/dashboard',
+    element: <LeaveDashboardPage />,
   },
   {
-    path: '/admin/leave/allocations/:id',
-    element: <LeaveAllocationViewPage />,
+    path: '/leave/requests/new',
+    element: <LeaveRequestFormPage />,
   },
   {
-    path: '/admin/leave/allocations/:id/edit',
-    element: <LeaveAllocationEditPage />,
+    path: '/leave/requests/:id',
+    element: <LeaveRequestFormPage />,
+  },
+  {
+    path: '/leave/requests/:id/edit',
+    element: <LeaveRequestFormPage />,
   },
 ];
 
@@ -36,6 +42,14 @@ export const ROUTES = {
   ADMIN: {
     LEAVE: {
       ALLOCATIONS: '/admin/leave/allocations',
+    },
+  },
+  LEAVE: {
+    DASHBOARD: '/leave/dashboard',
+    REQUESTS: {
+      NEW: '/leave/requests/new',
+      VIEW: (id: string) => `/leave/requests/${id}`,
+      EDIT: (id: string) => `/leave/requests/${id}/edit`,
     },
   },
 };

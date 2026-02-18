@@ -56,6 +56,12 @@ const LeaveLayout = lazy(() =>
   import('./features/leave/layouts/leave-layout').then((m) => ({ default: m.LeaveLayout }))
 );
 const LeaveAllocationsPage = lazy(() => import('./features/leave/pages/leave-allocations-page'));
+const LeaveDashboardPage = lazy(() => import('./features/leave/pages/leave-dashboard-page'));
+const LeaveRequestFormPage = lazy(() => import('./features/leave/pages/leave-request-form-page'));
+const LeaveRequestReviewsPage = lazy(
+  () => import('./features/leave/pages/leave-request-reviews-page')
+);
+const ManageLeaveBalances = lazy(() => import('./features/leave/components/manage-leave-balances'));
 
 // Preferences
 const PreferencesPage = lazy(() => import('./features/preferences/pages/preferences-page'));
@@ -141,6 +147,15 @@ function App() {
                 element={<LeaveAllocationsPage />}
               />
             </Route>
+
+            {/* Leave Dashboard & Requests (outside nested layout) */}
+            <Route path={ROUTES.LEAVE.DASHBOARD} element={<LeaveDashboardPage />} />
+            <Route path="/leave/dashboard/:userId" element={<LeaveDashboardPage />} />
+            <Route path={ROUTES.LEAVE.REVIEWS} element={<LeaveRequestReviewsPage />} />
+            <Route path={ROUTES.LEAVE.BALANCES} element={<ManageLeaveBalances />} />
+            <Route path="/leave/requests/new" element={<LeaveRequestFormPage />} />
+            <Route path="/leave/requests/:id" element={<LeaveRequestFormPage />} />
+            <Route path="/leave/requests/:id/edit" element={<LeaveRequestFormPage />} />
           </Route>
 
           {/* Default redirect */}

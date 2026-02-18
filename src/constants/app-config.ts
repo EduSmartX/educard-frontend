@@ -205,6 +205,7 @@ export const ROUTES = {
     STAFF: '/attendance/staff',
   },
   LEAVE: {
+    DASHBOARD: '/leave/dashboard',
     REQUESTS: '/leave/requests',
     REVIEWS: '/leave/reviews',
     BALANCES: '/leave/balances',

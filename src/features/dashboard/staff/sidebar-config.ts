@@ -8,6 +8,7 @@ import {
   FileText,
   Settings,
   MessageSquare,
+  Briefcase,
 } from 'lucide-react';
 import type { SidebarSection } from '@/components/layout/dashboard-sidebar';
 
@@ -55,6 +56,18 @@ export const staffSidebarConfig: SidebarSection[] = [
     title: 'LEAVE SYSTEM',
     items: [
       {
+        id: 'leave-dashboard',
+        label: 'Leave Dashboard',
+        icon: Briefcase,
+        path: '/leave/dashboard',
+      },
+      {
+        id: 'leave-reviews',
+        label: 'Leave Reviews',
+        icon: ClipboardCheck,
+        path: '/leave/reviews',
+      },
+      {
         id: 'my-leaves',
         label: 'My Leaves',
         icon: FileText,
@@ -64,7 +77,13 @@ export const staffSidebarConfig: SidebarSection[] = [
         id: 'leave-requests',
         label: 'Apply Leave',
         icon: Calendar,
-        path: '/dashboard/staff/leaves/apply',
+        path: '/leave/requests/new',
+      },
+      {
+        id: 'leave-balances',
+        label: 'Manage Leave Balances',
+        icon: CalendarDays,
+        path: '/leave/balances',
       },
     ],
   },

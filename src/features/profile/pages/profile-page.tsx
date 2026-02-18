@@ -6,6 +6,7 @@
 import { User, Lock, Mail, Phone, MapPin } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PageHeader } from '@/components/common';
 import { ProfileInformationForm } from '../components/profile-information-form';
 import { PasswordChangeForm } from '../components/password-change-form';
 import { EmailUpdateForm } from '../components/email-update-form';
@@ -14,13 +15,11 @@ import { AddressUpdateForm } from '../components/address-update-form';
 
 export default function ProfilePage() {
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
-        <p className="text-gray-600 mt-2">
-          Manage your personal information, security, and contact details
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Profile Settings"
+        description="Manage your personal information, security, and contact details"
+      />
 
       <Card>
         <Tabs defaultValue="profile" className="w-full">

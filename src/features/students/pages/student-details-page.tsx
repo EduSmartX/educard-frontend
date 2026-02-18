@@ -1,10 +1,13 @@
+import { PageHeader } from '@/components/common';
+
 export default function StudentDetailsPage() {
   return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold">Student Details</h1>
-        <p className="mt-4 text-muted-foreground">Coming soon...</p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Student Details"
+        description="View comprehensive student information and records"
+      />
+      <p className="text-muted-foreground">Coming soon...</p>
     </div>
   );
 }

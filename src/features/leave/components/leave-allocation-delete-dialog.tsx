@@ -26,7 +26,7 @@ export function LeaveAllocationDeleteDialog({
       onOpenChange={onOpenChange}
       onConfirm={onConfirm}
       title="Delete Leave Allocation Policy"
-      itemName={allocation?.display_name || allocation?.leave_type_name}
+      itemName={allocation?.name || allocation?.leave_type_name}
       isDeleting={isPending}
       deleteButtonText="Delete Policy"
     />

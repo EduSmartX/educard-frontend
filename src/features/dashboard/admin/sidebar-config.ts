@@ -6,13 +6,14 @@ import {
   GraduationCap,
   BookOpen,
   School,
-  FileText,
   CalendarCheck,
+  ClipboardCheck,
   CalendarDays,
   Settings,
   Building2,
   Sliders,
   AlertTriangle,
+  Briefcase,
 } from 'lucide-react';
 import type { SidebarSection } from '@/components/layout/dashboard-sidebar';
 import { ROUTES } from '@/constants/app-config';
@@ -73,11 +74,22 @@ export const adminSidebarConfig: SidebarSection[] = [
     title: 'LEAVE SYSTEM',
     items: [
       {
-        id: 'leave-requests',
-        label: 'Leave Requests',
-        icon: FileText,
-        path: ROUTES.LEAVE.REQUESTS,
-        badge: 3,
+        id: 'leave-dashboard',
+        label: 'Leave Dashboard',
+        icon: Briefcase,
+        path: ROUTES.LEAVE.DASHBOARD,
+      },
+      {
+        id: 'leave-reviews',
+        label: 'Leave Reviews',
+        icon: ClipboardCheck,
+        path: ROUTES.LEAVE.REVIEWS,
+      },
+      {
+        id: 'leave-balances',
+        label: 'Manage Leave Balances',
+        icon: CalendarDays,
+        path: ROUTES.LEAVE.BALANCES,
       },
       {
         id: 'leave-allocations',

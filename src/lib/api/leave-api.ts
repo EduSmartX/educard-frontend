@@ -80,21 +80,26 @@ export interface LeaveBalance {
   };
   leave_allocation: {
     public_id: string;
-    name: string;
+    leave_type_name: string;
+    leave_type_code: string;
     display_name: string;
-    leave_type: {
-      id: number;
-      name: string;
-      code: string;
-    };
+    total_days: number;
+    max_carry_forward_days: number;
+    effective_from: string | null;
+    effective_to: string | null;
   };
-  total_allocated: number;
+  leave_name: string;
+  total_allocated: string; // API returns as string
   used: number;
   pending: number;
   available: number;
-  carried_forward: number;
+  carried_forward: string; // API returns as string
   created_at: string;
   updated_at: string;
+  created_by_public_id?: string | null;
+  created_by_name?: string | null;
+  updated_by_public_id?: string | null;
+  updated_by_name?: string | null;
 }
 
 export interface LeaveRequest {

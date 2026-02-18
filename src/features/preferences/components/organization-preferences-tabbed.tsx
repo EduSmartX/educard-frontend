@@ -6,7 +6,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PageHeader } from '@/components/common';
 import { updatePreference, type OrganizationPreference } from '@/lib/api/preferences-api';
 import { useOrganizationPreferences } from '../hooks/use-preferences';
 import { AcademicYearSettingsForm } from './academic-year-settings-form';
@@ -293,12 +292,6 @@ export function OrganizationPreferencesTabbed() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <PageHeader
-        title="Organization Preferences"
-        description="Manage your organization's preferences, working day policies, and academic year settings"
-      />
-
       {/* Tabbed Interface */}
       <Tabs defaultValue="preferences" className="w-full">
         <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">

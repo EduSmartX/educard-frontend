@@ -70,7 +70,12 @@ export function ProfileInformationForm() {
   }, [profile, form]);
 
   const onSubmit = (values: ProfileInformationFormData) => {
-    updateMutation.mutate(values);
+    // Remove empty date_of_birth from payload
+    const payload = { ...values };
+    if (!payload.date_of_birth) {
+      delete payload.date_of_birth;
+    }
+    updateMutation.mutate(payload);
   };
 
   if (isLoading) {
@@ -82,7 +87,6 @@ export function ProfileInformationForm() {
       </Card>
     );
   }
-
   return (
     <Card>
       <CardContent className="pt-6">

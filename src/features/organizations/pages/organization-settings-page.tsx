@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { Building2, MapPin } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
+import { PageHeader } from '@/components/common';
 import { useAuth } from '@/hooks/use-auth';
 import { useOrganization } from '../hooks/queries';
 import { OrganizationInfoForm } from '../components/organization-info-form';
@@ -18,16 +19,12 @@ export default function OrganizationSettingsPage() {
   const { data: organization, isLoading } = useOrganization(orgFromStorage?.public_id);
 
   return (
-    <div className="container mx-auto max-w-5xl space-y-6 p-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Organization Settings</h1>
-        <p className="mt-2 text-gray-600">
-          Manage your organization information and address details
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Organization Settings"
+        description="Manage your organization information and address details"
+      />
 
-      {/* Tabs */}
       <Card className="overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 rounded-none border-b bg-gray-50">

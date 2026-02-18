@@ -179,6 +179,29 @@ export function formatDateForAPI(date: Date | string | null | undefined): string
 }
 
 /**
+ * Format a Date to YYYY-MM-DD using local date components (avoids timezone shifts)
+ */
+export function formatLocalDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = `${d.getMonth() + 1}`.padStart(2, '0');
+  const day = `${d.getDate()}`.padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/**
+ * Parse a YYYY-MM-DD string into a local Date object (returns undefined on invalid input)
+ */
+export function parseLocalDate(dateStr?: string | null): Date | undefined {
+  if (!dateStr) return undefined;
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return undefined;
+  const y = Number(parts[0]);
+  const m = Number(parts[1]) - 1;
+  const d = Number(parts[2]);
+  return new Date(y, m, d);
+}
+
+/**
  * Format datetime for API (ISO format)
  */
 export function formatDateTimeForAPI(date: Date | string | null | undefined): string {

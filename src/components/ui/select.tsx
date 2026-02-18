@@ -114,24 +114,43 @@ SelectLabel.displayName = SelectPrimitive.Label.displayName;
 const SelectItem = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
->(({ className, children, ...props }, ref) => (
-  <SelectPrimitive.Item
-    ref={ref}
-    className={cn(
-      'relative flex w-full cursor-pointer select-none items-center rounded-lg py-2.5 pl-8 pr-2 text-sm outline-none focus:bg-teal-50 focus:text-teal-900 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 transition-colors',
-      className
-    )}
-    {...props}
-  >
-    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-      <SelectPrimitive.ItemIndicator>
-        <Check className="h-4 w-4 text-teal-600" />
-      </SelectPrimitive.ItemIndicator>
-    </span>
+>(({ className, children, ...props }, ref) => {
+  // Defensive fix: Radix Select throws if a Select.Item has value === '' (empty string).
+  // Coerce empty-string values to a non-empty sentinel so the component doesn't crash at runtime.
+  // This keeps existing callers working while preventing the uncaught runtime error.
+  const safeProps = { ...props } as Record<string, unknown>;
+  if (typeof safeProps.value === 'string' && safeProps.value === '') {
+    // Use a developer-visible sentinel that is unlikely to collide with real values.
+    safeProps.value = '__empty__';
+    // Only warn in development to avoid noisy logs in production.
+    // Vite exposes import.meta.env.DEV for development mode.
+    if ((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV) {
+      console.warn(
+        `[Select] Coerced empty Select.Item value to "__empty__" to avoid Radix runtime error. ` +
+          `Consider using a non-empty sentinel (e.g. "all") or leaving the value undefined for placeholders.`
+      );
+    }
+  }
 
-    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
-  </SelectPrimitive.Item>
-));
+  return (
+    <SelectPrimitive.Item
+      ref={ref}
+      className={cn(
+        'relative flex w-full cursor-pointer select-none items-center rounded-lg py-2.5 pl-8 pr-2 text-sm outline-none focus:bg-teal-50 focus:text-teal-900 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 transition-colors',
+        className
+      )}
+      {...(safeProps as React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>)}
+    >
+      <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+        <SelectPrimitive.ItemIndicator>
+          <Check className="h-4 w-4 text-teal-600" />
+        </SelectPrimitive.ItemIndicator>
+      </span>
+
+      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+    </SelectPrimitive.Item>
+  );
+});
 SelectItem.displayName = SelectPrimitive.Item.displayName;
 
 const SelectSeparator = React.forwardRef<
