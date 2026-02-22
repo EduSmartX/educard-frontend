@@ -90,6 +90,10 @@ const config: Config = {
           '0%': { backgroundPosition: '-1000px 0' },
           '100%': { backgroundPosition: '1000px 0' },
         },
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-20px)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -101,6 +105,7 @@ const config: Config = {
         'fade-in': 'fade-in 0.2s ease-out',
         'fade-out': 'fade-out 0.2s ease-out',
         shimmer: 'shimmer 2s linear infinite',
+        float: 'float 3s ease-in-out infinite',
       },
     },
   },

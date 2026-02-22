@@ -8,6 +8,9 @@ import { PageLoader } from './components/ui/loading-spinner';
 // Protected Layout - Renders header once for all authenticated pages
 import { ProtectedLayout } from './components/layout/protected-layout';
 
+// Public pages
+const HomePage = lazy(() => import('./pages/home-page'));
+
 // Auth pages
 const LoginPage = lazy(() => import('./features/auth/pages/login-page'));
 const SignupPage = lazy(() => import('./features/auth/pages/signup-page'));
@@ -98,6 +101,7 @@ function App() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public Routes */}
+          <Route path="/" element={<HomePage />} />
           <Route path={ROUTES.AUTH.LOGIN} element={<LoginPage />} />
           <Route path={ROUTES.AUTH.SIGNUP} element={<SignupPage />} />
           <Route path={ROUTES.AUTH.REGISTRATION_SUCCESS} element={<RegistrationSuccessPage />} />

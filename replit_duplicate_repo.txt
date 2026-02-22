@@ -1,0 +1,419 @@
+1. Currently Multi tenant - Multi role school application is implementing ...
+2. We have created the replit demo for front end implmentation
+3. But the forms and flow and look and feel are very ordinary in this generation
+4. As per AI with best features available:
+ 4.1 Need to implment a new repo from scractch by taking referance of each module referance.
+ 4.2 Use common utility for Date fields
+ 4.3 Use Common for Date rane and form fields [reusable components]
+ 4.4 Common Non field Error processings and Form Field Error processings [Heighlight that form field- if we have any error in response from backend]
+ 4.5 Common Toast messeges with new look and field and user feel better experience
+ 4.6 Common Filter utility through out the application
+ 4.7 Common Data Table for list pages to show data 
+ 4.8 Pagination for Data tables
+ 4.9 Better Page look up with Profile Images and Organization Images in the dash board with latest floating view
+ 4.10 Proper profile sections 
+ 4.11 Finally Keep components reusable for all roles [Admin/Teacher/Student(Parent)]
+ 4.12 Use latest tailwind or ano better framework for Type script and implement the application
+ 4.13 Follows the ESlint and typescript thing .. Make code matches that .
+ 4.14 PERFORMANCE: Render header ONCE in ProtectedLayout wrapper (not per page) - fetch user/org data once
+ 4.15 MOBILE: Hide logo on mobile, use gradient header with glass-morphism, responsive sizing (h-16 sm:h-20)
+ 4.16 LAYOUT: Header width - Logo section (w-64 fixed), Organization (natural), User controls (ml-auto right)
+ 4.17 FORMS: Create generic field components supporting multiple types (string, number, bool, choice, multi-choice)
+ 4.18 FORMS: Use key prop on Select components to force re-render for view/edit modes: key={`${itemId}-${field.value}`}
+ 4.19 VALIDATION: Extract validation to utils folder (don't inline in components) - make it reusable
+ 4.20 GROUPING: Group settings/preferences by category, use Tabs for navigation with icons
+ 4.21 BORDERS: Add border-bottom to each field (px-4 py-4 last:border-b-0) not wrapper divs
+ 4.22 TYPOGRAPHY: Use default Label component sizing (text-sm) - don't override. Hierarchy: text-2xl → text-lg → text-sm
+ 4.23 RESPONSIVE: Grid layouts grid-cols-1 sm:grid-cols-2 lg:grid-cols-3. Headers flex-col sm:flex-row
+ 4.24 SIDEBAR: Mobile sidebar fixed with transform translate-x, hamburger at top-4 left-4 (not floating bottom)
+ 4.25 TYPES: NO any types - use proper interfaces. Error type is Error not any. Icons Record<string, string>
+ 4.26 CLEANUP: Remove unused imports, NO console statements (ESLint will error), run eslint --fix before commit
+ 4.27 API: Match backend serializer structure exactly. Handle nested objects. Invalidate related queries after mutations
+ 4.28 EXPORTS: Create index.ts barrel exports in each folder for clean imports from single source
+ 4.30 TESTING: Pre-commit - 0 ESLint errors, 0 warnings allowed, TypeScript compiles, Prettier applied
+ 4.31 REUSABLE COMPONENTS: Create PageHeader component with smart icon mapping based on title keywords
+ 4.32 ICON MAPPING: Auto-detect icons from page titles (Holiday→Calendar, Leave→Briefcase, Settings→Gear)
+ 4.33 PAGE HEADERS: Consistent typography (text-3xl bold), optional icon with gradient container, action buttons
+ 4.34 CHILDREN POSITIONING: PageHeader children (buttons/dialogs) render on right side with flex-shrink-0
+ 4.35 DELETE DIALOGS: Reusable DeleteConfirmationDialog with orange/amber theme (industry standard warning colors)
+ 4.36 SOFT DELETE: Support isSoftDelete prop with context-aware messaging ("archived/restorable" vs "permanent")
+ 4.37 CALENDAR THEMES: Use distinct color schemes (blue/indigo for calendar) to avoid visual conflicts with page
+ 4.38 TOAST NOTIFICATIONS: Add closeButton prop with circular X button positioned top-right (right: 12px, top: 12px)
+ 4.39 SPACING CONSISTENCY: Remove component margins, let parent containers control spacing with space-y-* utilities
+ 4.40 BULK UPLOAD: Detect top-level error field in API responses, display file-level errors at row 0
+ 4.41 CALENDAR FEATURES: Auto-detect weekend patterns, generate weekend holidays, combine with API holidays
+ 4.42 DATE HIGHLIGHTS: Show today's date with blue circle indicator, handle overlap with holidays properly
+ 4.43 HOLIDAY TYPES: Color-coded legend (Festival=Orange, Organization=Green), visual differentiation in calendar
+ 4.44 CALENDAR NAVIGATION: Month navigation (Previous/Today/Next), view toggle (Calendar/Table), date range display
+ 4.45 DUAL VIEW MODES: Calendar grid view with month layout, Table view with sortable columns and filters
+ 4.46 WORKING DAY POLICY: Respect organization settings (Sunday off, Saturday patterns: Full/First/Second/Third/Off)
+ 4.47 HOLIDAY DIALOGS: Click date to view/add/delete holidays, styled with gradient headers and decorative elements
+ 4.48 FORM VALIDATION: Client-side validation with visual feedback, server-side error handling with field highlighting
+ 4.49 RESPONSIVE CALENDAR: Mobile-optimized (hide weekday names on small screens, stack navigation controls)
+ 4.50 BARREL EXPORTS: Export components from index.ts for clean imports (import { PageHeader } from '@/components/common')
+ 4.51 ALWAYS keeps mutations in separate file better modularity 
+ 4.52 Use PageHeader for Headers for Forms for uniqueness
+ 4.53 ESLINT STRICT: no-console rule set to ERROR (not warn), only console.warn/error allowed, --max-warnings=0 enforced
+ 4.54 CODE QUALITY: Zero tolerance for console.log/info/debug statements, all removed from codebase
+
+=== CRITICAL PATTERNS FROM CLASSES & TEACHERS MODULES (FOLLOW FOR ALL MODULES) ===
+
+📋 FILE STRUCTURE (Standard for all CRUD modules):
+```
+feature/
+├── components/
+│   ├── [feature]-form.tsx          # Main form component with all modes
+│   ├── [feature]-management.tsx    # List page with filters and DataTable
+│   ├── [feature]-columns.tsx       # DataTable column definitions
+│   └── index.ts                    # Barrel exports
+├── hooks/
+│   ├── use-[feature]s.ts          # React Query hooks (list, single item)
+│   ├── mutations.ts                # All mutations (create, update, delete, reactivate)
+│   └── index.ts                    # Barrel exports
+├── api/
+│   └── [feature]-api.ts           # API client functions
+├── schemas/
+│   └── [feature]-form-schema.ts   # Zod validation schemas
+└── pages/
+    ├── [feature]-form-page.tsx    # Form page wrapper (create/edit/view)
+    └── [feature]-list-page.tsx    # List page wrapper
+```
+
+🔄 FORM PAGE PATTERN (Classes/Teachers reference):
+```tsx
+// 1. IMPORTS - Organized by category
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Edit, X, Plus, Eye, Trash2, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
+import { PageHeader, DeleteConfirmationDialog, ReactivateConfirmationDialog } from '@/components/common';
+import { FormActions } from '@/components/form/form-actions';
+// ... other imports
+
+// 2. MODE DETECTION - Based on URL path
+const getMode = (): 'create' | 'edit' | 'view' => {
+  if (!id) return 'create';
+  if (location.pathname.endsWith('/edit')) return 'edit';
+  return 'view';
+};
+
+// 3. QUERY PARAMS - Check for deleted=true
+const searchParams = new URLSearchParams(location.search);
+const isViewingDeleted = searchParams.get('deleted') === 'true';
+
+// 4. FLAGS - For delete/reactivate operations
+const [isDeleting, setIsDeleting] = useState(false);
+const [isReactivating, setIsReactivating] = useState(false);
+
+// 5. DATA FETCHING - Pass isDeleted flag when viewing deleted
+const { data: item, isLoading, error } = useItem(id, isViewingDeleted);
+
+// 6. ERROR HANDLING - Suppress errors during delete/reactivate
+useEffect(() => {
+  if (error && mode !== 'create' && !isDeleting && !isReactivating) {
+    const errorMessage = getErrorMessage(error, 'Failed to load data');
+    toast.error('Error Loading Data', { description: errorMessage });
+  }
+}, [error, mode, isDeleting, isReactivating]);
+
+// 7. FORM INITIALIZATION - With proper key prop for re-rendering
+const form = useForm<FormData>({
+  resolver: zodResolver(formSchema),
+  defaultValues: { /* defaults */ },
+});
+
+// 8. FORM RESET - On data load with keepDefaultValues: false
+useEffect(() => {
+  if (item && (mode === 'edit' || mode === 'view')) {
+    form.reset({
+      // ... mapped fields
+    }, { keepDefaultValues: false });
+  }
+}, [item, mode, form]);
+
+// 9. SELECT COMPONENTS - Force re-render with key prop
+<Select key={`${item?.public_id}-${field.value}`} /* ... */ >
+
+// 10. DELETE FLOW - Set flag, navigate, then execute
+const handleDelete = () => {
+  setIsDeleting(true);
+  navigate(ROUTES.ITEMS_LIST);
+  deleteMutation.mutate(id!, {
+    onSuccess: () => {
+      toast.success('Deleted Successfully');
+      setIsDeleting(false);
+    },
+    onError: (error) => {
+      setIsDeleting(false);
+      toast.error('Delete Failed', { description: getErrorMessage(error) });
+    },
+  });
+};
+
+// 11. REACTIVATE FLOW - Similar to delete
+const handleReactivate = () => {
+  setIsReactivating(true);
+  navigate(ROUTES.ITEMS_LIST);
+  reactivateMutation.mutate(id!, {
+    onSuccess: () => {
+      toast.success('Reactivated Successfully');
+      setIsReactivating(false);
+    },
+    onError: () => {
+      setIsReactivating(false);
+      toast.error('Reactivation Failed');
+    },
+  });
+};
+
+// 12. PAGE HEADER - Conditional buttons based on mode and deleted state
+<PageHeader title={title} icon={icon}>
+  {mode === 'view' && !isViewingDeleted && (
+    <>
+      <button onClick={() => navigate(`${ROUTES.ITEMS}/${id}/edit`)} /* Edit */>
+      <button onClick={() => setShowDeleteDialog(true)} /* Delete */>
+    </>
+  )}
+  {mode === 'view' && isViewingDeleted && (
+    <button onClick={() => setShowReactivateDialog(true)} /* Reactivate */>
+  )}
+  {mode === 'edit' && (
+    <button onClick={() => navigate(`${ROUTES.ITEMS}/${id}`)} /* Cancel */>
+  )}
+  {mode === 'create' && (
+    <button onClick={() => navigate(ROUTES.ITEMS_LIST)} /* Back */>
+  )}
+</PageHeader>
+
+// 13. FORM ACTIONS - Mode-based rendering
+<FormActions
+  mode={mode}
+  onCancel={handleCancel}
+  isLoading={isSubmitting}
+  showDelete={mode === 'edit'}
+  onDelete={() => setShowDeleteDialog(true)}
+/>
+
+// 14. DELETE DIALOG - Outside form, with full name
+<DeleteConfirmationDialog
+  isOpen={showDeleteDialog}
+  onClose={() => setShowDeleteDialog(false)}
+  onConfirm={handleDelete}
+  itemName={`${item?.class_name} - ${item?.section_name}`}
+  isDeleting={deleteMutation.isPending}
+/>
+```
+
+🔍 VIEW DELETED RECORDS PATTERN:
+```tsx
+// 1. API Function - Accept isDeleted parameter
+export async function fetchItem(publicId: string, isDeleted = false): Promise<Item> {
+  const params = isDeleted ? { is_deleted: 'true' } : {};
+  const response = await apiClient.get(`/items/${publicId}/`, { params });
+  return response.data.data;
+}
+
+// 2. Hook - Include isDeleted in query key
+export function useItem(publicId?: string, isDeleted = false) {
+  return useQuery({
+    queryKey: ['item', publicId, isDeleted],
+    queryFn: () => fetchItem(publicId!, isDeleted),
+    enabled: !!publicId,
+  });
+}
+
+// 3. Navigation - Pass deleted=true query param
+navigate(`${ROUTES.ITEMS}/${publicId}?deleted=true`);
+
+// 4. Conditional Buttons - Show reactivate for deleted items
+{isViewingDeleted ? (
+  <Button onClick={handleReactivate}>
+    <RefreshCw className="h-4 w-4" />
+    Reactivate
+  </Button>
+) : (
+  <>
+    <Button onClick={handleEdit}>Edit</Button>
+    <Button onClick={handleDelete}>Delete</Button>
+  </>
+)}
+```
+
+🎯 DELETED DUPLICATE HANDLING:
+```tsx
+// 1. Check for duplicate error
+if (isDeletedDuplicateError(error)) {
+  setShowDuplicateDialog(true);
+  setDuplicateError({
+    message: getDeletedDuplicateMessage(error),
+    recordId: getDeletedRecordId(error),
+  });
+  return;
+}
+
+// 2. Show dialog with view/reactivate options
+<DeletedDuplicateDialog
+  isOpen={showDuplicateDialog}
+  onClose={() => setShowDuplicateDialog(false)}
+  message={duplicateError?.message}
+  onViewRecord={() => navigate(`${ROUTES.ITEMS}/${duplicateError?.recordId}?deleted=true`)}
+  onReactivateRecord={handleReactivate}
+/>
+```
+
+📝 FORM VALIDATION SCHEMA PATTERN:
+```tsx
+// schemas/[feature]-form-schema.ts
+import { z } from 'zod';
+
+export const formSchema = z.object({
+  field1: z.string().min(1, 'Field is required'),
+  field2: z.number().positive('Must be positive'),
+  // ... other fields
+});
+
+export type FormData = z.infer<typeof formSchema>;
+```
+
+🔌 API CLIENT PATTERN:
+```tsx
+// api/[feature]-api.ts
+import { apiClient } from '@/lib/api';
+
+export async function fetchItems(params?: QueryParams): Promise<ApiListResponse<Item>> {
+  const response = await apiClient.get('/items/', { params });
+  return response.data;
+}
+
+export async function fetchItem(publicId: string, isDeleted = false): Promise<Item> {
+  const params = isDeleted ? { is_deleted: 'true' } : {};
+  const response = await apiClient.get(`/items/${publicId}/`, { params });
+  return response.data.data;
+}
+
+export async function createItem(data: CreatePayload): Promise<Item> {
+  const response = await apiClient.post('/items/', data);
+  return response.data.data;
+}
+
+export async function updateItem(publicId: string, data: UpdatePayload): Promise<Item> {
+  const response = await apiClient.patch(`/items/${publicId}/`, data);
+  return response.data.data;
+}
+
+export async function deleteItem(publicId: string): Promise<void> {
+  await apiClient.delete(`/items/${publicId}/`);
+}
+
+export async function reactivateItem(publicId: string): Promise<Item> {
+  const response = await apiClient.post(`/items/${publicId}/reactivate/`);
+  return response.data.data;
+}
+```
+
+🎣 HOOKS PATTERN:
+```tsx
+// hooks/use-[feature]s.ts
+export function useItems(params?: QueryParams) {
+  return useQuery({
+    queryKey: ['items', params],
+    queryFn: () => fetchItems(params),
+  });
+}
+
+export function useItem(publicId?: string, isDeleted = false) {
+  return useQuery({
+    queryKey: ['item', publicId, isDeleted],
+    queryFn: () => fetchItem(publicId!, isDeleted),
+    enabled: !!publicId,
+  });
+}
+
+// hooks/mutations.ts
+export function useCreateItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+    },
+  });
+}
+
+export function useUpdateItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdatePayload }) => 
+      updateItem(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+    },
+  });
+}
+
+export function useDeleteItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+    },
+  });
+}
+
+export function useReactivateItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: reactivateItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+    },
+  });
+}
+```
+
+🚫 CRITICAL DONT'S:
+- ❌ NO console.log, console.info, console.debug statements (ESLint will ERROR)
+- ❌ NO unused variables in catch blocks (use catch {} or catch (_error) {})
+- ❌ NO error?.message on unknown type (use getErrorMessage utility)
+- ❌ NO direct navigation without setting isDeleting/isReactivating flags
+- ❌ NO form.reset() without keepDefaultValues: false in edit/view modes
+- ❌ NO Select components without key prop for re-rendering
+- ❌ NO error toast when isDeleting or isReactivating is true
+- ❌ NO any types anywhere in the code
+
+✅ CRITICAL DO'S:
+- ✅ ALWAYS use getErrorMessage() for error handling
+- ✅ ALWAYS set flags before delete/reactivate operations
+- ✅ ALWAYS navigate before executing delete/reactivate mutations
+- ✅ ALWAYS suppress error toasts during delete/reactivate
+- ✅ ALWAYS use key prop on Select: key={`${itemId}-${field.value}`}
+- ✅ ALWAYS reset form with keepDefaultValues: false
+- ✅ ALWAYS pass isDeleted to API when viewing deleted records
+- ✅ ALWAYS include isDeleted in query keys for proper caching
+- ✅ ALWAYS use proper TypeScript types (no any)
+- ✅ ALWAYS run eslint --fix before commit (0 errors, 0 warnings)
+
+=== END OF CRITICAL PATTERNS ===
+
+Look at the Holiday calendar and implment the same way here as well ..
+
+why are you struggling so much and asking me so many inputs ..
+
+Keep these points in mind
+1. Use Page Header 
+2. Use Bulkupload utility [refer Holiday Calendar]
+3. Use Filter and Data Tables on List Page with Pagination [refer Leave allocations]
+4. On Form Page have back button to come back to list [Leave Allocation form refer]
+5. View mode -- Add close, Update , Delete buttons [UPDATED: Delete button in PageHeader for view mode, FormActions for edit mode]
+6. Need to prefill the data in edit and view modes properly ..render the data through hooks properly [UPDATED: Use key prop on Select components]
+7. Use ParserError utility for form field erros show from backend [Use getErrorMessage, applyFieldErrors, isDeletedDuplicateError]
+8. Add form field validations on front end as well [in new file for better modularity]
+   [/Users/sivakkumar/Projects/Educard/educard-frontend-new/src/lib/utils/error-handler.ts]
+9. DELETED RECORDS: Support viewing and reactivating deleted records with ?deleted=true query param
+10. DELETE FLOW: Set isDeleting flag, navigate immediately, then execute mutation to prevent 404 errors
+11. SELECT PREFILL: Use key={`${itemId}-${field.value}`} pattern to force re-render when navigating
+
+Keep these points in mind: [For minimal fields get the data from backend or replit demo --don't assume your self for form fields -- check backend in data columns or replit demo] 
