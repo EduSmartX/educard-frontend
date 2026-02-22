@@ -39,3 +39,45 @@ export const HolidayTypeLabels: Record<HolidayTypeValue, string> = {
   [HolidayType.ORGANIZATION_HOLIDAY]: 'Organization Holiday',
   [HolidayType.OTHER]: 'Other',
 };
+
+/**
+ * Attendance marking permission types
+ * Matches backend AttendancePermissions constants
+ */
+export const AttendancePermissions = {
+  CLASS_TEACHER_ONLY: 'class_teacher_only',
+  ANY_TEACHER_WHO_TEACHES_FOR_CLASS: 'any_teacher_who_teaches_for_class',
+  ANY_TEACHER_IN_ORGANIZATION: 'any_teacher_in_organization',
+} as const;
+
+export type AttendancePermissionType =
+  (typeof AttendancePermissions)[keyof typeof AttendancePermissions];
+
+export const AttendancePermissionLabels: Record<AttendancePermissionType, string> = {
+  [AttendancePermissions.CLASS_TEACHER_ONLY]: 'Class Teacher Only',
+  [AttendancePermissions.ANY_TEACHER_WHO_TEACHES_FOR_CLASS]: 'Any Teacher Who Teaches for Class',
+  [AttendancePermissions.ANY_TEACHER_IN_ORGANIZATION]: 'Any Teacher in Organization',
+};
+
+/**
+ * Attendance status types
+ */
+export const AttendanceStatus = {
+  PRESENT: 'present',
+  ABSENT: 'absent',
+  HALF_DAY_FIRST: 'half_day_first',
+  HALF_DAY_SECOND: 'half_day_second',
+  LEAVE: 'leave',
+  HOLIDAY: 'holiday',
+} as const;
+
+export type AttendanceStatusType = (typeof AttendanceStatus)[keyof typeof AttendanceStatus];
+
+export const AttendanceStatusLabels: Record<AttendanceStatusType, string> = {
+  [AttendanceStatus.PRESENT]: 'Present',
+  [AttendanceStatus.ABSENT]: 'Absent',
+  [AttendanceStatus.HALF_DAY_FIRST]: 'Half Day - First Half',
+  [AttendanceStatus.HALF_DAY_SECOND]: 'Half Day - Second Half',
+  [AttendanceStatus.LEAVE]: 'On Leave',
+  [AttendanceStatus.HOLIDAY]: 'Holiday',
+};

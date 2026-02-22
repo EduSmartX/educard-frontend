@@ -6,6 +6,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getErrorMessage, getFieldErrors } from '@/lib/utils/error-handler';
+import { ErrorMessages, SuccessMessages, QueryKeys } from '@/constants';
 import type { CreateTeacherPayload, UpdateTeacherPayload } from '../types';
 import {
   createTeacher,
@@ -67,16 +68,16 @@ export function useCreateTeacher(options?: MutationOptions) {
       forceCreate?: boolean;
     }) => createTeacher(payload, forceCreate),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teachers'] });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.TEACHERS.ALL });
 
       toast.success('Teacher Created', {
-        description: 'The teacher has been created successfully.',
+        description: SuccessMessages.TEACHER.CREATE_SUCCESS,
       });
 
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, 'Failed to create teacher. Please try again.');
+      const errorMessage = getErrorMessage(error, ErrorMessages.TEACHER.CREATE_FAILED);
       const fieldErrors = getFieldErrors(error) as TeacherFieldErrors | undefined;
 
       // Only show toast if no custom error handler is provided
@@ -102,19 +103,16 @@ export function useReactivateTeacher(options?: MutationOptions) {
   return useMutation({
     mutationFn: (publicId: string) => reactivateTeacher(publicId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teachers'] });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.TEACHERS.ALL });
 
       toast.success('Teacher Reactivated', {
-        description: 'The teacher has been reactivated successfully.',
+        description: SuccessMessages.TEACHER.REACTIVATE_SUCCESS,
       });
 
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(
-        error,
-        'Failed to reactivate teacher. Please try again.'
-      );
+      const errorMessage = getErrorMessage(error, ErrorMessages.TEACHER.UPDATE_FAILED);
 
       toast.error('Error Reactivating Teacher', {
         description: errorMessage,
@@ -136,16 +134,16 @@ export function useUpdateTeacher(options?: MutationOptions) {
     mutationFn: ({ publicId, payload }: { publicId: string; payload: UpdateTeacherPayload }) =>
       updateTeacher(publicId, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teachers'] });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.TEACHERS.ALL });
 
       toast.success('Teacher Updated', {
-        description: 'The teacher has been updated successfully.',
+        description: SuccessMessages.TEACHER.UPDATE_SUCCESS,
       });
 
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, 'Failed to update teacher. Please try again.');
+      const errorMessage = getErrorMessage(error, ErrorMessages.TEACHER.UPDATE_FAILED);
       const fieldErrors = getFieldErrors(error) as TeacherFieldErrors | undefined;
 
       toast.error('Error Updating Teacher', {
@@ -167,16 +165,16 @@ export function useDeleteTeacher(options?: MutationOptions) {
   return useMutation({
     mutationFn: (publicId: string) => deleteTeacher(publicId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teachers'] });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.TEACHERS.ALL });
 
       toast.success('Teacher Deleted', {
-        description: 'The teacher has been deleted successfully.',
+        description: SuccessMessages.TEACHER.DELETE_SUCCESS,
       });
 
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, 'Failed to delete teacher. Please try again.');
+      const errorMessage = getErrorMessage(error, ErrorMessages.TEACHER.DELETE_FAILED);
 
       toast.error('Error Deleting Teacher', {
         description: errorMessage,
@@ -197,7 +195,7 @@ export function useBulkUploadTeachers(options?: MutationOptions) {
   return useMutation({
     mutationFn: (file: File) => bulkUploadTeachers(file),
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ['teachers'] });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.TEACHERS.ALL });
 
       if (response.failed_count > 0) {
         toast.warning('Upload Completed with Errors', {
@@ -206,17 +204,14 @@ export function useBulkUploadTeachers(options?: MutationOptions) {
         });
       } else {
         toast.success('Bulk Upload Successful', {
-          description: `${response.created_count} teachers have been created successfully.`,
+          description: SuccessMessages.TEACHER.BULK_UPLOAD_SUCCESS,
         });
       }
 
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(
-        error,
-        'Failed to upload teachers. Please check the file and try again.'
-      );
+      const errorMessage = getErrorMessage(error, ErrorMessages.TEACHER.BULK_UPLOAD_FAILED);
 
       toast.error('Bulk Upload Failed', {
         description: errorMessage,

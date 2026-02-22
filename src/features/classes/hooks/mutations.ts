@@ -6,6 +6,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getErrorMessage, getFieldErrors } from '@/lib/utils/error-handler';
+import { ErrorMessages, SuccessMessages, QueryKeys } from '@/constants';
 import type { CreateClassPayload, UpdateClassPayload } from '../types';
 import {
   createClass,
@@ -41,14 +42,14 @@ export function useCreateClass(options?: MutationOptions) {
       forceCreate?: boolean;
     }) => createClass(payload, forceCreate),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.CLASSES.ALL });
       toast.success('Class Created', {
-        description: 'The class has been created successfully.',
+        description: SuccessMessages.CLASS.CREATE_SUCCESS,
       });
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, 'Failed to create class. Please try again.');
+      const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.CREATE_FAILED);
       const fieldErrors = getFieldErrors(error) as ClassFieldErrors | undefined;
       toast.error('Error Creating Class', {
         description: errorMessage,
@@ -68,16 +69,16 @@ export function useReactivateClass(options?: MutationOptions) {
       // Only invalidate the list queries, not individual class queries
       // The navigation will handle refreshing the detail view
       queryClient.invalidateQueries({
-        queryKey: ['classes'],
+        queryKey: QueryKeys.CLASSES.ALL,
         exact: true, // Only invalidate the exact list query, not detail queries
       });
       toast.success('Class Reactivated', {
-        description: 'The class has been reactivated successfully.',
+        description: SuccessMessages.CLASS.REACTIVATE_SUCCESS,
       });
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, 'Failed to reactivate class. Please try again.');
+      const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.UPDATE_FAILED);
       toast.error('Error Reactivating Class', {
         description: errorMessage,
         duration: 5000,
@@ -94,14 +95,14 @@ export function useUpdateClass(options?: MutationOptions) {
     mutationFn: ({ publicId, payload }: { publicId: string; payload: UpdateClassPayload }) =>
       updateClass(publicId, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.CLASSES.ALL });
       toast.success('Class Updated', {
-        description: 'The class has been updated successfully.',
+        description: SuccessMessages.CLASS.UPDATE_SUCCESS,
       });
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, 'Failed to update class. Please try again.');
+      const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.UPDATE_FAILED);
       const fieldErrors = getFieldErrors(error) as ClassFieldErrors | undefined;
       toast.error('Error Updating Class', {
         description: errorMessage,
@@ -118,14 +119,14 @@ export function useDeleteClass(options?: MutationOptions) {
   return useMutation({
     mutationFn: (publicId: string) => deleteClass(publicId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.CLASSES.ALL });
       toast.success('Class Deleted', {
-        description: 'The class has been deleted successfully.',
+        description: SuccessMessages.CLASS.DELETE_SUCCESS,
       });
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, 'Failed to delete class. Please try again.');
+      const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.DELETE_FAILED);
       toast.error('Error Deleting Class', {
         description: errorMessage,
         duration: 5000,
@@ -141,7 +142,7 @@ export function useBulkUploadClasses(options?: MutationOptions) {
   return useMutation({
     mutationFn: (file: File) => bulkUploadClasses(file),
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.CLASSES.ALL });
       if (response.failed_count > 0) {
         toast.warning('Upload Completed with Errors', {
           description: `${response.created_count} classes created, ${response.failed_count} failed.`,
@@ -149,16 +150,13 @@ export function useBulkUploadClasses(options?: MutationOptions) {
         });
       } else {
         toast.success('Bulk Upload Successful', {
-          description: `${response.created_count} classes have been created successfully.`,
+          description: SuccessMessages.CLASS.CREATE_SUCCESS,
         });
       }
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(
-        error,
-        'Failed to upload classes. Please check the file and try again.'
-      );
+      const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.CREATE_FAILED);
       toast.error('Bulk Upload Failed', {
         description: errorMessage,
         duration: 5000,

@@ -44,11 +44,28 @@ export const staffSidebarConfig: SidebarSection[] = [
         icon: BookOpen,
         path: '/dashboard/staff/subjects',
       },
+    ],
+  },
+  {
+    title: 'ATTENDANCE',
+    items: [
       {
-        id: 'attendance',
-        label: 'Attendance',
+        id: 'mark-attendance',
+        label: 'Mark Attendance',
         icon: ClipboardCheck,
-        path: '/dashboard/staff/attendance',
+        path: '/attendance/mark',
+      },
+      {
+        id: 'attendance-summary',
+        label: 'View Summary',
+        icon: FileText,
+        path: '/attendance/summary',
+      },
+      {
+        id: 'attendance-reports',
+        label: 'Monthly Report',
+        icon: CalendarDays,
+        path: '/attendance/monthly',
       },
     ],
   },

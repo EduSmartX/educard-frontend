@@ -63,6 +63,23 @@ const LeaveRequestReviewsPage = lazy(
 );
 const ManageLeaveBalances = lazy(() => import('./features/leave/components/manage-leave-balances'));
 
+// Attendance pages
+const MarkAttendancePage = lazy(() =>
+  import('./features/attendance/pages/mark-attendance-page').then((m) => ({
+    default: m.MarkAttendancePage,
+  }))
+);
+const AttendanceSummaryPage = lazy(() =>
+  import('./features/attendance/pages/attendance-summary-page').then((m) => ({
+    default: m.AttendanceSummaryPage,
+  }))
+);
+const MonthlyAttendanceReportPage = lazy(() =>
+  import('./features/attendance/pages/monthly-report-page').then((m) => ({
+    default: m.MonthlyAttendanceReportPage,
+  }))
+);
+
 // Preferences
 const PreferencesPage = lazy(() => import('./features/preferences/pages/preferences-page'));
 
@@ -133,6 +150,11 @@ function App() {
 
             {/* Profile */}
             <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
+
+            {/* Attendance */}
+            <Route path="/attendance/mark" element={<MarkAttendancePage />} />
+            <Route path="/attendance/summary" element={<AttendanceSummaryPage />} />
+            <Route path="/attendance/monthly" element={<MonthlyAttendanceReportPage />} />
 
             {/* Leave Management (with nested layout) */}
             <Route element={<LeaveLayout />}>

@@ -71,6 +71,29 @@ export const adminSidebarConfig: SidebarSection[] = [
     ],
   },
   {
+    title: 'ATTENDANCE',
+    items: [
+      {
+        id: 'mark-attendance',
+        label: 'Mark Attendance',
+        icon: ClipboardCheck,
+        path: '/attendance/mark',
+      },
+      {
+        id: 'attendance-summary',
+        label: 'View Summary',
+        icon: BarChart3,
+        path: '/attendance/summary',
+      },
+      {
+        id: 'attendance-reports',
+        label: 'Monthly Report',
+        icon: CalendarDays,
+        path: '/attendance/monthly',
+      },
+    ],
+  },
+  {
     title: 'LEAVE SYSTEM',
     items: [
       {
