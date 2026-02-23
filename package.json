@@ -17,7 +17,12 @@
     "validate": "npm run type-check && npm run lint && npm run format:check",
     "validate:fix": "npm run type-check && npm run lint:fix && npm run format",
     "pre-commit": "lint-staged",
-    "prepare": "husky"
+    "prepare": "husky",
+    "check:types": "tsc --noEmit --pretty",
+    "check:lint": "eslint . --ext .js,.jsx,.ts,.tsx --max-warnings=0",
+    "check:format": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
+    "check:all": "npm run check:types && npm run check:lint && npm run check:format",
+    "fix:all": "npm run lint:fix && npm run format"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
