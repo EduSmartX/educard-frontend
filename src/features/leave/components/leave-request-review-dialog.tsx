@@ -197,23 +197,19 @@ export function LeaveRequestReviewDialog({
         <DialogFooter className="gap-2">
           <Button
             type="button"
-            variant="outline"
+            variant="brandOutline"
             onClick={onClose}
             disabled={isPending}
-            className="hover:bg-gray-100"
           >
             {isViewMode ? 'Close' : 'Cancel'}
           </Button>
           {!isViewMode && (
             <Button
               type="button"
+              variant={action === 'approve' ? 'brand' : 'destructive'}
               onClick={form.handleSubmit(handleSubmit)}
               disabled={isPending}
-              className={
-                action === 'approve'
-                  ? 'bg-green-600 hover:bg-green-700 text-white shadow-md'
-                  : 'bg-red-600 hover:bg-red-700 text-white shadow-md'
-              }
+              className="shadow-md"
             >
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {action === 'approve' && <Check className="mr-2 h-4 w-4" />}

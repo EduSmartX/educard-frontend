@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/date-picker';
+import { FormPlaceholders } from '@/constants';
 import type { HolidayType } from '../types';
 import { formatHolidayType } from '../utils/holiday-utils';
 import { parseISO } from 'date-fns';
@@ -90,7 +91,7 @@ export function HolidayFormFields({
             <DatePicker
               value={startDateValue}
               onChange={handleStartDateChange}
-              placeholder="Select start date"
+              placeholder={FormPlaceholders.SELECT_START_DATE}
               className={errors?.start_date ? 'border-red-500 focus-visible:ring-red-500' : ''}
             />
           </div>
@@ -109,7 +110,7 @@ export function HolidayFormFields({
             <DatePicker
               value={endDateValue}
               onChange={handleEndDateChange}
-              placeholder="Select end date"
+              placeholder={FormPlaceholders.SELECT_END_DATE}
               minDate={minEndDate}
               className={errors?.end_date ? 'border-red-500 focus-visible:ring-red-500' : ''}
             />
@@ -138,7 +139,7 @@ export function HolidayFormFields({
                 : 'focus:ring-2 focus:ring-blue-500'
             }`}
           >
-            <SelectValue placeholder="Select holiday type" />
+            <SelectValue placeholder={FormPlaceholders.SELECT_HOLIDAY_TYPE} />
           </SelectTrigger>
           <SelectContent>
             {HOLIDAY_TYPES.map((type) => (
@@ -161,7 +162,7 @@ export function HolidayFormFields({
           id="description"
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
-          placeholder="e.g., Independence Day, Diwali, etc."
+          placeholder={FormPlaceholders.HOLIDAY_DESCRIPTION_EXAMPLE}
           rows={4}
           maxLength={255}
           className={`text-base resize-none border-gray-300 ${

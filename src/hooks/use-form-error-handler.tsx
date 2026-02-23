@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { AlertCircle } from 'lucide-react';
 import { type UseFormSetError, type FieldValues } from 'react-hook-form';
 import { applyFieldErrors, getErrorMessage } from '@/lib/utils/error-handler';
+import { ErrorMessages, ToastTitles } from '@/constants';
 
 interface UseFormErrorHandlerOptions {
   /**
@@ -65,12 +66,12 @@ export function useFormErrorHandler<TFieldValues extends FieldValues>(
   options: UseFormErrorHandlerOptions = {}
 ) {
   const {
-    defaultErrorMessage = 'An error occurred',
+    defaultErrorMessage = ErrorMessages.GENERIC_ERROR,
     fieldMap,
     showToast = true,
     toastDuration = 5000,
-    validationErrorTitle = 'Validation Error',
-    generalErrorTitle = 'Error',
+    validationErrorTitle = ToastTitles.VALIDATION_ERROR,
+    generalErrorTitle = ToastTitles.ERROR,
   } = options;
 
   return (error: unknown) => {
@@ -102,10 +103,10 @@ export function useFormErrorHandler<TFieldValues extends FieldValues>(
  */
 export function useApiErrorHandler(options: Omit<UseFormErrorHandlerOptions, 'fieldMap'> = {}) {
   const {
-    defaultErrorMessage = 'An error occurred',
+    defaultErrorMessage = ErrorMessages.GENERIC_ERROR,
     showToast = true,
     toastDuration = 5000,
-    generalErrorTitle = 'Error',
+    generalErrorTitle = ToastTitles.ERROR,
   } = options;
 
   return (error: unknown) => {

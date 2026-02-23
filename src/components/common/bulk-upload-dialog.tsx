@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { ErrorMessages, SuccessMessages } from '@/constants';
 
 // Generic error type for bulk uploads
 export interface BulkUploadError {
@@ -124,7 +125,7 @@ export function BulkUploadDialog({
       link.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(link);
-      toast.success('Template downloaded successfully');
+      toast.success(SuccessMessages.FILES.TEMPLATE_DOWNLOADED);
     } catch (error) {
       const err = error as Error;
       toast.error(err?.message || 'Failed to download template');
@@ -223,7 +224,7 @@ export function BulkUploadDialog({
   // Upload handler
   const handleUpload = async () => {
     if (!selectedFile) {
-      toast.error('Please select a file to upload');
+      toast.error(ErrorMessages.FILE_NOT_SELECTED);
       return;
     }
 
@@ -553,16 +554,16 @@ export function BulkUploadDialog({
         {/* Footer with gradient */}
         <DialogFooter className="border-t bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 gap-3">
           <Button
-            variant="outline"
+            variant="brandOutline"
             onClick={handleClose}
-            className="border-gray-300 hover:bg-white"
           >
             Close
           </Button>
           <Button
+            variant="brand"
             onClick={handleUpload}
             disabled={!selectedFile || isUploading}
-            className="gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl transition-all duration-200 min-w-[120px]"
+            className="gap-2 shadow-lg hover:shadow-xl transition-all duration-200 min-w-[120px]"
           >
             {isUploading ? (
               <>

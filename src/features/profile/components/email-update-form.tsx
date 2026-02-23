@@ -9,7 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Mail, Send } from 'lucide-react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -20,6 +20,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { CommonUiText, FormPlaceholders } from '@/constants';
 import { useUserProfile } from '../hooks/queries';
 import { useSendOTP, useUpdateEmail } from '../hooks/mutations';
 
@@ -92,7 +93,10 @@ export function EmailUpdateForm() {
 
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardHeader>
+        <CardTitle className="text-base font-medium">Update Email Address</CardTitle>
+      </CardHeader>
+      <CardContent>
         <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
           <p className="text-sm text-blue-900">
             <strong>Current Email:</strong> {profile?.email || 'Not set'}
@@ -119,7 +123,7 @@ export function EmailUpdateForm() {
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder="newemail@example.com"
+                        placeholder={FormPlaceholders.EMAIL_EXAMPLE}
                         {...field}
                         disabled={otpSent}
                       />
@@ -134,7 +138,7 @@ export function EmailUpdateForm() {
                       ) : (
                         <>
                           <Send className="mr-2 h-4 w-4" />
-                          Send OTP
+                          {CommonUiText.SEND_OTP}
                         </>
                       )}
                     </Button>
@@ -163,7 +167,12 @@ export function EmailUpdateForm() {
                       OTP Code <span className="text-red-500">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input type="text" placeholder="Enter 6-digit OTP" maxLength={6} {...field} />
+                      <Input
+                        type="text"
+                        placeholder={FormPlaceholders.ENTER_OTP_6_DIGIT}
+                        maxLength={6}
+                        {...field}
+                      />
                     </FormControl>
                     <FormDescription>Enter the OTP sent to your new email</FormDescription>
                     <FormMessage />
@@ -183,12 +192,12 @@ export function EmailUpdateForm() {
                 }}
                 disabled={updateEmailMutation.isPending}
               >
-                Reset
+                {CommonUiText.RESET}
               </Button>
               <Button type="submit" disabled={!otpSent || updateEmailMutation.isPending}>
                 {updateEmailMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <Mail className="mr-2 h-4 w-4" />
-                Update Email
+                {CommonUiText.UPDATE_EMAIL}
               </Button>
             </div>
           </form>

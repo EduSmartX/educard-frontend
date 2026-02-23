@@ -14,6 +14,7 @@ import {
   ReactivateConfirmationDialog,
 } from '@/components/common';
 import { ROUTES } from '@/constants/app-config';
+import { ErrorMessages, SuccessMessages, ToastTitles } from '@/constants';
 import { useStudent } from '../hooks/use-students';
 import { useDeleteStudent, useReactivateStudent } from '../hooks/mutations';
 import { StudentForm } from '../components/student-form';
@@ -47,8 +48,8 @@ export default function StudentFormPage() {
 
   useEffect(() => {
     if (error && mode !== 'create' && !isDeleting && !isReactivating) {
-      const errorMessage = getErrorMessage(error, 'Failed to load student data');
-      toast.error('Error Loading Student', {
+      const errorMessage = getErrorMessage(error, ErrorMessages.STUDENT.FETCH_FAILED);
+      toast.error(ToastTitles.ERROR, {
         description: errorMessage,
         duration: 5000,
       });
@@ -102,11 +103,11 @@ export default function StudentFormPage() {
         },
         {
           onSuccess: () => {
-            toast.success('Student reactivated successfully');
+            toast.success(SuccessMessages.STUDENT.REACTIVATE_SUCCESS);
             setIsReactivating(false);
           },
           onError: (error: Error) => {
-            toast.error(`Failed to reactivate student: ${error.message}`);
+            toast.error(error.message || ErrorMessages.STUDENT.REACTIVATE_FAILED);
             setIsReactivating(false);
           },
         }
@@ -131,11 +132,11 @@ export default function StudentFormPage() {
         },
         {
           onSuccess: () => {
-            toast.success('Student deleted successfully');
+            toast.success(SuccessMessages.STUDENT.DELETE_SUCCESS);
             setIsDeleting(false);
           },
           onError: (error: Error) => {
-            toast.error(`Failed to delete student: ${error.message}`);
+            toast.error(error.message || ErrorMessages.STUDENT.DELETE_FAILED);
             setIsDeleting(false);
           },
         }
@@ -175,7 +176,7 @@ export default function StudentFormPage() {
 
   // Show error state
   if (error && mode !== 'create') {
-    const errorMessage = getErrorMessage(error, 'Failed to load student data');
+    const errorMessage = getErrorMessage(error, ErrorMessages.STUDENT.FETCH_FAILED);
 
     return (
       <div className="space-y-6">

@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { ErrorMessages, FormPlaceholders, SuccessMessages, ToastTitles } from '@/constants';
 import {
   Table,
   TableBody,
@@ -163,14 +164,14 @@ export function LeaveRequestFormPageNew() {
     if (mode === 'create') {
       createMutation.mutate(data, {
         onSuccess: () => {
-          toast.success('Leave Request Submitted', {
+          toast.success(SuccessMessages.LEAVE.REQUEST_SUBMITTED, {
             description: 'Your leave request has been submitted successfully.',
           });
           navigate('/leave/dashboard');
         },
         onError: (error) => {
-          const errorMessage = getErrorMessage(error, 'Failed to submit leave request');
-          toast.error('Submission Failed', { description: errorMessage });
+          const errorMessage = getErrorMessage(error, ErrorMessages.LEAVE.CREATE_REQUEST_FAILED);
+          toast.error(ToastTitles.ERROR, { description: errorMessage });
         },
       });
     } else if (mode === 'edit' && id) {
@@ -178,14 +179,14 @@ export function LeaveRequestFormPageNew() {
         { publicId: id, data },
         {
           onSuccess: () => {
-            toast.success('Leave Request Updated', {
+            toast.success(SuccessMessages.LEAVE.REQUEST_UPDATED, {
               description: 'Your leave request has been updated successfully.',
             });
             navigate('/leave/dashboard');
           },
           onError: (error) => {
-            const errorMessage = getErrorMessage(error, 'Failed to update leave request');
-            toast.error('Update Failed', { description: errorMessage });
+            const errorMessage = getErrorMessage(error, ErrorMessages.LEAVE.UPDATE_REQUEST_FAILED);
+            toast.error(ToastTitles.ERROR, { description: errorMessage });
           },
         }
       );
@@ -263,7 +264,7 @@ export function LeaveRequestFormPageNew() {
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select leave type" />
+                          <SelectValue placeholder={FormPlaceholders.SELECT_LEAVE_TYPE} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -439,7 +440,7 @@ export function LeaveRequestFormPageNew() {
                     <FormControl>
                       <Textarea
                         {...field}
-                        placeholder="Enter reason for leave..."
+                        placeholder={FormPlaceholders.ENTER_LEAVE_REASON}
                         rows={4}
                         disabled={mode === 'view'}
                       />
@@ -474,10 +475,11 @@ export function LeaveRequestFormPageNew() {
                   </Button>
                   <Button
                     type="submit"
+                    variant="brand"
                     disabled={
                       isSubmitting || dateRangeError !== null || form.watch('number_of_days') <= 0
                     }
-                    className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md"
+                    className="gap-2 shadow-md"
                   >
                     {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                     {mode === 'create' ? 'Submit Request' : 'Save Changes'}

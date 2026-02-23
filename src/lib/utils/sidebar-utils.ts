@@ -4,31 +4,25 @@
 
 import { adminSidebarConfig } from '@/features/dashboard/admin/sidebar-config';
 import { staffSidebarConfig } from '@/features/dashboard/staff/sidebar-config';
+import { getStoredUserRole } from '@/lib/utils/storage';
 // import { parentSidebarConfig } from '@/features/dashboard/parent/sidebar-config';
 
 export function getSidebarConfig() {
-  const userStr = localStorage.getItem('user');
-  if (!userStr) {
+  const role = getStoredUserRole();
+  if (!role) {
     return adminSidebarConfig; // Default fallback
   }
 
-  try {
-    const user = JSON.parse(userStr);
-    const role = user.role?.toLowerCase();
-
-    switch (role) {
-      case 'admin':
-        return adminSidebarConfig;
-      case 'teacher':
-      case 'staff':
-        return staffSidebarConfig;
-      case 'parent':
-        // return parentSidebarConfig;
-        return adminSidebarConfig; // Fallback until parent sidebar is created
-      default:
-        return adminSidebarConfig;
-    }
-  } catch {
-    return adminSidebarConfig;
+  switch (role) {
+    case 'admin':
+      return adminSidebarConfig;
+    case 'teacher':
+    case 'staff':
+      return staffSidebarConfig;
+    case 'parent':
+      // return parentSidebarConfig;
+      return adminSidebarConfig; // Fallback until parent sidebar is created
+    default:
+      return adminSidebarConfig;
   }
 }

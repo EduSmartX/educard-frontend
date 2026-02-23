@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { toast } from 'sonner';
 import { sendOtps, verifyOtp } from '@/lib/api/otp-api';
 import { registerOrganization } from '@/lib/api/organization-api';
@@ -10,7 +9,7 @@ import { parseOtpErrors } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { getErrorMessage } from '@/lib/utils/error-handler';
 import { ROUTES } from '@/constants/app-config';
-import { ADDRESS_TYPE } from '@/constants/address-type';
+import { ErrorMessages, FormPlaceholders, SuccessMessages } from '@/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,69 +34,28 @@ import {
 import { Logo } from '@/components/branding/logo';
 import { AddressForm } from '@/components/forms/address-form';
 import { PhoneInput } from '@/components/forms/phone-input';
-import { createAddressSchema } from '@/components/forms/address-schema';
 import { ORGANIZATION_TYPES, BOARD_AFFILIATIONS } from '@/constants/organization-options';
-import { isValidIndianPhone } from '@/lib/phone-utils';
-
-// Multi-step wizard steps
-type SignupStep = 1 | 2 | 3 | 4;
-
-// Validation schemas for each step
-const step1Schema = z.object({
-  adminEmail: z.string().email('Please enter a valid admin email'),
-  orgEmail: z.string().email('Please enter a valid organization email'),
-});
-
-const step2Schema = z.object({
-  adminOtp: z.string().length(6, 'OTP must be 6 digits'),
-  orgOtp: z.string().optional(),
-});
-
-// Dynamic schema that changes based on includeAddress toggle
-const createStep3Schema = (includeAddress: boolean) =>
-  z.object({
-    // Organization Info
-    orgName: z.string().min(2, 'Organization name is required'),
-    orgType: z.string().min(1, 'Organization type is required'),
-    orgPhone: z
-      .string()
-      .min(1, 'Phone number is required')
-      .refine(
-        (val) => {
-          // Allow partial input during typing, but validate on submit
-          if (!val || val === '+91') return false;
-          return isValidIndianPhone(val);
-        },
-        {
-          message: 'Please enter a valid 10-digit Indian mobile number',
-        }
-      ),
-    orgWebsite: z.string().optional(),
-    boardAffiliation: z.string().optional(),
-
-    // Address Info - Use helper function
-    ...createAddressSchema(includeAddress),
-  });
-
-const step4Schema = z
-  .object({
-    // Admin Personal Info
-    firstName: z.string().min(2, 'First name is required'),
-    lastName: z.string().min(2, 'Last name is required'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
-    confirmPassword: z.string(),
-    notificationOptIn: z.boolean().default(true),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ['confirmPassword'],
-  });
-
-type Step1Data = z.infer<typeof step1Schema>;
-type Step2Data = z.infer<typeof step2Schema>;
-type Step3Data = z.infer<ReturnType<typeof createStep3Schema>>;
-type Step4Data = z.infer<typeof step4Schema>;
-type CompleteSignupData = Step1Data & Step2Data & Step3Data & Step4Data;
+import { AuthActionButtons } from '../components/auth-action-buttons';
+import {
+  createStep3Schema,
+  step1Schema,
+  step2Schema,
+  step4Schema,
+  type CompleteSignupData,
+  type SignupStep,
+  type Step1Data,
+  type Step2Data,
+  type Step3Data,
+  type Step4Data,
+} from '../utils/signup.schemas';
+import {
+  buildOrganizationRegistrationPayload,
+  buildOtpSendRequests,
+  getOtpSendSuccessMessage,
+  getOtpVerifyBlockingMessage,
+  normalizeStep3DataForSave,
+  SIGNUP_STEP_TITLES,
+} from '../utils/signup.utils';
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -157,27 +115,7 @@ export default function SignupPage() {
   const handleStep1Submit = async (data: Step1Data) => {
     setIsLoading(true);
     try {
-      // If using same email, send only one OTP with both categories
-      const emails = useSameEmail
-        ? [
-            {
-              email: data.adminEmail,
-              category: 'admin' as const,
-              purpose: 'organization_registration',
-            },
-          ]
-        : [
-            {
-              email: data.adminEmail,
-              category: 'admin' as const,
-              purpose: 'organization_registration',
-            },
-            {
-              email: data.orgEmail,
-              category: 'organization' as const,
-              purpose: 'organization_registration',
-            },
-          ];
+      const emails = buildOtpSendRequests(useSameEmail, data);
 
       const response = await sendOtps(emails);
 
@@ -187,15 +125,11 @@ export default function SignupPage() {
 
         setFormData((prev) => ({ ...prev, ...updatedData }));
 
-        const message = useSameEmail
-          ? `Verification code sent to ${data.adminEmail}`
-          : `Verification codes sent to ${data.adminEmail} and ${data.orgEmail}`;
-
-        toast.success(message);
+        toast.success(getOtpSendSuccessMessage(useSameEmail, data));
         setCurrentStep(2);
       } else {
         const failedEmails = response.results.filter((r) => !r.success);
-        toast.error(`Failed to send OTP to: ${failedEmails.map((r) => r.email).join(', ')}`);
+        toast.error(`${ErrorMessages.AUTH.SEND_OTP_FAILED} ${failedEmails.map((r) => r.email).join(', ')}`);
       }
     } catch (error: unknown) {
       // Parse OTP validation errors
@@ -230,7 +164,7 @@ export default function SignupPage() {
   const handleVerifyAdminOtp = async () => {
     const otpValue = step2Form.getValues('adminOtp');
     if (!otpValue || otpValue.length !== 6) {
-      toast.error('Please enter a valid 6-digit OTP');
+      toast.error(ErrorMessages.AUTH.INVALID_OTP);
       return;
     }
 
@@ -240,12 +174,12 @@ export default function SignupPage() {
 
       if (response.success) {
         setAdminOtpVerified(true);
-        toast.success('Administrator email verified successfully');
+        toast.success(SuccessMessages.AUTH.ADMIN_EMAIL_VERIFIED);
       } else {
-        toast.error(response.message || 'Invalid OTP. Please try again.');
+        toast.error(response.message || ErrorMessages.AUTH.VERIFY_OTP_FAILED);
       }
     } catch (error: unknown) {
-      toast.error(getErrorMessage(error, 'Failed to verify OTP. Please try again.'));
+      toast.error(getErrorMessage(error, ErrorMessages.AUTH.VERIFY_OTP_FAILED));
     } finally {
       setVerifyingAdmin(false);
     }
@@ -254,7 +188,7 @@ export default function SignupPage() {
   const handleVerifyOrgOtp = async () => {
     const otpValue = step2Form.getValues('orgOtp');
     if (!otpValue || otpValue.length !== 6) {
-      toast.error('Please enter a valid 6-digit OTP');
+      toast.error(ErrorMessages.AUTH.INVALID_OTP);
       return;
     }
 
@@ -264,12 +198,12 @@ export default function SignupPage() {
 
       if (response.success) {
         setOrgOtpVerified(true);
-        toast.success('Organization email verified successfully');
+        toast.success(SuccessMessages.AUTH.ORG_EMAIL_VERIFIED);
       } else {
-        toast.error(response.message || 'Invalid OTP. Please try again.');
+        toast.error(response.message || ErrorMessages.AUTH.VERIFY_OTP_FAILED);
       }
     } catch (error: unknown) {
-      toast.error(getErrorMessage(error, 'Failed to verify OTP. Please try again.'));
+      toast.error(getErrorMessage(error, ErrorMessages.AUTH.VERIFY_OTP_FAILED));
     } finally {
       setVerifyingOrg(false);
     }
@@ -280,10 +214,7 @@ export default function SignupPage() {
     const isVerified = useSameEmail ? adminOtpVerified : adminOtpVerified && orgOtpVerified;
 
     if (!isVerified) {
-      const message = useSameEmail
-        ? 'Please verify the email address before continuing'
-        : 'Please verify both email addresses before continuing';
-      toast.error(message);
+      toast.error(getOtpVerifyBlockingMessage(useSameEmail));
       return;
     }
 
@@ -294,21 +225,14 @@ export default function SignupPage() {
     }
 
     setFormData((prev) => ({ ...prev, ...data }));
-    toast.success('Email verification complete! 🎉');
+    toast.success(SuccessMessages.AUTH.EMAIL_VERIFICATION_COMPLETE);
     setCurrentStep(3);
   };
 
   // Step 3: Organization and Address details
   const handleStep3Submit = (data: Step3Data) => {
-    // If address toggle is OFF, clear address fields before saving
-    if (!includeAddress) {
-      data.streetAddress = '';
-      data.addressLine2 = '';
-      data.city = '';
-      data.state = '';
-      data.zipCode = '';
-    }
-    setFormData((prev) => ({ ...prev, ...data }));
+    const normalizedData = normalizeStep3DataForSave(includeAddress, data);
+    setFormData((prev) => ({ ...prev, ...normalizedData }));
     setCurrentStep(4);
   };
 
@@ -317,42 +241,7 @@ export default function SignupPage() {
     setIsLoading(true);
     try {
       const completeData = { ...formData, ...data } as CompleteSignupData;
-
-      const registrationData = {
-        organization_info: {
-          name: completeData.orgName,
-          type: completeData.orgType,
-          email: completeData.orgEmail,
-          phone_number: completeData.orgPhone,
-          website_url: completeData.orgWebsite,
-          board_affiliation: completeData.boardAffiliation,
-        },
-        admin_info: {
-          first_name: completeData.firstName,
-          last_name: completeData.lastName,
-          email: completeData.adminEmail,
-          password: completeData.password,
-          password2: completeData.confirmPassword,
-          notification_opt_in: completeData.notificationOptIn,
-        },
-        // Only include address_info if user provided address details
-        ...(completeData.streetAddress &&
-        completeData.city &&
-        completeData.state &&
-        completeData.zipCode
-          ? {
-              address_info: {
-                address_type: ADDRESS_TYPE.ORGANIZATION,
-                street_address: completeData.streetAddress,
-                address_line_2: completeData.addressLine2 || '',
-                city: completeData.city,
-                state: completeData.state,
-                zip_code: completeData.zipCode,
-                country: completeData.country || 'India',
-              },
-            }
-          : {}),
-      };
+      const registrationData = buildOrganizationRegistrationPayload(completeData);
 
       const response = await registerOrganization(registrationData);
 
@@ -381,13 +270,6 @@ export default function SignupPage() {
       setCurrentStep((prev) => (prev - 1) as SignupStep);
     }
   };
-
-  const stepTitles = [
-    'Email Verification',
-    'Verify OTP Codes',
-    'Organization Details',
-    'Administrator Setup',
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 sm:p-6 lg:p-8">
@@ -418,7 +300,7 @@ export default function SignupPage() {
                 Create Your Account
               </CardTitle>
               <CardDescription className="text-lg text-gray-600 font-medium">
-                {stepTitles[currentStep - 1]}
+                {SIGNUP_STEP_TITLES[currentStep - 1]}
               </CardDescription>
             </div>
 
@@ -509,7 +391,7 @@ export default function SignupPage() {
                     <input
                       id="adminEmail"
                       type="email"
-                      placeholder="admin@example.com"
+                      placeholder={FormPlaceholders.ADMIN_EMAIL_EXAMPLE}
                       className={cn(
                         'h-14 pl-12 text-base border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:ring-4 focus:ring-teal-50 transition-all w-full',
                         step1Form.formState.errors.adminEmail &&
@@ -575,7 +457,7 @@ export default function SignupPage() {
                     <input
                       id="orgEmail"
                       type="email"
-                      placeholder="school@example.com"
+                      placeholder={FormPlaceholders.SCHOOL_EMAIL_EXAMPLE}
                       className={cn(
                         'h-14 pl-12 text-base border-2 rounded-xl transition-all w-full',
                         useSameEmail
@@ -603,25 +485,14 @@ export default function SignupPage() {
                   </p>
                 </div>
 
-                {/* Action Buttons - Modern Style */}
-                <div className="flex gap-3 pt-6">
-                  <Button
-                    type="button"
-                    className="flex-1 h-14 bg-white border-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl font-semibold transition-all"
-                    onClick={() => navigate(ROUTES.AUTH.LOGIN)}
-                  >
-                    <ArrowLeft className="mr-2 h-5 w-5" />
-                    Back to Login
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="flex-1 h-14 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white rounded-xl font-semibold shadow-lg shadow-teal-200 hover:shadow-xl hover:scale-105 transition-all"
-                    isLoading={isLoading}
-                  >
-                    Send Verification Codes
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </div>
+                <AuthActionButtons
+                  secondaryLabel="Back to Login"
+                  primaryLabel="Send Verification Codes"
+                  onSecondaryClick={() => navigate(ROUTES.AUTH.LOGIN)}
+                  primaryLoading={isLoading}
+                  secondaryIcon={<ArrowLeft className="mr-2 h-5 w-5" />}
+                  primaryIcon={<ArrowRight className="ml-2 h-5 w-5" />}
+                />
               </form>
             )}
 
@@ -672,7 +543,7 @@ export default function SignupPage() {
                         id="adminOtp"
                         type="text"
                         maxLength={6}
-                        placeholder="• • • • • •"
+                        placeholder={FormPlaceholders.OTP_MASK}
                         className={`h-14 text-center text-2xl font-bold tracking-[0.5em] border-2 rounded-xl transition-all ${
                           adminOtpVerified
                             ? 'border-green-300 bg-green-50 text-green-700'
@@ -732,7 +603,7 @@ export default function SignupPage() {
                           id="orgOtp"
                           type="text"
                           maxLength={6}
-                          placeholder="• • • • • •"
+                          placeholder={FormPlaceholders.OTP_MASK}
                           className={`h-14 text-center text-2xl font-bold tracking-[0.5em] border-2 rounded-xl transition-all ${
                             orgOtpVerified
                               ? 'border-green-300 bg-green-50 text-green-700'
@@ -793,27 +664,17 @@ export default function SignupPage() {
                   </div>
                 )}
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-4">
-                  <Button
-                    type="button"
-                    className="flex-1 h-14 bg-white border-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl font-semibold transition-all"
-                    onClick={goToPreviousStep}
-                  >
-                    <ArrowLeft className="mr-2 h-5 w-5" />
-                    Previous
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="flex-1 h-14 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white rounded-xl font-semibold shadow-lg shadow-teal-200 hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                    disabled={
-                      useSameEmail ? !adminOtpVerified : !adminOtpVerified || !orgOtpVerified
-                    }
-                  >
-                    Continue
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </div>
+                <AuthActionButtons
+                  secondaryLabel="Previous"
+                  primaryLabel="Continue"
+                  onSecondaryClick={goToPreviousStep}
+                  primaryDisabled={
+                    useSameEmail ? !adminOtpVerified : !adminOtpVerified || !orgOtpVerified
+                  }
+                  containerClassName="pt-4"
+                  secondaryIcon={<ArrowLeft className="mr-2 h-5 w-5" />}
+                  primaryIcon={<ArrowRight className="ml-2 h-5 w-5" />}
+                />
               </form>
             )}
 
@@ -845,7 +706,7 @@ export default function SignupPage() {
                   </Label>
                   <Input
                     id="orgName"
-                    placeholder="Enter school/institution name"
+                    placeholder={FormPlaceholders.ENTER_SCHOOL_NAME}
                     className="h-14 text-base border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:ring-4 focus:ring-teal-50 transition-all"
                     error={step3Form.formState.errors.orgName?.message}
                     {...step3Form.register('orgName')}
@@ -876,7 +737,7 @@ export default function SignupPage() {
                         className="h-14 text-base"
                         error={step3Form.formState.errors.orgType?.message as string}
                       >
-                        <SelectValue placeholder="Select organization type" />
+                        <SelectValue placeholder={FormPlaceholders.SELECT_OPTION} />
                       </SelectTrigger>
                       <SelectContent>
                         {ORGANIZATION_TYPES.map((type) => (
@@ -930,7 +791,7 @@ export default function SignupPage() {
                     <Input
                       id="orgWebsite"
                       type="url"
-                      placeholder="https://www.example.com"
+                      placeholder={FormPlaceholders.WEBSITE_GENERIC_EXAMPLE}
                       className="h-14 text-base border-2 border-gray-200 rounded-xl focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all"
                       {...step3Form.register('orgWebsite')}
                     />
@@ -954,7 +815,7 @@ export default function SignupPage() {
                       }
                     >
                       <SelectTrigger id="boardAffiliation" className="h-14 text-base">
-                        <SelectValue placeholder="Select board affiliation" />
+                        <SelectValue placeholder={FormPlaceholders.SELECT_OPTION} />
                       </SelectTrigger>
                       <SelectContent>
                         {BOARD_AFFILIATIONS.map((board) => (
@@ -1029,24 +890,13 @@ export default function SignupPage() {
                   </div>
                 )}
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-6">
-                  <Button
-                    type="button"
-                    className="flex-1 h-14 bg-white border-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl font-semibold transition-all"
-                    onClick={goToPreviousStep}
-                  >
-                    <ArrowLeft className="mr-2 h-5 w-5" />
-                    Previous
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="flex-1 h-14 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white rounded-xl font-semibold shadow-lg shadow-teal-200 hover:shadow-xl hover:scale-105 transition-all"
-                  >
-                    Continue
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </div>
+                <AuthActionButtons
+                  secondaryLabel="Previous"
+                  primaryLabel="Continue"
+                  onSecondaryClick={goToPreviousStep}
+                  secondaryIcon={<ArrowLeft className="mr-2 h-5 w-5" />}
+                  primaryIcon={<ArrowRight className="ml-2 h-5 w-5" />}
+                />
               </form>
             )}
 
@@ -1065,7 +915,7 @@ export default function SignupPage() {
                     </Label>
                     <Input
                       id="firstName"
-                      placeholder="John"
+                      placeholder={FormPlaceholders.FIRST_NAME_EXAMPLE}
                       className="h-12 border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
                       error={step4Form.formState.errors.firstName?.message}
                       {...step4Form.register('firstName')}
@@ -1078,11 +928,49 @@ export default function SignupPage() {
                     </Label>
                     <Input
                       id="lastName"
-                      placeholder="Doe"
+                      placeholder={FormPlaceholders.LAST_NAME_EXAMPLE}
                       className="h-12 border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
                       error={step4Form.formState.errors.lastName?.message}
                       {...step4Form.register('lastName')}
                     />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phoneNumber" className="text-sm font-semibold text-gray-700">
+                      Phone Number
+                    </Label>
+                    <PhoneInput
+                      id="phoneNumber"
+                      className="h-12 border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                      error={step4Form.formState.errors.phoneNumber?.message}
+                      {...step4Form.register('phoneNumber')}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="gender" className="text-sm font-semibold text-gray-700">
+                      Gender
+                    </Label>
+                    <Select
+                      value={step4Form.watch('gender') || ''}
+                      onValueChange={(value) => step4Form.setValue('gender', value)}
+                    >
+                      <SelectTrigger className="h-12 border-2 border-gray-300 focus:border-teal-500">
+                        <SelectValue placeholder="Select Gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="M">Male</SelectItem>
+                        <SelectItem value="F">Female</SelectItem>
+                        <SelectItem value="O">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {step4Form.formState.errors.gender && (
+                      <p className="text-sm text-red-600">
+                        {step4Form.formState.errors.gender.message}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -1093,7 +981,7 @@ export default function SignupPage() {
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Create a strong password (min 8 characters)"
+                    placeholder={FormPlaceholders.CREATE_STRONG_PASSWORD}
                     className="h-12 border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
                     error={step4Form.formState.errors.password?.message}
                     {...step4Form.register('password')}
@@ -1107,7 +995,7 @@ export default function SignupPage() {
                   <Input
                     id="confirmPassword"
                     type="password"
-                    placeholder="Re-enter your password"
+                    placeholder={FormPlaceholders.REENTER_NEW_PASSWORD}
                     className="h-12 border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
                     error={step4Form.formState.errors.confirmPassword?.message}
                     {...step4Form.register('confirmPassword')}
@@ -1159,25 +1047,18 @@ export default function SignupPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-4">
-                  <Button
-                    type="button"
-                    className="flex-1 h-12 bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50"
-                    onClick={goToPreviousStep}
-                    disabled={isLoading}
-                  >
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Previous
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="flex-1 h-12 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 shadow-lg"
-                    isLoading={isLoading}
-                  >
-                    Complete Registration
-                    <CheckCircle2 className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
+                <AuthActionButtons
+                  secondaryLabel="Previous"
+                  primaryLabel="Complete Registration"
+                  onSecondaryClick={goToPreviousStep}
+                  secondaryDisabled={isLoading}
+                  primaryLoading={isLoading}
+                  containerClassName="pt-4"
+                  secondaryIcon={<ArrowLeft className="mr-2 h-4 w-4" />}
+                  primaryIcon={<CheckCircle2 className="ml-2 h-4 w-4" />}
+                  secondaryClassName="h-12 border-gray-300"
+                  primaryClassName="h-12"
+                />
               </form>
             )}
 

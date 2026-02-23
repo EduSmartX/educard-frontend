@@ -9,7 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CardContent } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
 import { TextInputField } from '@/components/forms/form-fields';
 import { SelectField } from '@/components/forms/form-fields';
@@ -19,6 +19,7 @@ import {
   ORGANIZATION_TYPE_OPTIONS,
   BOARD_AFFILIATION_OPTIONS,
 } from '@/constants/organization-types';
+import { CommonUiText, FormPlaceholders } from '@/constants';
 
 const organizationInfoSchema = z.object({
   name: z.string().min(1, 'Organization name is required'),
@@ -86,8 +87,12 @@ export function OrganizationInfoForm({ organization, isLoading }: OrganizationIn
   }
 
   return (
-    <CardContent className="pt-6">
-      <Form {...form}>
+    <>
+      <CardHeader>
+        <CardTitle className="text-base font-medium">Organization Information</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
@@ -95,7 +100,7 @@ export function OrganizationInfoForm({ organization, isLoading }: OrganizationIn
                 control={form.control}
                 name="name"
                 label="Organization Name"
-                placeholder="Adharsha International High School"
+                placeholder={FormPlaceholders.ORG_NAME_EXAMPLE}
                 required
               />
             </div>
@@ -104,7 +109,7 @@ export function OrganizationInfoForm({ organization, isLoading }: OrganizationIn
               control={form.control}
               name="organization_type"
               label="Organization Type"
-              placeholder="Select organization type"
+              placeholder={FormPlaceholders.SELECT_OPTION}
               options={ORGANIZATION_TYPE_OPTIONS}
             />
 
@@ -112,7 +117,7 @@ export function OrganizationInfoForm({ organization, isLoading }: OrganizationIn
               control={form.control}
               name="board_affiliation"
               label="Board Affiliation"
-              placeholder="Select board affiliation"
+              placeholder={FormPlaceholders.SELECT_OPTION}
               options={BOARD_AFFILIATION_OPTIONS}
             />
 
@@ -120,7 +125,7 @@ export function OrganizationInfoForm({ organization, isLoading }: OrganizationIn
               control={form.control}
               name="email"
               label="Email Address"
-              placeholder="info@organization.com"
+              placeholder={FormPlaceholders.ORG_EMAIL_EXAMPLE}
               type="email"
               required
             />
@@ -129,7 +134,7 @@ export function OrganizationInfoForm({ organization, isLoading }: OrganizationIn
               control={form.control}
               name="phone"
               label="Phone Number"
-              placeholder="+1234567890"
+              placeholder={FormPlaceholders.PHONE_EXAMPLE}
               type="tel"
             />
 
@@ -137,54 +142,55 @@ export function OrganizationInfoForm({ organization, isLoading }: OrganizationIn
               control={form.control}
               name="registration_number"
               label="Registration Number"
-              placeholder="REG123456"
+              placeholder={FormPlaceholders.REGISTRATION_NUMBER_EXAMPLE}
             />
 
             <TextInputField
               control={form.control}
               name="corporate_identification_number"
               label="Corporate Identification Number (CIN)"
-              placeholder="U12345AB2020PTC123456"
+              placeholder={FormPlaceholders.CIN_EXAMPLE}
             />
 
             <TextInputField
               control={form.control}
               name="tax_id"
               label="Tax ID / GSTIN"
-              placeholder="22AAAAA0000A1Z5"
+              placeholder={FormPlaceholders.GSTIN_EXAMPLE}
             />
 
             <TextInputField
               control={form.control}
               name="website_url"
               label="Website"
-              placeholder="https://www.organization.com"
+              placeholder={FormPlaceholders.WEBSITE_EXAMPLE}
             />
           </div>
 
           <div className="flex justify-end gap-3">
             <Button
               type="button"
-              variant="outline"
+              variant="brandOutline"
               onClick={() => form.reset()}
               disabled={updateMutation.isPending || !form.formState.isDirty}
             >
-              Reset
+              {CommonUiText.RESET}
             </Button>
             <Button
               type="submit"
+              variant="brand"
               disabled={updateMutation.isPending || !form.formState.isDirty}
-              className="bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg shadow-blue-500/50 disabled:opacity-50 disabled:shadow-none"
+              className="shadow-lg disabled:shadow-none"
             >
               {updateMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  {CommonUiText.SAVING}
                 </>
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  Save Changes
+                  {CommonUiText.SAVE_CHANGES}
                 </>
               )}
             </Button>
@@ -192,5 +198,6 @@ export function OrganizationInfoForm({ organization, isLoading }: OrganizationIn
         </form>
       </Form>
     </CardContent>
+    </>
   );
 }

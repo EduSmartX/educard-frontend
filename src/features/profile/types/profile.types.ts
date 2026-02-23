@@ -53,6 +53,7 @@ export interface UpdateProfilePayload {
   gender?: string;
   blood_group?: string;
   date_of_birth?: string;
+  organization_role?: string;
   notification_opt_in?: boolean;
   address?: {
     address_type?: string;

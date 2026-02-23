@@ -5,6 +5,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { ErrorMessages, SuccessMessages, ToastTitles } from '@/constants';
 import type { CreateHolidayPayload, UpdateHolidayPayload } from '../types';
 import {
   createHoliday,
@@ -65,7 +66,7 @@ export function useCreateHoliday(options?: MutationOptions) {
       // Invalidate all holiday queries
       queryClient.invalidateQueries({ queryKey: ['holidays'] });
 
-      toast.success('Holiday Created', {
+      toast.success(SuccessMessages.HOLIDAY.CREATE_SUCCESS, {
         description: 'The holiday has been created successfully.',
       });
 
@@ -77,12 +78,12 @@ export function useCreateHoliday(options?: MutationOptions) {
 
       // Only show toast if there are no field errors (generic errors)
       if (!fieldErrors || Object.keys(fieldErrors).length === 0) {
-        toast.error('Error Creating Holiday', {
+        toast.error(ToastTitles.ERROR, {
           description: errorMessage,
         });
       } else {
         // If there are field errors, show a generic validation message
-        toast.error('Validation Error', {
+        toast.error(ToastTitles.VALIDATION_ERROR, {
           description: 'Please check the form fields and try again.',
         });
       }
@@ -103,15 +104,15 @@ export function useCreateHolidaysBulk(options?: MutationOptions) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['holidays'] });
 
-      toast.success('Holidays Created', {
+      toast.success(SuccessMessages.HOLIDAY.BULK_UPLOAD_SUCCESS, {
         description: 'All holidays have been created successfully.',
       });
 
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      toast.error('Error Creating Holidays', {
-        description: error.message || 'Failed to create holidays. Please try again.',
+      toast.error(ToastTitles.ERROR, {
+        description: error.message || ErrorMessages.HOLIDAY.CREATE_FAILED,
       });
 
       options?.onError?.(error);
@@ -135,7 +136,7 @@ export function useUpdateHoliday(options?: MutationOptions) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['holidays'] });
 
-      toast.success('Holiday Updated', {
+      toast.success(SuccessMessages.HOLIDAY.UPDATE_SUCCESS, {
         description: 'The holiday has been updated successfully.',
       });
 
@@ -147,12 +148,12 @@ export function useUpdateHoliday(options?: MutationOptions) {
 
       // Only show toast if there are no field errors (generic errors)
       if (!fieldErrors || Object.keys(fieldErrors).length === 0) {
-        toast.error('Error Updating Holiday', {
+        toast.error(ToastTitles.ERROR, {
           description: errorMessage,
         });
       } else {
         // If there are field errors, show a generic validation message
-        toast.error('Validation Error', {
+        toast.error(ToastTitles.VALIDATION_ERROR, {
           description: 'Please check the form fields and try again.',
         });
       }
@@ -177,15 +178,15 @@ export function useDeleteHoliday(options?: MutationOptions) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['holidays'] });
 
-      toast.success('Holiday Deleted', {
+      toast.success(SuccessMessages.HOLIDAY.DELETE_SUCCESS, {
         description: 'The holiday has been deleted successfully.',
       });
 
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      toast.error('Error Deleting Holiday', {
-        description: error.message || 'Failed to delete holiday. Please try again.',
+      toast.error(ToastTitles.ERROR, {
+        description: error.message || ErrorMessages.HOLIDAY.DELETE_FAILED,
       });
 
       options?.onError?.(error);
@@ -209,11 +210,11 @@ export function useBulkUploadHolidays(options?: MutationOptions) {
       queryClient.invalidateQueries({ queryKey: ['holidays'] });
 
       if (response.data.failed_count > 0) {
-        toast.warning('Upload Completed with Errors', {
+        toast.warning(ErrorMessages.HOLIDAY.BULK_UPLOAD_FAILED, {
           description: `${response.data.created_count} holidays created, ${response.data.failed_count} failed.`,
         });
       } else {
-        toast.success('Bulk Upload Successful', {
+        toast.success(SuccessMessages.HOLIDAY.BULK_UPLOAD_SUCCESS, {
           description: `${response.data.created_count} holidays have been created successfully.`,
         });
       }
@@ -221,9 +222,8 @@ export function useBulkUploadHolidays(options?: MutationOptions) {
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      toast.error('Bulk Upload Failed', {
-        description:
-          error.message || 'Failed to upload holidays. Please check the file and try again.',
+      toast.error(ToastTitles.ERROR, {
+        description: error.message || ErrorMessages.HOLIDAY.BULK_UPLOAD_FAILED,
       });
 
       options?.onError?.(error);

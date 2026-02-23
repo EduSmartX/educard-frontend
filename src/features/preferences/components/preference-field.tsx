@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { OrganizationPreference } from '@/lib/api/preferences-api';
+import { FormPlaceholders } from '@/constants';
 import {
   validateTimeFormat,
   validateDeadlineDay,
@@ -218,7 +219,7 @@ export function PreferenceField({
                 id={preference.key}
                 className="h-11 bg-white border-gray-300 text-gray-900 w-full sm:max-w-md"
               >
-                <SelectValue placeholder="Select an option" />
+                <SelectValue placeholder={FormPlaceholders.SELECT_OPTION} />
               </SelectTrigger>
               <SelectContent>
                 {preference.applicable_values?.map((option: string) => (
@@ -253,7 +254,7 @@ export function PreferenceField({
                   id={preference.key}
                   className="h-11 bg-white border-gray-300 text-gray-900 w-full sm:max-w-md"
                 >
-                  <SelectValue placeholder="Select options" />
+                  <SelectValue placeholder={FormPlaceholders.SELECT_OPTIONS} />
                 </SelectTrigger>
                 <SelectContent>
                   {preference.applicable_values

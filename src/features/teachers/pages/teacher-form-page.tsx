@@ -13,6 +13,7 @@ import {
   ReactivateConfirmationDialog,
 } from '@/components/common';
 import { ROUTES } from '@/constants/app-config';
+import { ErrorMessages, SuccessMessages, ToastTitles } from '@/constants';
 import { useTeacher } from '../hooks/use-teachers';
 import { useDeleteTeacher, useReactivateTeacher } from '../hooks/mutations';
 import { TeacherForm } from '../components/teacher-form';
@@ -46,8 +47,8 @@ export default function TeacherFormPage() {
 
   useEffect(() => {
     if (error && mode !== 'create' && !isDeleting && !isReactivating) {
-      const errorMessage = getErrorMessage(error, 'Failed to load teacher data');
-      toast.error('Error Loading Teacher', {
+      const errorMessage = getErrorMessage(error, ErrorMessages.TEACHER.FETCH_FAILED);
+      toast.error(ToastTitles.ERROR, {
         description: errorMessage,
         duration: 5000,
       });
@@ -71,23 +72,23 @@ export default function TeacherFormPage() {
   // Delete mutation
   const deleteMutation = useDeleteTeacher({
     onSuccess: () => {
-      toast.success('Teacher deleted successfully');
+      toast.success(SuccessMessages.TEACHER.DELETE_SUCCESS);
       // Navigate immediately to avoid refetching deleted resource
       navigate(ROUTES.TEACHERS, { replace: true });
     },
     onError: (error: Error) => {
-      toast.error(`Failed to delete teacher: ${error.message}`);
+      toast.error(error.message || ErrorMessages.TEACHER.DELETE_FAILED);
     },
   });
 
   // Reactivate mutation
   const reactivateMutation = useReactivateTeacher({
     onSuccess: () => {
-      toast.success('Teacher reactivated successfully');
+      toast.success(SuccessMessages.TEACHER.REACTIVATE_SUCCESS);
       navigate(ROUTES.TEACHERS, { replace: true });
     },
     onError: (error: Error) => {
-      toast.error(`Failed to reactivate teacher: ${error.message}`);
+      toast.error(error.message || ErrorMessages.TEACHER.REACTIVATE_FAILED);
     },
   });
 
@@ -161,7 +162,7 @@ export default function TeacherFormPage() {
 
   // Show error state
   if (error && mode !== 'create') {
-    const errorMessage = getErrorMessage(error, 'Failed to load teacher data');
+    const errorMessage = getErrorMessage(error, ErrorMessages.TEACHER.FETCH_FAILED);
 
     return (
       <div className="space-y-6">

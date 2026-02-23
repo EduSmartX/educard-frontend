@@ -14,6 +14,7 @@ import { getCurrentLocationAddress } from '@/lib/location-utils';
 import { MapPin, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ADDRESS_TYPE_OPTIONS } from '@/constants/address-type';
+import { CommonUiText, ErrorMessages, FormPlaceholders, SuccessMessages } from '@/constants';
 
 interface FieldNames {
   addressType?: string;
@@ -88,9 +89,10 @@ export function AddressForm({
       form.setValue(getFieldName('zipCode'), locationData.zipCode, { shouldValidate: true });
       form.setValue(getFieldName('country'), locationData.country, { shouldValidate: true });
 
-      toast.success('📍 Location detected! Address fields filled automatically.');
+      toast.success(SuccessMessages.LOCATION.AUTO_FILLED);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unable to get location';
+      const errorMessage =
+        error instanceof Error ? error.message : ErrorMessages.LOCATION_UNAVAILABLE;
       toast.error(errorMessage);
     } finally {
       setIsLoadingLocation(false);
@@ -128,7 +130,7 @@ export function AddressForm({
               {isLoadingLocation ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Getting location...
+                  {CommonUiText.GETTING_LOCATION}
                 </>
               ) : (
                 <>
@@ -154,7 +156,7 @@ export function AddressForm({
             disabled={disabled}
           >
             <SelectTrigger className="bg-gray-50 focus:bg-white">
-              <SelectValue placeholder="Select address type" />
+              <SelectValue placeholder={FormPlaceholders.SELECT_ADDRESS_TYPE} />
             </SelectTrigger>
             <SelectContent>
               {ADDRESS_TYPE_OPTIONS.map((option) => (

@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Navigate } from 'react-router-dom';
 import { PageLoader } from '@/components/ui/loading-spinner';
 import { ROUTES } from '@/constants/app-config';
+import { getStoredUserRole } from '@/lib/utils/storage';
 
 // Lazy load dashboard pages
 const AdminDashboardPage = lazy(() => import('./admin/admin-dashboard-page'));
@@ -14,21 +15,7 @@ const AdminDashboardPage = lazy(() => import('./admin/admin-dashboard-page'));
  * URL: /dashboard (same for all roles)
  */
 export default function DashboardRouter() {
-  // Get user from localStorage
-  const getUserRole = (): string | null => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        return user.role?.toLowerCase();
-      } catch {
-        return null;
-      }
-    }
-    return null;
-  };
-
-  const role = getUserRole();
+  const role = getStoredUserRole();
 
   // If no role, redirect to login
   if (!role) {

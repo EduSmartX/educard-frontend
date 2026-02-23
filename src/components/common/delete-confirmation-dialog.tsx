@@ -127,7 +127,7 @@ export function DeleteConfirmationDialog({
             <AlertDialogAction
               onClick={onConfirm}
               disabled={isDeleting}
-              className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-md hover:shadow-lg transition-all duration-200"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-md hover:shadow-lg transition-all duration-200"
             >
               {isDeleting ? (
                 <>

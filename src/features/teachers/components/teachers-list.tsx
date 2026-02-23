@@ -3,7 +3,7 @@
  * Displays the table with filtering, search, and pagination capabilities
  */
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus, Filter, X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -59,45 +59,46 @@ export function TeachersList({
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [showFilters, setShowFilters] = useState(false);
 
-  // Extract unique values for filter options
-  const designations = Array.from(new Set(teachers.map((t) => t.designation).filter(Boolean))).map(
-    (d) => ({
-      value: d!,
-      label: d!,
-    })
-  );
+  const filterFields: FilterField[] = useMemo(() => {
+    const designations = Array.from(
+      new Set(teachers.map((teacher) => teacher.designation).filter(Boolean))
+    ).map((designation) => ({
+      value: designation!,
+      label: designation!,
+    }));
 
-  const specializations = Array.from(
-    new Set(teachers.map((t) => t.specialization).filter(Boolean))
-  ).map((s) => ({
-    value: s!,
-    label: s!,
-  }));
+    const specializations = Array.from(
+      new Set(teachers.map((teacher) => teacher.specialization).filter(Boolean))
+    ).map((specialization) => ({
+      value: specialization!,
+      label: specialization!,
+    }));
 
-  const filterFields: FilterField[] = [
-    {
-      name: 'search',
-      label: 'Search',
-      type: 'text',
-      placeholder: 'Search by name, email, phone, or employee ID...',
-    },
-    {
-      name: 'designation',
-      label: 'Designation',
-      type: 'select',
-      placeholder: 'All designations',
-      options: designations,
-      searchable: true,
-    },
-    {
-      name: 'specialization',
-      label: 'Specialization',
-      type: 'select',
-      placeholder: 'All specializations',
-      options: specializations,
-      searchable: true,
-    },
-  ];
+    return [
+      {
+        name: 'search',
+        label: 'Search',
+        type: 'text',
+        placeholder: 'Search by name, email, phone, or employee ID...',
+      },
+      {
+        name: 'designation',
+        label: 'Designation',
+        type: 'select',
+        placeholder: 'All designations',
+        options: designations,
+        searchable: true,
+      },
+      {
+        name: 'specialization',
+        label: 'Specialization',
+        type: 'select',
+        placeholder: 'All specializations',
+        options: specializations,
+        searchable: true,
+      },
+    ];
+  }, [teachers]);
 
   const columns = createTeacherListColumns({
     onView,
@@ -118,10 +119,8 @@ export function TeachersList({
                 {
                   label: 'Add Teacher',
                   onClick: onCreateNew,
-                  variant: 'default' as const,
+                  variant: 'brand' as const,
                   icon: Plus,
-                  className:
-                    'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700',
                 },
               ]
             : []),

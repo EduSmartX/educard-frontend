@@ -46,6 +46,7 @@ import { isDeletedDuplicateError, getDeletedDuplicateMessage } from '@/lib/utils
 import { DeletedDuplicateDialog } from '@/components/common';
 import { useDeletedDuplicateHandler } from '@/hooks/use-deleted-duplicate-handler';
 import { classFormSchema, type ClassFormData } from '../schemas/class-form-schema';
+import { ErrorMessages, FormPlaceholders, SuccessMessages } from '@/constants';
 
 export default function ClassFormPage() {
   const navigate = useNavigate();
@@ -155,7 +156,7 @@ export default function ClassFormPage() {
   // Mutations
   const createMutation = useCreateClass({
     onSuccess: () => {
-      toast.success('Class created successfully');
+      toast.success(SuccessMessages.CLASS.CREATE_SUCCESS);
       navigate(ROUTES.CLASSES);
     },
     onError: handleFormErrors,
@@ -163,7 +164,7 @@ export default function ClassFormPage() {
 
   const updateMutation = useUpdateClass({
     onSuccess: () => {
-      toast.success('Class updated successfully');
+      toast.success(SuccessMessages.CLASS.UPDATE_SUCCESS);
       navigate(ROUTES.CLASSES);
     },
     onError: handleFormErrors,
@@ -171,17 +172,17 @@ export default function ClassFormPage() {
 
   const deleteMutation = useDeleteClass({
     onSuccess: () => {
-      toast.success('Class deleted successfully');
+      toast.success(SuccessMessages.CLASS.DELETE_SUCCESS);
       navigate(ROUTES.CLASSES);
     },
     onError: (error: Error) => {
-      toast.error(`Failed to delete class: ${error.message}`);
+      toast.error(error.message || ErrorMessages.CLASS.DELETE_FAILED);
     },
   });
 
   const reactivateMutation = useReactivateClass({
     onSuccess: () => {
-      toast.success('Class reactivated successfully');
+      toast.success(SuccessMessages.CLASS.REACTIVATE_SUCCESS);
       // Navigate to the view page without the deleted flag to prevent 404 on refetch
       if (id) {
         // Use replace: true to replace the history entry so back button works correctly
@@ -191,7 +192,7 @@ export default function ClassFormPage() {
       }
     },
     onError: (error: Error) => {
-      toast.error(`Failed to reactivate class: ${error.message}`);
+      toast.error(error.message || ErrorMessages.CLASS.REACTIVATE_FAILED);
     },
   });
 
@@ -401,7 +402,7 @@ export default function ClassFormPage() {
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select class" />
+                              <SelectValue placeholder={FormPlaceholders.SELECT_CLASS} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -435,7 +436,7 @@ export default function ClassFormPage() {
                         </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="e.g., A, B, Section A"
+                            placeholder={FormPlaceholders.CLASS_SECTION_EXAMPLE}
                             disabled={isPending || mode === 'view'}
                             {...field}
                           />
@@ -460,7 +461,7 @@ export default function ClassFormPage() {
                           <Input
                             type="number"
                             min="1"
-                            placeholder="Enter class capacity"
+                            placeholder={FormPlaceholders.ENTER_CLASS_CAPACITY}
                             disabled={isPending || mode === 'view'}
                             {...field}
                           />
@@ -490,7 +491,7 @@ export default function ClassFormPage() {
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select class teacher" />
+                              <SelectValue placeholder={FormPlaceholders.SELECT_CLASS_TEACHER} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -519,7 +520,7 @@ export default function ClassFormPage() {
                       <FormLabel>Additional Information (Optional)</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Enter any additional information about this class section"
+                          placeholder={FormPlaceholders.CLASS_INFO}
                           disabled={isPending || mode === 'view'}
                           rows={3}
                           {...field}

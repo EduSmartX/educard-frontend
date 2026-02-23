@@ -6,6 +6,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getErrorMessage, getFieldErrors } from '@/lib/utils/error-handler';
+import { ErrorMessages, SuccessMessages, ToastTitles } from '@/constants';
 import type { CalendarExceptionCreate, CalendarExceptionUpdate } from '../types';
 import {
   createCalendarException,
@@ -30,19 +31,17 @@ export function useCreateCalendarException(options?: MutationOptions) {
       // Invalidate all calendar exception queries
       queryClient.invalidateQueries({ queryKey: ['calendar-exceptions'] });
 
-      toast.success('Exception Created', {
-        description: 'Calendar exception has been created successfully.',
-      });
+      toast.success(SuccessMessages.EXCEPTIONAL_WORK.CREATED);
 
       options?.onSuccess?.();
     },
     onError: (error: unknown) => {
       // Parse error once
-      const errorMessage = getErrorMessage(error, 'Failed to create calendar exception');
+      const errorMessage = getErrorMessage(error, ErrorMessages.CREATE_FAILED);
       const fieldErrors = getFieldErrors(error);
 
       // Show error in toast
-      toast.error('Error Creating Exception', {
+      toast.error(ToastTitles.ERROR, {
         description: errorMessage,
         duration: 5000,
       });
@@ -66,19 +65,17 @@ export function useUpdateCalendarException(options?: MutationOptions) {
       // Invalidate all calendar exception queries
       queryClient.invalidateQueries({ queryKey: ['calendar-exceptions'] });
 
-      toast.success('Exception Updated', {
-        description: 'Calendar exception has been updated successfully.',
-      });
+      toast.success(SuccessMessages.EXCEPTIONAL_WORK.UPDATED);
 
       options?.onSuccess?.();
     },
     onError: (error: unknown) => {
       // Parse error once
-      const errorMessage = getErrorMessage(error, 'Failed to update calendar exception');
+      const errorMessage = getErrorMessage(error, ErrorMessages.UPDATE_FAILED);
       const fieldErrors = getFieldErrors(error);
 
       // Show error in toast
-      toast.error('Error Updating Exception', {
+      toast.error(ToastTitles.ERROR, {
         description: errorMessage,
         duration: 5000,
       });
@@ -101,15 +98,13 @@ export function useDeleteCalendarException(options?: MutationOptions) {
       // Invalidate all calendar exception queries
       queryClient.invalidateQueries({ queryKey: ['calendar-exceptions'] });
 
-      toast.success('Exception Deleted', {
-        description: 'Calendar exception has been deleted successfully.',
-      });
+      toast.success(SuccessMessages.EXCEPTIONAL_WORK.DELETED);
 
       options?.onSuccess?.();
     },
     onError: (error: unknown) => {
-      const errorMessage = getErrorMessage(error, 'Failed to delete calendar exception');
-      toast.error('Error Deleting Exception', {
+      const errorMessage = getErrorMessage(error, ErrorMessages.DELETE_FAILED);
+      toast.error(ToastTitles.ERROR, {
         description: errorMessage,
         duration: 5000,
       });

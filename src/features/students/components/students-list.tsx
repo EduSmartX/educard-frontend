@@ -129,10 +129,8 @@ export function StudentsList({
                 {
                   label: 'Add Student',
                   onClick: onCreateNew,
-                  variant: 'default' as const,
+                  variant: 'brand' as const,
                   icon: Plus,
-                  className:
-                    'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700',
                 },
               ]
             : []),

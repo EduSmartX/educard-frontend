@@ -221,7 +221,8 @@ export function ExceptionalWorkManagement() {
       >
         <Button
           onClick={() => setShowAddDialog(true)}
-          className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 shadow-sm hover:shadow-md transition-all"
+          variant="brand"
+          className="shadow-sm hover:shadow-md transition-all"
         >
           <Plus className="mr-2 h-4 w-4" />
           Add Exception

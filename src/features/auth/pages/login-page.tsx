@@ -6,7 +6,9 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { Mail, Lock, LogIn, UserCircle2 } from 'lucide-react';
 import { authApi, type LoginCredentials } from '@/lib/api/auth-api';
-import { ROUTES, BRANDING } from '@/constants';
+import { CommonUiText, ErrorMessages, FormPlaceholders, SuccessMessages } from '@/constants/error-messages';
+import { ROUTES } from '@/constants/app-config';
+import { BRANDING } from '@/constants/branding';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,6 +25,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const {
     register,
@@ -34,29 +37,41 @@ export default function LoginPage() {
 
   const onSubmit = async (formData: LoginFormData) => {
     setIsLoading(true);
+    setLoginError(null); // Clear previous errors
     try {
       const response = await authApi.login(formData as LoginCredentials);
 
-      // Check if organization is approved
-      if (response.organization && !response.organization.is_approved) {
-        toast.warning('Organization pending approval');
+      // Check if organization is rejected or not approved
+      if (response.organization && (!response.organization.is_approved || response.organization.is_rejected)) {
+        if (response.organization.is_rejected) {
+          toast.error(ErrorMessages.AUTH.ORGANIZATION_REJECTED);
+        } else {
+          toast.warning(ErrorMessages.AUTH.PENDING_APPROVAL);
+        }
         navigate(ROUTES.AUTH.ORGANIZATION_NOT_APPROVED, {
           state: {
             organizationName: response.organization.name,
             organizationEmail: response.organization.email,
             organizationPhone: response.organization.phone,
             isVerified: response.organization.is_verified,
+            isRejected: response.organization.is_rejected,
+            userRole: response.user.role,
           },
         });
         return;
       }
 
-      toast.success('Login successful!');
+      toast.success(SuccessMessages.LOGIN_SUCCESS);
 
       // Redirect to dashboard (role-based routing handled by DashboardRouter)
       navigate(ROUTES.DASHBOARD);
-    } catch {
-      // Error handling is done in api.ts interceptor
+    } catch (error: any) {
+      // Extract error message from API response
+      const errorMessage = 
+        error?.response?.data?.message || 
+        error?.response?.data?.detail || 
+        'Invalid username or password';
+      setLoginError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -91,6 +106,20 @@ export default function LoginPage() {
 
           {/* Login Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {/* Login Error Message */}
+            {loginError && (
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <span className="text-xl">❌</span>
+                  <div className="flex-1">
+                    <p className="text-sm text-red-900 font-medium">
+                      {loginError}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Username/Email Field */}
             <div className="space-y-2">
               <Label
@@ -108,7 +137,7 @@ export default function LoginPage() {
                 </div>
                 <Input
                   id="username"
-                  placeholder="Enter your username or email"
+                  placeholder={FormPlaceholders.ENTER_USERNAME_OR_EMAIL}
                   className="h-14 pl-12 rounded-xl border-2 border-gray-200 focus:border-teal-400 focus:ring-4 focus:ring-teal-100 text-base transition-all duration-200"
                   error={errors.username?.message}
                   {...register('username')}
@@ -132,7 +161,7 @@ export default function LoginPage() {
                   href={ROUTES.AUTH.FORGOT_PASSWORD}
                   className="text-sm text-teal-600 hover:text-teal-700 font-medium hover:underline transition-colors"
                 >
-                  Forgot password?
+                  {CommonUiText.FORGOT_PASSWORD}
                 </a>
               </div>
               <div className="relative">
@@ -142,7 +171,7 @@ export default function LoginPage() {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Enter your password"
+                  placeholder={FormPlaceholders.ENTER_PASSWORD}
                   className="h-14 pl-12 rounded-xl border-2 border-gray-200 focus:border-teal-400 focus:ring-4 focus:ring-teal-100 text-base transition-all duration-200"
                   error={errors.password?.message}
                   {...register('password')}
@@ -153,11 +182,13 @@ export default function LoginPage() {
             {/* Sign In Button */}
             <Button
               type="submit"
-              className="w-full h-14 text-base font-semibold bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 rounded-xl"
+              variant="brand"
+              size="xl"
+              className="w-full font-semibold"
               isLoading={isLoading}
             >
               <LogIn className="mr-2 h-5 w-5" />
-              Sign In
+              {CommonUiText.SIGN_IN}
             </Button>
 
             {/* Sign Up Link */}

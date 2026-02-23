@@ -87,10 +87,8 @@ export function ClassesList({
                 {
                   label: 'Add Class',
                   onClick: onCreateNew,
-                  variant: 'default' as const,
+                  variant: 'brand' as const,
                   icon: Plus,
-                  className:
-                    'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700',
                 },
               ]
             : []),

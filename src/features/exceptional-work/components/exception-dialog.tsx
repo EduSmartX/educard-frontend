@@ -521,7 +521,7 @@ export function ExceptionDialog({
           <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
             <Button
               type="button"
-              variant="outline"
+              variant="brandOutline"
               onClick={() => onOpenChange(false)}
               disabled={isLoading}
               className="w-full sm:w-auto h-11 border-2 hover:bg-gray-100 transition-colors"
@@ -530,9 +530,10 @@ export function ExceptionDialog({
             </Button>
             <Button
               type="button"
+              variant="brand"
               onClick={handleSubmit}
               disabled={isLoading}
-              className="w-full sm:w-auto h-11 bg-gradient-to-r from-purple-600 via-violet-600 to-purple-700 hover:from-purple-700 hover:via-violet-700 hover:to-purple-800 shadow-md hover:shadow-xl transition-all"
+              className="w-full sm:w-auto h-11 shadow-md hover:shadow-xl transition-all"
             >
               {isLoading ? (
                 <>

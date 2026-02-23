@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { DeleteConfirmationDialog, ReactivateConfirmationDialog } from '@/components/common';
+import { ErrorMessages, SuccessMessages } from '@/constants';
 import { useClasses } from '../hooks/use-classes';
 import { useDeleteClass, useReactivateClass } from '../hooks/mutations';
 import { ClassesList } from './classes-list';
@@ -47,22 +48,22 @@ export function ClassesManagement() {
   // Delete mutation
   const deleteMutation = useDeleteClass({
     onSuccess: () => {
-      toast.success('Class deleted successfully');
+      toast.success(SuccessMessages.CLASS.DELETE_SUCCESS);
       setClassToDelete(undefined);
     },
     onError: (error: Error) => {
-      toast.error(`Failed to delete class: ${error.message}`);
+      toast.error(error.message || ErrorMessages.CLASS.DELETE_FAILED);
     },
   });
 
   // Reactivate mutation
   const reactivateMutation = useReactivateClass({
     onSuccess: () => {
-      toast.success('Class reactivated successfully');
+      toast.success(SuccessMessages.CLASS.REACTIVATE_SUCCESS);
       setClassToReactivate(undefined);
     },
     onError: (error: Error) => {
-      toast.error(`Failed to reactivate class: ${error.message}`);
+      toast.error(error.message || ErrorMessages.CLASS.REACTIVATE_FAILED);
     },
   });
 

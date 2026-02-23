@@ -16,8 +16,7 @@ export function BulkUploadDialog({ onUploadSuccess }: HolidayBulkUploadDialogPro
       title="Bulk Upload Holidays"
       description="Download the Excel template, fill in holiday details, and upload the file to add multiple holidays at once"
       triggerLabel="Bulk Upload"
-      triggerVariant="default"
-      triggerClassName="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+      triggerVariant="brand"
       downloadTemplate={downloadHolidayTemplate}
       uploadFile={bulkUploadHolidays}
       invalidateQueryKeys={['holiday-calendar']}

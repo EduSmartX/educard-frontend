@@ -11,7 +11,7 @@ import { z } from 'zod';
 export const profileInformationSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
   last_name: z.string().min(1, 'Last name is required'),
-  phone: z.string().optional(),
+  organization_role: z.string().optional(),
   gender: z.string().optional(),
   blood_group: z.string().optional(),
   date_of_birth: z.string().optional(),

@@ -200,17 +200,18 @@ export function DateActionDialog({
           <div className="bg-gradient-to-r from-amber-50/50 to-orange-50/50 px-6 py-4 border-t border-amber-100">
             <DialogFooter className="gap-2 flex-col sm:flex-row">
               <Button
-                variant="outline"
+                variant="brandOutline"
                 onClick={() => onOpenChange(false)}
                 disabled={deleteMutation.isPending}
-                className="w-full sm:w-auto border-amber-200 hover:bg-amber-50"
+                className="w-full sm:w-auto"
               >
                 Close
               </Button>
               <Button
+                variant="brand"
                 onClick={onAddAnother}
                 disabled={deleteMutation.isPending}
-                className="w-full sm:w-auto bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 shadow-lg hover:shadow-xl transition-all duration-200"
+                className="w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Holiday

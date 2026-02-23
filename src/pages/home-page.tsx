@@ -22,7 +22,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel';
-import { COMPANY_NAME } from '@/constants/app-config';
+import { COMPANY_NAME, ROUTES } from '@/constants/app-config';
 import heroImage from '/assets/images/hero-illustration.png';
 
 export default function HomePage() {
@@ -178,17 +178,18 @@ export default function HomePage() {
 
             <div className="flex flex-col gap-3 sm:flex-row animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200">
               <Button
+                variant="brand"
                 size="lg"
-                className="group text-base h-12 px-8 bg-gradient-to-r from-blue-600 to-emerald-500 hover:from-blue-700 hover:to-emerald-600 shadow-lg hover:shadow-xl transition-all"
-                onClick={() => navigate('/login')}
+                className="group text-base h-12 px-8"
+                onClick={() => navigate(ROUTES.AUTH.LOGIN)}
               >
                 Launch Your Future
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
               <Button
+                variant="brandOutline"
                 size="lg"
-                variant="outline"
-                className="text-base h-12 px-8 border-2 border-emerald-500/50 text-emerald-700 hover:bg-emerald-50"
+                className="text-base h-12 px-8"
                 onClick={scrollToFeatures}
               >
                 Learn More
@@ -358,20 +359,20 @@ export default function HomePage() {
 
       {/* CTA Section */}
       <div className="w-full bg-primary px-6 py-16 lg:px-16">
-        <div className="mx-auto max-w-4xl text-center">
+        <div className="mx-auto max-w-4xl text-center flex flex-col items-center justify-center">
           <h2 className="mb-5 font-serif text-3xl font-bold text-white lg:text-4xl">
             Ready to Transform Your School?
           </h2>
-          <p className="mb-6 text-base text-primary-foreground/90 lg:text-lg">
+          <p className="mb-6 text-base text-primary-foreground/90 lg:text-lg max-w-3xl">
             Join hundreds of schools already using EduCard to improve their operations and enhance
             the learning experience.
           </p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <div className="flex flex-col gap-3 sm:flex-row items-center justify-center">
             <Button
               size="lg"
               variant="secondary"
               className="text-base h-12 px-8"
-              onClick={() => navigate('/login')}
+              onClick={() => navigate(ROUTES.AUTH.LOGIN)}
             >
               Start Free Trial
             </Button>
@@ -379,7 +380,7 @@ export default function HomePage() {
               size="lg"
               variant="outline"
               className="text-base h-12 border-2 border-white bg-transparent px-8 text-white hover:bg-white hover:text-primary"
-              onClick={() => navigate('/login')}
+              onClick={() => navigate(ROUTES.AUTH.LOGIN)}
             >
               Schedule a Demo
             </Button>
@@ -390,15 +391,15 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="border-t bg-background px-6 py-8 lg:px-16">
         <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col items-center justify-center gap-4 md:gap-8">
+            <div className="flex items-center justify-center gap-2">
               <GraduationCap className="h-8 w-8 text-primary" />
               <span className="text-xl font-bold">{COMPANY_NAME}</span>
             </div>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-muted-foreground text-sm text-center">
               © 2026 {COMPANY_NAME}. All rights reserved.
             </p>
-            <div className="flex gap-6">
+            <div className="flex gap-6 justify-center flex-wrap">
               <button
                 type="button"
                 className="text-muted-foreground hover:text-foreground text-sm transition-colors"

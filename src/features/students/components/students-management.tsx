@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ROUTES } from '@/constants/app-config';
+import { ErrorMessages, SuccessMessages } from '@/constants';
 import { useStudents } from '../hooks/use-students';
 import { useDeleteStudent, useReactivateStudent } from '../hooks/mutations';
 import { StudentsList } from './students-list';
@@ -123,11 +124,11 @@ export function StudentsManagement() {
         },
         {
           onSuccess: () => {
-            toast.success('Student deleted successfully');
+            toast.success(SuccessMessages.STUDENT.DELETE_SUCCESS);
             setStudentToDelete(null);
           },
           onError: (error: Error) => {
-            toast.error(`Failed to delete student: ${error.message}`);
+            toast.error(error.message || ErrorMessages.STUDENT.DELETE_FAILED);
           },
         }
       );
@@ -143,11 +144,11 @@ export function StudentsManagement() {
         },
         {
           onSuccess: () => {
-            toast.success('Student reactivated successfully');
+            toast.success(SuccessMessages.STUDENT.REACTIVATE_SUCCESS);
             setStudentToReactivate(null);
           },
           onError: (error: Error) => {
-            toast.error(`Failed to reactivate student: ${error.message}`);
+            toast.error(error.message || ErrorMessages.STUDENT.REACTIVATE_FAILED);
           },
         }
       );

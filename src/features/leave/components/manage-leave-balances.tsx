@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { Combobox } from '@/components/ui/combobox';
+import { ErrorMessages, FormPlaceholders, SuccessMessages } from '@/constants';
 import { type LeaveBalance } from '@/lib/api/leave-api';
 import api from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -366,14 +367,14 @@ export default function ManageLeaveBalances() {
     if (deleteDialog.balance) {
       deleteMutation.mutate(deleteDialog.balance.public_id, {
         onSuccess: () => {
-          toast.success('Leave balance deleted successfully');
+          toast.success(SuccessMessages.LEAVE.BALANCE_DELETED);
           refetchBalances();
           setDeleteDialog({ open: false, balance: null });
         },
         onError: (error: Error) => {
           const apiError = error as unknown as { response?: { data?: { message?: string } } };
-          toast.error('Failed to delete leave balance', {
-            description: apiError.response?.data?.message || 'An error occurred',
+          toast.error(ErrorMessages.LEAVE.DELETE_BALANCE_FAILED, {
+            description: apiError.response?.data?.message || ErrorMessages.GENERIC_RETRY,
           });
         },
       });
@@ -508,7 +509,7 @@ export default function ManageLeaveBalances() {
 
   const handleAddBalance = () => {
     if (unallocatedLeaveTypes.length === 0) {
-      toast.info('No Available Leave Types', {
+      toast.info(ErrorMessages.LEAVE.NO_AVAILABLE_TYPES, {
         description: 'All leave types have been assigned.',
       });
       return;
@@ -598,9 +599,9 @@ export default function ManageLeaveBalances() {
                       label: `${cls.class_master.name} (${cls.name})`,
                       value: cls.public_id,
                     }))}
-                    placeholder="Select a class"
+                    placeholder={FormPlaceholders.SELECT_CLASS}
                     emptyText="No classes found"
-                    searchPlaceholder="Search classes..."
+                    searchPlaceholder={FormPlaceholders.SEARCH_CLASSES}
                     disabled={isLoadingClasses}
                   />
                 </div>
@@ -812,8 +813,9 @@ export default function ManageLeaveBalances() {
                 </div>
                 <Button
                   onClick={handleAddBalance}
+                  variant="brand"
                   size="sm"
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium shadow-md hover:shadow-lg transition-all"
+                  className="font-medium shadow-md hover:shadow-lg transition-all"
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   Add Leave Balance
@@ -825,7 +827,7 @@ export default function ManageLeaveBalances() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Search leave types..."
+                  placeholder={FormPlaceholders.SEARCH_LEAVE_TYPES}
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);

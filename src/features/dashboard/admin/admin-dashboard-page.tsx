@@ -20,6 +20,7 @@ import { LeaveRequestsList, type LeaveRequest } from '@/components/dashboard/lea
 import { UpcomingEvents, type UpcomingEvent } from '@/components/dashboard/upcoming-events';
 import { useStorageListener } from '@/hooks/use-storage-listener';
 import { ROUTES } from '@/constants/app-config';
+import { SuccessMessages } from '@/constants';
 
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
@@ -151,8 +152,8 @@ export default function AdminDashboardPage() {
       icon: UserPlus,
       iconColor: 'text-blue-600',
       iconBgColor: 'bg-blue-100',
-      onClick: () => {
-        toast.success('🎓 Opening Add Teacher form...');
+        onClick: () => {
+          toast.success(SuccessMessages.DASHBOARD.OPEN_ADD_TEACHER);
         navigate(`${ROUTES.TEACHERS}/new`);
       },
     },
@@ -172,8 +173,8 @@ export default function AdminDashboardPage() {
       icon: CalendarPlus,
       iconColor: 'text-purple-600',
       iconBgColor: 'bg-purple-100',
-      onClick: () => {
-        toast.success('📅 Opening Add Event form...');
+        onClick: () => {
+          toast.success(SuccessMessages.DASHBOARD.OPEN_ADD_EVENT);
         navigate(`${ROUTES.CALENDAR}/new`);
       },
     },
@@ -183,8 +184,8 @@ export default function AdminDashboardPage() {
       icon: Upload,
       iconColor: 'text-orange-600',
       iconBgColor: 'bg-orange-100',
-      onClick: () => {
-        toast.info('📤 Opening Bulk Upload...');
+        onClick: () => {
+          toast.info(SuccessMessages.DASHBOARD.OPEN_BULK_UPLOAD);
       },
     },
     {
@@ -205,7 +206,7 @@ export default function AdminDashboardPage() {
     setLeaveRequests((prev) =>
       prev.map((req) => (req.id === id ? { ...req, status: 'approved' as const } : req))
     );
-    toast.success(`✅ Approved leave request for ${request?.userName}`);
+    toast.success(`${SuccessMessages.DASHBOARD.LEAVE_APPROVED} ${request?.userName}`);
   };
 
   // Handle leave rejection
@@ -214,7 +215,7 @@ export default function AdminDashboardPage() {
     setLeaveRequests((prev) =>
       prev.map((req) => (req.id === id ? { ...req, status: 'rejected' as const } : req))
     );
-    toast.error(`❌ Rejected leave request for ${request?.userName}`);
+    toast.error(`${SuccessMessages.DASHBOARD.LEAVE_REJECTED} ${request?.userName}`);
   };
 
   return (

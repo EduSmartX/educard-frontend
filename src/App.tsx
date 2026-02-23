@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { ROUTES } from './constants/app-config';
 
 // Lazy load pages for better performance
@@ -183,9 +183,6 @@ function App() {
             <Route path="/leave/requests/:id" element={<LeaveRequestFormPage />} />
             <Route path="/leave/requests/:id/edit" element={<LeaveRequestFormPage />} />
           </Route>
-
-          {/* Default redirect */}
-          <Route path="/" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
 
           {/* 404 - Not Found */}
           <Route path="*" element={<NotFound />} />

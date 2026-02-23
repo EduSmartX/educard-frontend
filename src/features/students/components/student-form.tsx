@@ -35,39 +35,28 @@ import {
   getDeletedDuplicateMessage,
   getDeletedRecordId,
 } from '@/lib/utils/error-handler';
-import type { Student, CreateStudentPayload } from '../types';
+import type { CreateStudentPayload, Student } from '../types';
 import { FormActions } from '@/components/form/form-actions';
 import { FormMetadata } from '@/components/form/form-metadata';
 import { DeleteConfirmationDialog, DeletedDuplicateDialog } from '@/components/common';
 import { useDeletedDuplicateHandler } from '@/hooks/use-deleted-duplicate-handler';
 import { RELATIONSHIP_OPTIONS } from '@/constants/form-enums';
-import { ADDRESS_TYPE } from '@/constants/address-type';
 import { MinimalStudentFields } from './minimal-student-fields';
-
-/**
- * Scroll to the first field with an error
- * Helps users quickly identify validation issues
- */
-function scrollToFirstError() {
-  // Small delay to ensure DOM is updated with error messages
-  setTimeout(() => {
-    // Find the first element with an error message
-    const firstError = document.querySelector('[data-error="true"], [aria-invalid="true"]');
-
-    if (firstError) {
-      firstError.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      });
-
-      // Focus on the input if it's focusable
-      const input = firstError.querySelector('input, textarea, select');
-      if (input instanceof HTMLElement) {
-        input.focus();
-      }
-    }
-  }, 100);
-}
+import {
+  CommonUiText,
+  ErrorMessages,
+  FormPlaceholders,
+  SuccessMessages,
+  ToastTitles,
+} from '@/constants';
+import {
+  getStudentFormValuesFromInitialData,
+  scrollToFirstFormError,
+  shouldShowValidationToast,
+  STUDENT_FORM_DEFAULT_VALUES,
+  STUDENT_FORM_FIELD_ERROR_MAP,
+  transformStudentFormToPayload,
+} from '../utils/student-form.utils';
 
 interface StudentFormProps {
   mode: 'create' | 'edit' | 'view';
@@ -107,38 +96,7 @@ export function StudentForm({
 
   const form = useForm<StudentFormData>({
     resolver: zodResolver(studentFormSchema),
-    defaultValues: {
-      first_name: '',
-      last_name: '',
-      roll_number: '',
-      class_id: '',
-      email: '',
-      phone: '',
-      gender: undefined,
-      blood_group: undefined,
-      date_of_birth: '',
-      supervisor_email: '',
-      admission_number: '',
-      admission_date: '',
-      guardian_name: '',
-      guardian_phone: '',
-      guardian_email: '',
-      guardian_relationship: '',
-      emergency_contact_name: '',
-      emergency_contact_phone: '',
-      medical_conditions: '',
-      description: '',
-      previous_school_name: '',
-      previous_school_address: '',
-      previous_school_class: '',
-      addressType: ADDRESS_TYPE.USER_CURRENT,
-      streetAddress: '',
-      addressLine2: '',
-      city: '',
-      state: '',
-      zipCode: '',
-      country: 'India',
-    },
+    defaultValues: STUDENT_FORM_DEFAULT_VALUES,
   });
 
   // Auto-fill supervisor_email when class is selected
@@ -161,50 +119,13 @@ export function StudentForm({
   // Prefill form with student data in edit or view mode
   useEffect(() => {
     if (initialData && (mode === 'edit' || mode === 'view')) {
-      const userInfo = initialData.user_info;
-      const address = userInfo.address;
-
-      form.reset(
-        {
-          first_name: userInfo.first_name,
-          last_name: userInfo.last_name,
-          roll_number: initialData.roll_number,
-          class_id: initialData.class_info.public_id,
-          email: userInfo.email,
-          phone: userInfo.phone || '',
-          gender: userInfo.gender || undefined,
-          blood_group: userInfo.blood_group || undefined,
-          date_of_birth: userInfo.date_of_birth || '',
-          supervisor_email: userInfo.supervisor?.email || '',
-          admission_number: initialData.admission_number || '',
-          admission_date: initialData.admission_date || '',
-          guardian_name: initialData.guardian_name || '',
-          guardian_phone: initialData.guardian_phone || '',
-          guardian_email: initialData.guardian_email || '',
-          guardian_relationship: initialData.guardian_relationship || '',
-          emergency_contact_name: initialData.emergency_contact_name || '',
-          emergency_contact_phone: initialData.emergency_contact_phone || '',
-          medical_conditions: initialData.medical_conditions || '',
-          description: initialData.description || '',
-          previous_school_name: initialData.previous_school_name || '',
-          previous_school_address: initialData.previous_school_address || '',
-          previous_school_class: initialData.previous_school_class || '',
-          addressType: address?.address_type || ADDRESS_TYPE.USER_CURRENT,
-          streetAddress: address?.street_address || '',
-          addressLine2: address?.address_line_2 || '',
-          city: address?.city || '',
-          state: address?.state || '',
-          zipCode: address?.zip_code || '',
-          country: address?.country || '',
-        },
-        { keepDefaultValues: false }
-      );
+      form.reset(getStudentFormValuesFromInitialData(initialData), { keepDefaultValues: false });
     }
   }, [initialData, mode, form]);
 
   const createMutation = useCreateStudent({
     onSuccess: () => {
-      toast.success('Student created successfully!');
+      toast.success(SuccessMessages.STUDENT.CREATE_SUCCESS);
       duplicateHandler.closeDialog();
       onSuccess();
     },
@@ -215,7 +136,7 @@ export function StudentForm({
         const deletedRecordId = getDeletedRecordId(error);
 
         const formData = form.getValues();
-        const payload = transformFormToPayload(formData);
+        const payload = transformStudentFormToPayload(formData);
         duplicateHandler.openDialog(message, {
           payload: { classId: formData.class_id, payload },
           deletedRecordId,
@@ -223,50 +144,17 @@ export function StudentForm({
         return;
       }
 
-      // Map nested user fields to form fields
-      const fieldMap = {
-        // User fields
-        'user.username': 'email', // Map username errors to email field (since backend generates it)
-        'user.email': 'email',
-        'user.first_name': 'first_name',
-        'user.last_name': 'last_name',
-        'user.phone': 'phone',
-        'user.gender': 'gender',
-        'user.date_of_birth': 'date_of_birth',
-        'user.blood_group': 'blood_group',
-        'user.supervisor_email': 'supervisor_email',
-        // Address fields
-        'user.address.address_type': 'addressType',
-        'user.address.street_address': 'streetAddress',
-        'user.address.address_line_2': 'addressLine2',
-        'user.address.city': 'city',
-        'user.address.state': 'state',
-        'user.address.zip_code': 'zipCode',
-        'user.address.country': 'country',
-        // Student root-level fields
-        admission_number: 'admission_number',
-        roll_number: 'roll_number',
-        admission_date: 'admission_date',
-        guardian_name: 'guardian_name',
-        guardian_phone: 'guardian_phone',
-        guardian_email: 'guardian_email',
-        guardian_relationship: 'guardian_relationship',
-      } as const;
-
-      const result = applyFieldErrors(error, form.setError, fieldMap);
+      const result = applyFieldErrors(error, form.setError, STUDENT_FORM_FIELD_ERROR_MAP);
 
       // Scroll to first error field if there are field errors
       if (result.hasFieldErrors) {
-        scrollToFirstError();
+        scrollToFirstFormError();
       }
 
       if (!result.hasFieldErrors) {
-        toast.error('Failed to create student. Please try again.');
-      } else if (
-        result.toastMessage &&
-        result.toastMessage !== 'Please check the form fields for errors'
-      ) {
-        toast.error('Validation Error', {
+        toast.error(ErrorMessages.STUDENT.CREATE_FAILED);
+      } else if (shouldShowValidationToast(result.toastMessage)) {
+        toast.error(ToastTitles.VALIDATION_ERROR, {
           description: result.toastMessage,
         });
       }
@@ -275,53 +163,21 @@ export function StudentForm({
 
   const updateMutation = useUpdateStudent({
     onSuccess: () => {
-      toast.success('Student updated successfully!');
+      toast.success(SuccessMessages.STUDENT.UPDATE_SUCCESS);
       onSuccess();
     },
     onError: (error) => {
-      const fieldMap = {
-        // User fields
-        'user.username': 'email', // Map username errors to email field
-        'user.email': 'email',
-        'user.first_name': 'first_name',
-        'user.last_name': 'last_name',
-        'user.phone': 'phone',
-        'user.gender': 'gender',
-        'user.date_of_birth': 'date_of_birth',
-        'user.blood_group': 'blood_group',
-        'user.supervisor_email': 'supervisor_email',
-        // Address fields
-        'user.address.address_type': 'addressType',
-        'user.address.street_address': 'streetAddress',
-        'user.address.address_line_2': 'addressLine2',
-        'user.address.city': 'city',
-        'user.address.state': 'state',
-        'user.address.zip_code': 'zipCode',
-        'user.address.country': 'country',
-        // Student root-level fields
-        admission_number: 'admission_number',
-        roll_number: 'roll_number',
-        admission_date: 'admission_date',
-        guardian_name: 'guardian_name',
-        guardian_phone: 'guardian_phone',
-        guardian_email: 'guardian_email',
-        guardian_relationship: 'guardian_relationship',
-      } as const;
-
-      const result = applyFieldErrors(error, form.setError, fieldMap);
+      const result = applyFieldErrors(error, form.setError, STUDENT_FORM_FIELD_ERROR_MAP);
 
       // Scroll to first error field if there are field errors
       if (result.hasFieldErrors) {
-        scrollToFirstError();
+        scrollToFirstFormError();
       }
 
       if (!result.hasFieldErrors) {
-        toast.error('Failed to update student. Please try again.');
-      } else if (
-        result.toastMessage &&
-        result.toastMessage !== 'Please check the form fields for errors'
-      ) {
-        toast.error('Validation Error', {
+        toast.error(ErrorMessages.STUDENT.UPDATE_FAILED);
+      } else if (shouldShowValidationToast(result.toastMessage)) {
+        toast.error(ToastTitles.VALIDATION_ERROR, {
           description: result.toastMessage,
         });
       }
@@ -330,15 +186,15 @@ export function StudentForm({
 
   const reactivateMutation = useReactivateStudent({
     onSuccess: () => {
-      toast.success('Student Reactivated', {
+      toast.success(SuccessMessages.STUDENT.REACTIVATE_SUCCESS, {
         description: 'The deleted student has been reactivated successfully.',
       });
       duplicateHandler.closeDialog();
       onSuccess();
     },
     onError: () => {
-      toast.error('Failed to Reactivate', {
-        description: 'Could not reactivate the student. Please try again.',
+      toast.error(ToastTitles.ERROR, {
+        description: ErrorMessages.STUDENT.REACTIVATE_FAILED,
       });
     },
   });
@@ -348,7 +204,7 @@ export function StudentForm({
     const classId = duplicateHandler.pendingData?.payload.classId;
 
     if (!deletedRecordId || !classId) {
-      toast.error('Cannot find the deleted student record to reactivate.');
+      toast.error(ErrorMessages.STUDENT.NOT_FOUND);
       return;
     }
 
@@ -362,54 +218,8 @@ export function StudentForm({
     }
   };
 
-  const transformFormToPayload = (data: StudentFormData): CreateStudentPayload => {
-    const hasAddress =
-      data.streetAddress || data.city || data.state || data.zipCode || data.country;
-
-    return {
-      user: {
-        // username is auto-generated by backend - DO NOT send from frontend
-        first_name: data.first_name,
-        last_name: data.last_name,
-        email: data.email,
-        phone: data.phone || undefined,
-        role: 'student',
-        gender: data.gender || '',
-        blood_group: data.blood_group,
-        date_of_birth: data.date_of_birth || undefined,
-        organization_role_code: 'STUDENT',
-        supervisor_email: data.supervisor_email || undefined,
-        address: hasAddress
-          ? {
-              address_type: data.addressType || ADDRESS_TYPE.USER_CURRENT,
-              street_address: data.streetAddress || '',
-              address_line_2: data.addressLine2 || undefined,
-              city: data.city || '',
-              state: data.state || '',
-              zip_code: data.zipCode || '',
-              country: data.country || 'India',
-            }
-          : undefined,
-      },
-      roll_number: data.roll_number,
-      admission_number: data.admission_number || undefined,
-      admission_date: data.admission_date || undefined,
-      guardian_name: data.guardian_name || undefined,
-      guardian_phone: data.guardian_phone || undefined,
-      guardian_email: data.guardian_email || undefined,
-      guardian_relationship: data.guardian_relationship || undefined,
-      medical_conditions: data.medical_conditions || undefined,
-      description: data.description || undefined,
-      emergency_contact_name: data.emergency_contact_name || undefined,
-      emergency_contact_phone: data.emergency_contact_phone || undefined,
-      previous_school_name: data.previous_school_name || undefined,
-      previous_school_address: data.previous_school_address || undefined,
-      previous_school_class: data.previous_school_class || undefined,
-    };
-  };
-
   const onSubmit = (data: StudentFormData) => {
-    const payload = transformFormToPayload(data);
+    const payload = transformStudentFormToPayload(data);
 
     if (mode === 'create') {
       createMutation.mutate({ classId: data.class_id, payload });
@@ -491,7 +301,7 @@ export function StudentForm({
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select class" />
+                          <SelectValue placeholder={FormPlaceholders.SELECT_CLASS} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -521,7 +331,11 @@ export function StudentForm({
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue
-                            placeholder={isSupervisorsLoading ? 'Loading...' : 'Select supervisor'}
+                            placeholder={
+                              isSupervisorsLoading
+                                ? CommonUiText.LOADING
+                                : FormPlaceholders.SELECT_SUPERVISOR
+                            }
                           />
                         </SelectTrigger>
                       </FormControl>
@@ -565,7 +379,7 @@ export function StudentForm({
                     control={form.control}
                     name="first_name"
                     label="First Name"
-                    placeholder="Enter first name"
+                    placeholder={FormPlaceholders.ENTER_FIRST_NAME}
                     disabled={isViewMode || !isClassSelected}
                     required
                     validationType="name"
@@ -575,7 +389,7 @@ export function StudentForm({
                     control={form.control}
                     name="last_name"
                     label="Last Name"
-                    placeholder="Enter last name"
+                    placeholder={FormPlaceholders.ENTER_LAST_NAME}
                     disabled={isViewMode || !isClassSelected}
                     required
                     validationType="name"
@@ -585,7 +399,7 @@ export function StudentForm({
                     control={form.control}
                     name="roll_number"
                     label="Roll Number"
-                    placeholder="Enter roll number"
+                    placeholder={FormPlaceholders.ENTER_ROLL_NUMBER}
                     disabled={isViewMode || !isClassSelected}
                     required
                     validationType="alphanumeric"
@@ -595,7 +409,7 @@ export function StudentForm({
                     name="email"
                     label="Email"
                     type="email"
-                    placeholder="Enter email"
+                    placeholder={FormPlaceholders.ENTER_EMAIL}
                     disabled={isViewMode || !isClassSelected}
                     validationType="email"
                   />
@@ -603,7 +417,7 @@ export function StudentForm({
                     control={form.control}
                     name="phone"
                     label="Phone"
-                    placeholder="Enter phone number"
+                    placeholder={FormPlaceholders.ENTER_PHONE_NUMBER}
                     disabled={isViewMode || !isClassSelected}
                     validationType="phone"
                   />
@@ -636,7 +450,7 @@ export function StudentForm({
                     control={form.control}
                     name="admission_number"
                     label="Admission Number"
-                    placeholder="Enter admission number"
+                    placeholder={FormPlaceholders.ENTER_ADMISSION_NUMBER}
                     disabled={isViewMode || !isClassSelected}
                     validationType="alphanumeric"
                   />
@@ -659,7 +473,7 @@ export function StudentForm({
                     control={form.control}
                     name="guardian_name"
                     label="Guardian Name"
-                    placeholder="Enter guardian name"
+                    placeholder={FormPlaceholders.ENTER_GUARDIAN_NAME}
                     disabled={isViewMode || !isClassSelected}
                     validationType="name"
                     validationOptions={{ fieldName: 'Guardian name' }}
@@ -668,7 +482,7 @@ export function StudentForm({
                     control={form.control}
                     name="guardian_phone"
                     label="Guardian Phone"
-                    placeholder="Enter guardian phone"
+                    placeholder={FormPlaceholders.ENTER_GUARDIAN_PHONE}
                     disabled={isViewMode || !isClassSelected}
                     validationType="phone"
                   />
@@ -677,7 +491,7 @@ export function StudentForm({
                     name="guardian_email"
                     label="Guardian Email"
                     type="email"
-                    placeholder="Enter guardian email"
+                    placeholder={FormPlaceholders.ENTER_GUARDIAN_EMAIL}
                     disabled={isViewMode || !isClassSelected}
                     validationType="email"
                   />
@@ -695,7 +509,7 @@ export function StudentForm({
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select relationship" />
+                              <SelectValue placeholder={FormPlaceholders.SELECT_RELATIONSHIP} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -730,7 +544,7 @@ export function StudentForm({
                         <FormControl>
                           <Textarea
                             {...field}
-                            placeholder="Enter any medical conditions or allergies"
+                            placeholder={FormPlaceholders.MEDICAL_CONDITIONS}
                             disabled={isViewMode || !isClassSelected}
                             className="min-h-[80px]"
                           />
@@ -748,7 +562,7 @@ export function StudentForm({
                         <FormControl>
                           <Textarea
                             {...field}
-                            placeholder="Enter additional notes"
+                            placeholder={FormPlaceholders.ENTER_ADDITIONAL_NOTES}
                             disabled={isViewMode || !isClassSelected}
                             className="min-h-[80px]"
                           />
@@ -781,7 +595,7 @@ export function StudentForm({
                       control={form.control}
                       name="previous_school_name"
                       label="Previous School Name"
-                      placeholder="Enter previous school name"
+                      placeholder={FormPlaceholders.ENTER_PREVIOUS_SCHOOL_NAME}
                       disabled={isViewMode || !isClassSelected}
                       validationType="text"
                       validationOptions={{ fieldName: 'Previous school name', maxLength: 255 }}
@@ -790,7 +604,7 @@ export function StudentForm({
                       control={form.control}
                       name="previous_school_class"
                       label="Previous School Class"
-                      placeholder="Enter previous class"
+                      placeholder={FormPlaceholders.ENTER_PREVIOUS_CLASS}
                       disabled={isViewMode || !isClassSelected}
                       validationType="text"
                       validationOptions={{ fieldName: 'Previous school class', maxLength: 50 }}
@@ -804,7 +618,7 @@ export function StudentForm({
                           <FormControl>
                             <Textarea
                               {...field}
-                              placeholder="Enter previous school address"
+                              placeholder={FormPlaceholders.ENTER_PREVIOUS_SCHOOL_ADDRESS}
                               disabled={isViewMode}
                               className="min-h-[80px]"
                             />

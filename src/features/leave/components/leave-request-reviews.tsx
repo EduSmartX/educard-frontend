@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { Combobox } from '@/components/ui/combobox';
+import { ErrorMessages, FormPlaceholders, SuccessMessages } from '@/constants';
 import {
   Select,
   SelectContent,
@@ -261,7 +262,7 @@ export function LeaveRequestReviews() {
         { publicId, comments },
         {
           onSuccess: () => {
-            toast.success('Leave Request Approved', {
+            toast.success(SuccessMessages.LEAVE.REQUEST_APPROVED, {
               description: 'The leave request has been approved successfully.',
             });
             refetch();
@@ -269,8 +270,8 @@ export function LeaveRequestReviews() {
           },
           onError: (error: Error) => {
             const apiError = error as unknown as { response?: { data?: { message?: string } } };
-            toast.error('Failed to approve leave request', {
-              description: apiError.response?.data?.message || 'An error occurred',
+            toast.error(ErrorMessages.LEAVE.APPROVE_REQUEST_FAILED, {
+              description: apiError.response?.data?.message || ErrorMessages.GENERIC_RETRY,
             });
           },
         }
@@ -280,7 +281,7 @@ export function LeaveRequestReviews() {
         { publicId, comments },
         {
           onSuccess: () => {
-            toast.success('Leave Request Rejected', {
+            toast.success(SuccessMessages.LEAVE.REQUEST_REJECTED, {
               description: 'The leave request has been rejected successfully.',
             });
             refetch();
@@ -288,8 +289,8 @@ export function LeaveRequestReviews() {
           },
           onError: (error: Error) => {
             const apiError = error as unknown as { response?: { data?: { message?: string } } };
-            toast.error('Failed to reject leave request', {
-              description: apiError.response?.data?.message || 'An error occurred',
+            toast.error(ErrorMessages.LEAVE.REJECT_REQUEST_FAILED, {
+              description: apiError.response?.data?.message || ErrorMessages.GENERIC_RETRY,
             });
           },
         }
@@ -493,9 +494,9 @@ export function LeaveRequestReviews() {
                 label: `${cls.class_master.name} (${cls.name})`,
                 value: cls.public_id,
               }))}
-              placeholder="Select a class"
+              placeholder={FormPlaceholders.SELECT_CLASS}
               emptyText="No classes found"
-              searchPlaceholder="Search classes..."
+              searchPlaceholder={FormPlaceholders.SEARCH_CLASSES}
               disabled={isLoadingClasses}
             />
           </CardContent>
@@ -520,7 +521,7 @@ export function LeaveRequestReviews() {
                 <Label>Status</Label>
                 <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
+                    <SelectValue placeholder={FormPlaceholders.SELECT_STATUS} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pending">Pending</SelectItem>
@@ -535,7 +536,7 @@ export function LeaveRequestReviews() {
                 <Label>Leave Type</Label>
                 <Select value={selectedLeaveType} onValueChange={setSelectedLeaveType}>
                   <SelectTrigger>
-                    <SelectValue placeholder="All leave types" />
+                    <SelectValue placeholder={FormPlaceholders.ALL_LEAVE_TYPES} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">All</SelectItem>
@@ -562,9 +563,9 @@ export function LeaveRequestReviews() {
                         ? `Employee ID: ${user.employee_id}`
                         : undefined,
                     }))}
-                    placeholder="Select user"
+                    placeholder={FormPlaceholders.SELECT_USER}
                     emptyText="No users found"
-                    searchPlaceholder="Search users..."
+                    searchPlaceholder={FormPlaceholders.SEARCH_USERS}
                     disabled={isLoadingUsers}
                   />
                 </div>

@@ -4,6 +4,19 @@
  */
 
 /**
+ * User role values as used by backend API
+ */
+export const USER_ROLES = {
+  ADMIN: 'admin',
+  TEACHER: 'teacher',
+  STUDENT: 'student',
+  PARENT: 'parent',
+  STAFF: 'staff',
+} as const;
+
+export type UserRoleValue = (typeof USER_ROLES)[keyof typeof USER_ROLES];
+
+/**
  * Gender values as used by backend API
  */
 export const GENDER = {

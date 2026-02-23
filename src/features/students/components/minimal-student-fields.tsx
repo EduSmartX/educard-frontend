@@ -1,6 +1,7 @@
 import type { Control } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TextInputField, GenderField } from '@/components/forms';
+import { FormPlaceholders } from '@/constants';
 import type { StudentFormData } from '../schemas/student-form-schema';
 
 interface MinimalStudentFieldsProps {
@@ -19,7 +20,7 @@ export function MinimalStudentFields({ control, disabled = false }: MinimalStude
           control={control}
           name="first_name"
           label="First Name"
-          placeholder="Enter first name"
+          placeholder={FormPlaceholders.ENTER_FIRST_NAME}
           disabled={disabled}
           required
           validationType="name"
@@ -29,7 +30,7 @@ export function MinimalStudentFields({ control, disabled = false }: MinimalStude
           control={control}
           name="last_name"
           label="Last Name"
-          placeholder="Enter last name"
+          placeholder={FormPlaceholders.ENTER_LAST_NAME}
           disabled={disabled}
           required
           validationType="name"
@@ -39,7 +40,7 @@ export function MinimalStudentFields({ control, disabled = false }: MinimalStude
           control={control}
           name="roll_number"
           label="Roll Number"
-          placeholder="Enter roll number"
+          placeholder={FormPlaceholders.ENTER_ROLL_NUMBER}
           disabled={disabled}
           required
           validationType="alphanumeric"

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { ErrorMessages, SuccessMessages, ToastTitles } from '@/constants';
 import {
   getEligibleClasses,
   validateAttendanceDate,
@@ -60,7 +61,7 @@ export const useBulkMarkAttendance = () => {
         queryKey: attendanceKeys.comprehensiveAttendance(variables.classId, variables.payload.date),
       });
 
-      toast.success('Attendance marked successfully', {
+      toast.success(SuccessMessages.ATTENDANCE.MARK_SUCCESS, {
         description: `Attendance has been saved for ${variables.payload.date}`,
       });
     },
@@ -68,9 +69,9 @@ export const useBulkMarkAttendance = () => {
       // Safely extract message from unknown error object
       const err = error as { response?: { data?: { message?: string } }; message?: string };
       const errorMessage =
-        err?.response?.data?.message || err?.message || 'Failed to mark attendance';
+        err?.response?.data?.message || err?.message || ErrorMessages.ATTENDANCE.MARK_FAILED;
 
-      toast.error('Error marking attendance', {
+      toast.error(ToastTitles.ERROR, {
         description: errorMessage,
       });
     },

@@ -46,6 +46,7 @@ import { useClasses } from '@/features/classes/hooks/use-classes';
 import { useSubjectMasters } from '@/features/core/hooks/use-subject-masters';
 import { useTeachers } from '@/features/teachers/hooks/use-teachers';
 import { ROUTES } from '@/constants/app-config';
+import { ErrorMessages, FormPlaceholders, SuccessMessages } from '@/constants';
 
 const subjectSchema = z.object({
   class_id: z.string().min(1, 'Class is required'),
@@ -146,7 +147,7 @@ export default function SubjectFormPage() {
   // Mutations
   const createMutation = useCreateSubject({
     onSuccess: () => {
-      toast.success('Subject created successfully');
+      toast.success(SuccessMessages.SUBJECT.CREATE_SUCCESS);
       navigate(ROUTES.SUBJECTS);
     },
     onError: handleFormErrors,
@@ -154,7 +155,7 @@ export default function SubjectFormPage() {
 
   const updateMutation = useUpdateSubject({
     onSuccess: () => {
-      toast.success('Subject updated successfully');
+      toast.success(SuccessMessages.SUBJECT.UPDATE_SUCCESS);
       navigate(ROUTES.SUBJECTS);
     },
     onError: handleFormErrors,
@@ -162,17 +163,17 @@ export default function SubjectFormPage() {
 
   const deleteMutation = useDeleteSubject({
     onSuccess: () => {
-      toast.success('Subject deleted successfully');
+      toast.success(SuccessMessages.SUBJECT.DELETE_SUCCESS);
       navigate(ROUTES.SUBJECTS);
     },
     onError: (error: Error) => {
-      toast.error(`Failed to delete subject: ${error.message}`);
+      toast.error(error.message || ErrorMessages.SUBJECT.DELETE_FAILED);
     },
   });
 
   const reactivateMutation = useReactivateSubject({
     onSuccess: () => {
-      toast.success('Subject reactivated successfully');
+      toast.success(SuccessMessages.SUBJECT.REACTIVATE_SUCCESS);
       // Navigate to the view page without the deleted flag to prevent 404 on refetch
       if (id) {
         // Use replace: true to replace the history entry so back button works correctly
@@ -182,7 +183,7 @@ export default function SubjectFormPage() {
       }
     },
     onError: (error: Error) => {
-      toast.error(`Failed to reactivate subject: ${error.message}`);
+      toast.error(error.message || ErrorMessages.SUBJECT.REACTIVATE_FAILED);
     },
   });
 
@@ -416,7 +417,7 @@ export default function SubjectFormPage() {
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select class" />
+                              <SelectValue placeholder={FormPlaceholders.SELECT_CLASS} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -456,7 +457,7 @@ export default function SubjectFormPage() {
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select subject" />
+                              <SelectValue placeholder={FormPlaceholders.SELECT_SUBJECT} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -499,7 +500,7 @@ export default function SubjectFormPage() {
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select teacher" />
+                              <SelectValue placeholder={FormPlaceholders.SELECT_TEACHER} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -528,7 +529,7 @@ export default function SubjectFormPage() {
                       <FormLabel>Additional Information (Optional)</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Enter any additional information about this subject"
+                          placeholder={FormPlaceholders.SUBJECT_INFO}
                           disabled={isPending || mode === 'view'}
                           rows={3}
                           {...field}

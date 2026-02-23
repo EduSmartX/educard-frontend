@@ -136,8 +136,9 @@ export function LeaveAllocationsList({
       >
         <Button
           onClick={onCreateNew}
+          variant="brand"
           size="lg"
-          className="gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md hover:shadow-lg transition-all duration-200 font-semibold"
+          className="gap-2 shadow-md hover:shadow-lg transition-all duration-200 font-semibold"
         >
           <Plus className="h-5 w-5" />
           <span>Create Policy</span>

@@ -37,6 +37,7 @@ import { FormMetadata } from '@/components/form/form-metadata';
 import { DeleteConfirmationDialog, DeletedDuplicateDialog } from '@/components/common';
 import { useDeletedDuplicateHandler } from '@/hooks/use-deleted-duplicate-handler';
 import type { CreateTeacherPayload } from '../types';
+import { ErrorMessages, FormPlaceholders, SuccessMessages, ToastTitles } from '@/constants';
 
 /**
  * Scroll to the first field with an error
@@ -132,7 +133,7 @@ export function TeacherForm({
 
   const createMutation = useCreateTeacher({
     onSuccess: () => {
-      toast.success('Teacher created successfully!');
+      toast.success(SuccessMessages.TEACHER.CREATE_SUCCESS);
       duplicateHandler.closeDialog();
       onSuccess();
     },
@@ -177,13 +178,13 @@ export function TeacherForm({
       }
 
       if (!result.hasFieldErrors) {
-        toast.error('Failed to create teacher. Please try again.');
+        toast.error(ErrorMessages.TEACHER.CREATE_FAILED);
       } else if (
         result.toastMessage &&
         result.toastMessage !== 'Please check the form fields for errors'
       ) {
         // Show toast only for non-field errors, not for general validation summary
-        toast.error('Validation Error', {
+        toast.error(ToastTitles.VALIDATION_ERROR, {
           description: result.toastMessage,
         });
       }
@@ -192,7 +193,7 @@ export function TeacherForm({
 
   const updateMutation = useUpdateTeacher({
     onSuccess: () => {
-      toast.success('Teacher updated successfully!');
+      toast.success(SuccessMessages.TEACHER.UPDATE_SUCCESS);
       onSuccess();
     },
     onError: (error) => {
@@ -224,13 +225,13 @@ export function TeacherForm({
       }
 
       if (!result.hasFieldErrors) {
-        toast.error('Failed to update teacher. Please try again.');
+        toast.error(ErrorMessages.TEACHER.UPDATE_FAILED);
       } else if (
         result.toastMessage &&
         result.toastMessage !== 'Please check the form fields for errors'
       ) {
         // Show toast only for non-field errors, not for general validation summary
-        toast.error('Validation Error', {
+        toast.error(ToastTitles.VALIDATION_ERROR, {
           description: result.toastMessage,
         });
       }
@@ -239,15 +240,15 @@ export function TeacherForm({
 
   const reactivateMutation = useReactivateTeacher({
     onSuccess: () => {
-      toast.success('Teacher Reactivated', {
+      toast.success(SuccessMessages.TEACHER.REACTIVATE_SUCCESS, {
         description: 'The deleted teacher has been reactivated successfully. You can now edit it.',
       });
       duplicateHandler.closeDialog();
       onSuccess(); // Refresh the list or close the form
     },
     onError: () => {
-      toast.error('Failed to Reactivate', {
-        description: 'Could not reactivate the teacher. Please try again.',
+      toast.error(ToastTitles.ERROR, {
+        description: ErrorMessages.TEACHER.REACTIVATE_FAILED,
       });
     },
   });
@@ -256,7 +257,7 @@ export function TeacherForm({
     const deletedRecordId = duplicateHandler.pendingData?.deletedRecordId;
 
     if (!deletedRecordId) {
-      toast.error('Cannot find the deleted teacher record to reactivate.');
+      toast.error(ErrorMessages.TEACHER.NOT_FOUND);
       return;
     }
 
@@ -331,7 +332,7 @@ export function TeacherForm({
                 control={form.control}
                 name="employee_id"
                 label="Employee ID"
-                placeholder="Enter employee ID"
+                placeholder={FormPlaceholders.ENTER_EMPLOYEE_ID}
                 disabled={isViewMode}
                 required
                 validationType="employeeId"
@@ -341,7 +342,7 @@ export function TeacherForm({
                 name="email"
                 label="Email"
                 type="email"
-                placeholder="Enter email"
+                placeholder={FormPlaceholders.ENTER_EMAIL}
                 disabled={isViewMode}
                 required
                 validationType="email"
@@ -350,7 +351,7 @@ export function TeacherForm({
                 control={form.control}
                 name="first_name"
                 label="First Name"
-                placeholder="Enter first name"
+                placeholder={FormPlaceholders.ENTER_FIRST_NAME}
                 disabled={isViewMode}
                 required
                 validationType="name"
@@ -360,7 +361,7 @@ export function TeacherForm({
                 control={form.control}
                 name="last_name"
                 label="Last Name"
-                placeholder="Enter last name"
+                placeholder={FormPlaceholders.ENTER_LAST_NAME}
                 disabled={isViewMode}
                 required
                 validationType="name"
@@ -379,7 +380,7 @@ export function TeacherForm({
                     control={form.control}
                     name="phone"
                     label="Phone"
-                    placeholder="Enter phone number"
+                    placeholder={FormPlaceholders.ENTER_PHONE_NUMBER}
                     disabled={isViewMode}
                     required
                     validationType="phone"
@@ -411,7 +412,7 @@ export function TeacherForm({
                   control={form.control}
                   name="designation"
                   label="Designation"
-                  placeholder="e.g., Senior Teacher"
+                  placeholder={FormPlaceholders.DESIGNATION_EXAMPLE}
                   disabled={isViewMode}
                   validationType="text"
                   validationOptions={{ fieldName: 'Designation', maxLength: 100 }}
@@ -420,7 +421,7 @@ export function TeacherForm({
                   control={form.control}
                   name="highest_qualification"
                   label="Qualification"
-                  placeholder="e.g., M.Ed, B.Sc"
+                  placeholder={FormPlaceholders.QUALIFICATION_EXAMPLE}
                   disabled={isViewMode}
                   validationType="text"
                   validationOptions={{ fieldName: 'Qualification', maxLength: 200 }}
@@ -429,7 +430,7 @@ export function TeacherForm({
                   control={form.control}
                   name="specialization"
                   label="Specialization"
-                  placeholder="e.g., Mathematics, Science"
+                  placeholder={FormPlaceholders.SPECIALIZATION_EXAMPLE}
                   disabled={isViewMode}
                   validationType="text"
                   validationOptions={{ fieldName: 'Specialization', maxLength: 200 }}
@@ -439,7 +440,7 @@ export function TeacherForm({
                   name="experience_years"
                   label="Experience (Years)"
                   type="number"
-                  placeholder="Enter years of experience"
+                  placeholder={FormPlaceholders.ENTER_YEARS_OF_EXPERIENCE}
                   disabled={isViewMode}
                   validationType="numeric"
                   validationOptions={{
@@ -486,7 +487,7 @@ export function TeacherForm({
                   control={form.control}
                   name="emergency_contact_name"
                   label="Emergency Contact Name"
-                  placeholder="Enter contact name"
+                  placeholder={FormPlaceholders.ENTER_CONTACT_NAME}
                   disabled={isViewMode}
                   validationType="name"
                   validationOptions={{ fieldName: 'Contact name' }}
@@ -495,7 +496,7 @@ export function TeacherForm({
                   control={form.control}
                   name="emergency_contact_number"
                   label="Emergency Contact Phone"
-                  placeholder="Enter contact phone"
+                  placeholder={FormPlaceholders.ENTER_CONTACT_PHONE}
                   disabled={isViewMode}
                   validationType="phone"
                 />

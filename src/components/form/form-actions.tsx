@@ -103,7 +103,7 @@ export function FormActions({
             {onCancel && (
               <Button
                 type="button"
-                variant="outline"
+                variant="brandOutline"
                 onClick={onCancel}
                 disabled={isSubmitting}
                 className="shadow-sm hover:shadow-md transition-all"
@@ -115,7 +115,8 @@ export function FormActions({
             <Button
               type="submit"
               size="lg"
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-md hover:shadow-lg transition-all font-semibold"
+              variant="brand"
+              className="shadow-md hover:shadow-lg transition-all font-semibold"
               disabled={isSubmitting}
             >
               {isSubmitting ? (

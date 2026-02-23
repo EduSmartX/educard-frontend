@@ -31,6 +31,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { DatePicker } from '@/components/ui/date-picker';
+import { ErrorMessages, FormPlaceholders, SuccessMessages, ToastTitles } from '@/constants';
 import { getErrorMessage, applyFieldErrors } from '@/lib/utils/error-handler';
 import { formatDate, formatLocalDate, parseLocalDate } from '@/lib/utils/date-utils';
 import {
@@ -194,12 +195,12 @@ export function LeaveRequestFormPage() {
     if (mode === 'create') {
       createMutation.mutate(data, {
         onSuccess: () => {
-          toast.success('Leave request submitted successfully');
+          toast.success(SuccessMessages.LEAVE.REQUEST_SUBMITTED);
           navigate('/leave/dashboard');
         },
         onError: (error: unknown) => {
-          const errorMessage = getErrorMessage(error, 'Failed to create leave request');
-          toast.error('Submission Failed', { description: errorMessage });
+          const errorMessage = getErrorMessage(error, ErrorMessages.LEAVE.CREATE_REQUEST_FAILED);
+          toast.error(ToastTitles.ERROR, { description: errorMessage });
           applyFieldErrors(error, form.setError);
 
           // Handle conflicting leaves
@@ -224,12 +225,12 @@ export function LeaveRequestFormPage() {
         },
         {
           onSuccess: () => {
-            toast.success('Leave request updated successfully');
+            toast.success(SuccessMessages.LEAVE.REQUEST_UPDATED);
             navigate(`/leave/requests/${id}`);
           },
           onError: (error: unknown) => {
-            const errorMessage = getErrorMessage(error, 'Failed to update leave request');
-            toast.error('Update Failed', { description: errorMessage });
+            const errorMessage = getErrorMessage(error, ErrorMessages.LEAVE.UPDATE_REQUEST_FAILED);
+            toast.error(ToastTitles.ERROR, { description: errorMessage });
             applyFieldErrors(error, form.setError);
 
             // Handle conflicting leaves
@@ -280,13 +281,12 @@ export function LeaveRequestFormPage() {
         {mode === 'view' && request?.status === 'pending' && (
           <Button
             onClick={handleEdit}
-            variant="outline"
-            className="border-blue-300 text-blue-700 hover:bg-blue-50"
+            variant="brandOutline"
           >
             Edit
           </Button>
         )}
-        <Button onClick={handleBack} variant="outline" className="hover:bg-gray-100">
+        <Button onClick={handleBack} variant="brandOutline">
           Back to Dashboard
         </Button>
       </PageHeader>
@@ -310,7 +310,7 @@ export function LeaveRequestFormPage() {
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select leave type" />
+                          <SelectValue placeholder={FormPlaceholders.SELECT_LEAVE_TYPE} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -349,7 +349,7 @@ export function LeaveRequestFormPage() {
                             field.onChange(date ? formatLocalDate(date) : '');
                           }}
                           disabled={mode === 'view'}
-                          placeholder="Select start date"
+                          placeholder={FormPlaceholders.SELECT_START_DATE}
                         />
                       </FormControl>
                       <FormMessage />
@@ -370,7 +370,7 @@ export function LeaveRequestFormPage() {
                             field.onChange(date ? formatLocalDate(date) : '');
                           }}
                           disabled={mode === 'view'}
-                          placeholder="Select end date"
+                          placeholder={FormPlaceholders.SELECT_END_DATE}
                           minDate={
                             form.watch('start_date')
                               ? parseLocalDate(form.watch('start_date'))
@@ -561,7 +561,7 @@ export function LeaveRequestFormPage() {
                     <FormControl>
                       <Textarea
                         {...field}
-                        placeholder="Enter reason for leave..."
+                        placeholder={FormPlaceholders.ENTER_LEAVE_REASON}
                         rows={4}
                         disabled={mode === 'view'}
                       />
@@ -588,17 +588,17 @@ export function LeaveRequestFormPage() {
                 <div className="flex justify-end gap-2 pt-4 border-t">
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="brandOutline"
                     onClick={handleBack}
                     disabled={isSubmitting}
-                    className="hover:bg-gray-100"
                   >
                     Cancel
                   </Button>
                   <Button
                     type="submit"
+                    variant="brand"
                     disabled={isSubmitting}
-                    className="gap-2 bg-green-600 hover:bg-green-700 text-white"
+                    className="gap-2"
                   >
                     {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                     {mode === 'create' ? 'Submit Request' : 'Save Changes'}

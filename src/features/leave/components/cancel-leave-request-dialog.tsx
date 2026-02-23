@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ErrorMessages, FormPlaceholders, SuccessMessages, ToastTitles } from '@/constants';
 import { formatDate } from '@/lib/utils/date-utils';
 import { getErrorMessage } from '@/lib/utils/error-handler';
 import { useCancelLeaveRequest } from '../hooks';
@@ -48,13 +49,13 @@ export function CancelLeaveRequestDialog({
       },
       {
         onSuccess: () => {
-          toast.success('Leave request cancelled successfully');
+          toast.success(SuccessMessages.LEAVE.REQUEST_CANCELLED);
           onSuccess();
         },
         onError: (err) => {
-          const errorMessage = getErrorMessage(err, 'Failed to cancel leave request');
+          const errorMessage = getErrorMessage(err, ErrorMessages.LEAVE.CANCEL_REQUEST_FAILED);
           setError(errorMessage);
-          toast.error('Cancellation Failed', {
+          toast.error(ToastTitles.ERROR, {
             description: errorMessage,
           });
         },
@@ -102,7 +103,7 @@ export function CancelLeaveRequestDialog({
             <Label htmlFor="cancellation-reason">Cancellation Reason (Optional)</Label>
             <Textarea
               id="cancellation-reason"
-              placeholder="Provide a reason for cancellation..."
+              placeholder={FormPlaceholders.PROVIDE_CANCELLATION_REASON}
               value={cancellationReason}
               onChange={(e) => setCancellationReason(e.target.value)}
               rows={3}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getParsedLocalStorageItem } from '@/lib/utils/storage';
 
 export interface User {
   public_id: string;
@@ -24,29 +25,9 @@ export interface Organization {
 }
 
 export function useAuth() {
-  const getUserFromStorage = () => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        return JSON.parse(userStr);
-      } catch {
-        return null;
-      }
-    }
-    return null;
-  };
+  const getUserFromStorage = () => getParsedLocalStorageItem<User>('user');
 
-  const getOrganizationFromStorage = () => {
-    const orgStr = localStorage.getItem('organization');
-    if (orgStr) {
-      try {
-        return JSON.parse(orgStr);
-      } catch {
-        return null;
-      }
-    }
-    return null;
-  };
+  const getOrganizationFromStorage = () => getParsedLocalStorageItem<Organization>('organization');
 
   const [user] = useState<User | null>(getUserFromStorage);
   const [organization] = useState<Organization | null>(getOrganizationFromStorage);

@@ -13,8 +13,9 @@ import {
   GenderField,
   TextInputField,
 } from '@/components/forms/form-fields';
+import { OrganizationRoleField } from '@/components/forms/organization-role-field';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -30,17 +31,21 @@ import {
   profileInformationSchema,
   type ProfileInformationFormData,
 } from '../schemas/profile-schemas';
+import { CommonUiText, FormPlaceholders } from '@/constants';
 
 export function ProfileInformationForm() {
   const { data: profile, isLoading } = useUserProfile();
   const updateMutation = useUpdateProfile();
+
+  // Check if user is admin - only admins can edit their organization role
+  const isAdmin = profile?.role?.toLowerCase() === 'admin';
 
   const form = useForm<ProfileInformationFormData>({
     resolver: zodResolver(profileInformationSchema),
     defaultValues: {
       first_name: '',
       last_name: '',
-      phone: '',
+      organization_role: undefined,
       gender: undefined,
       blood_group: undefined,
       date_of_birth: '',
@@ -53,7 +58,7 @@ export function ProfileInformationForm() {
       const formData = {
         first_name: profile.first_name || '',
         last_name: profile.last_name || '',
-        phone: profile.phone || '',
+        organization_role: profile.organization_role || undefined,
         gender: profile.gender || undefined,
         blood_group: profile.blood_group || undefined,
         date_of_birth: profile.date_of_birth || '',
@@ -89,7 +94,10 @@ export function ProfileInformationForm() {
   }
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardHeader>
+        <CardTitle className="text-base font-medium">Personal Information</CardTitle>
+      </CardHeader>
+      <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -97,7 +105,7 @@ export function ProfileInformationForm() {
                 control={form.control}
                 name="first_name"
                 label="First Name"
-                placeholder="John"
+                placeholder={FormPlaceholders.FIRST_NAME_EXAMPLE}
                 required
                 validationType="name"
               />
@@ -105,17 +113,17 @@ export function ProfileInformationForm() {
                 control={form.control}
                 name="last_name"
                 label="Last Name"
-                placeholder="Doe"
+                placeholder={FormPlaceholders.LAST_NAME_EXAMPLE}
                 required
                 validationType="name"
               />
-              <TextInputField
+              <OrganizationRoleField
                 control={form.control}
-                name="phone"
-                label="Phone Number"
-                placeholder="+1234567890"
-                type="tel"
-                validationType="phone"
+                name="organization_role"
+                label="Organization Role"
+                placeholder="Select your role"
+                disabled={!isAdmin}
+                defaultRoleCode=""
               />
               <GenderField control={form.control} name="gender" required />
               <BloodGroupField control={form.control} name="blood_group" />
@@ -152,16 +160,16 @@ export function ProfileInformationForm() {
                 onClick={() => form.reset()}
                 disabled={updateMutation.isPending || !form.formState.isDirty}
               >
-                Reset
+                {CommonUiText.RESET}
               </Button>
               <Button
                 type="submit"
+                variant="brand"
                 disabled={updateMutation.isPending || !form.formState.isDirty}
-                className="bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg shadow-blue-500/50 disabled:opacity-50 disabled:shadow-none"
               >
                 {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <Save className="mr-2 h-4 w-4" />
-                Save Changes
+                {CommonUiText.SAVE_CHANGES}
               </Button>
             </div>
           </form>
