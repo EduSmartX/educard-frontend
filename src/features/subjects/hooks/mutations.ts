@@ -101,10 +101,10 @@ export function useDeleteSubject(options?: MutationOptions) {
   return useMutation({
     mutationFn: deleteSubject,
     onSuccess: () => {
-      // Only invalidate the list queries, not individual subject queries
+      // Invalidate all subjects queries (with any params) to refresh the list
       queryClient.invalidateQueries({
         queryKey: ['subjects'],
-        exact: true,
+        refetchType: 'all',
       });
       toast.success(SuccessMessages.SUBJECT.DELETE_SUCCESS);
       options?.onSuccess?.();
@@ -130,12 +130,10 @@ export function useReactivateSubject(options?: MutationOptions) {
 
   return useMutation({
     mutationFn: reactivateSubject,
-    onSuccess: () => {
-      // Only invalidate the list queries, not individual subject queries
-      // The navigation will handle refreshing the detail view
+    onSuccess: () => {  
       queryClient.invalidateQueries({
         queryKey: ['subjects'],
-        exact: true,
+        refetchType: 'all',
       });
       toast.success(SuccessMessages.SUBJECT.REACTIVATE_SUCCESS);
       options?.onSuccess?.();

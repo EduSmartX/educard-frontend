@@ -86,11 +86,14 @@ export async function fetchStudent(publicId: string, isDeleted = false): Promise
 // Class-level (full CRUD)
 export async function createStudent(
   classId: string,
-  payload: CreateStudentPayload
+  payload: CreateStudentPayload,
+  forceCreate?: boolean
 ): Promise<Student> {
+  const params = forceCreate ? { force_create: 'true' } : {};
   const response = await api.post<ApiDetailResponse<Student>>(
     `${CLASS_STUDENTS_BASE(classId)}/`,
-    payload
+    payload,
+    { params }
   );
   return response.data.data;
 }

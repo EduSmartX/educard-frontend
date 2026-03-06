@@ -435,7 +435,7 @@ export function ExceptionDialog({
                               variant="secondary"
                               className="gap-1.5 pr-1 bg-purple-600 text-white hover:bg-purple-700 shadow-sm"
                             >
-                              {cls.name}
+                              {cls.class_master?.name}-{cls.name}
                               <Button
                                 variant="ghost"
                                 size="sm"

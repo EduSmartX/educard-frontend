@@ -20,6 +20,7 @@ import {
   BOARD_AFFILIATION_OPTIONS,
 } from '@/constants/organization-types';
 import { CommonUiText, FormPlaceholders } from '@/constants';
+import { STANDARD_FORM_VALIDATION_CONFIG } from '@/lib/utils/form-validation';
 
 const organizationInfoSchema = z.object({
   name: z.string().min(1, 'Organization name is required'),
@@ -45,6 +46,7 @@ export function OrganizationInfoForm({ organization, isLoading }: OrganizationIn
 
   const form = useForm<OrganizationInfoFormData>({
     resolver: zodResolver(organizationInfoSchema),
+    ...STANDARD_FORM_VALIDATION_CONFIG,
     defaultValues: {
       name: '',
       organization_type: '',

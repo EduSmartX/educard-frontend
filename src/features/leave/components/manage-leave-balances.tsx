@@ -42,7 +42,7 @@ interface ManageableUser {
   role?: string;
   phone?: string;
   gender?: string;
-  organization_role?: string;
+  organization_role?: string | { code: string; name: string };
 }
 
 interface ClassData {
@@ -692,7 +692,9 @@ export default function ManageLeaveBalances() {
                         </td>
                         <td className="py-3 px-4 text-sm">
                           <Badge variant="secondary" className="font-medium">
-                            {selectedUserDetails?.organization_role || 'N/A'}
+                            {typeof selectedUserDetails?.organization_role === 'object' && selectedUserDetails.organization_role
+                              ? selectedUserDetails.organization_role.name
+                              : selectedUserDetails?.organization_role || 'N/A'}
                           </Badge>
                         </td>
                       </tr>

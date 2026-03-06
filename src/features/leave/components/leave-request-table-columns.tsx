@@ -29,16 +29,15 @@ export function getLeaveRequestColumns(actions: ColumnActions): Column<LeaveRequ
       sortKey: 'leave_name',
     },
     {
-      header: 'Start Date',
-      accessor: (row) => <div className="text-sm text-gray-900">{formatDate(row.start_date)}</div>,
+      header: 'Start / End Date',
+      accessor: (row) => (
+        <div>
+          <div className="text-sm text-gray-900">{formatDate(row.start_date)}</div>
+          <div className="text-xs text-muted-foreground">to {formatDate(row.end_date)}</div>
+        </div>
+      ),
       sortable: true,
       sortKey: 'start_date',
-    },
-    {
-      header: 'End Date',
-      accessor: (row) => <div className="text-sm text-gray-900">{formatDate(row.end_date)}</div>,
-      sortable: true,
-      sortKey: 'end_date',
     },
     {
       header: 'Days',
@@ -63,6 +62,28 @@ export function getLeaveRequestColumns(actions: ColumnActions): Column<LeaveRequ
       },
       sortable: true,
       sortKey: 'status',
+    },
+    {
+      header: 'Reviewed',
+      accessor: (row) => (
+        <div>
+          <div className="text-sm text-gray-900">{row.reviewed_by_name?.trim() || '-'}</div>
+          <div className="text-xs text-muted-foreground">
+            {row.reviewed_at ? formatDate(row.reviewed_at) : '-'}
+          </div>
+        </div>
+      ),
+      sortable: true,
+      sortKey: 'reviewed_at',
+    },
+    {
+      header: 'Comments',
+      accessor: (row) => (
+        <div className="text-sm text-gray-900 max-w-[220px] truncate" title={row.review_comments || '-'}>
+          {row.review_comments?.trim() || '-'}
+        </div>
+      ),
+      sortable: false,
     },
     {
       header: 'Created',

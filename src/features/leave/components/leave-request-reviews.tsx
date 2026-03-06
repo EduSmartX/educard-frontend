@@ -37,7 +37,7 @@ interface LeaveRequestReview {
   user_public_id: string;
   user_name: string;
   user_role: string;
-  organization_role: string;
+  organization_role: string | { code: string; name: string };
   email: string;
   supervisor_name: string;
   supervisor_public_id: string;
@@ -75,7 +75,7 @@ interface ManageableUser {
   phone: string;
   role: string;
   role_display: string;
-  organization_role: string;
+  organization_role: string | { code: string; name: string };
   gender: string;
   employee_id?: string;
 }
@@ -343,7 +343,11 @@ export function LeaveRequestReviews() {
             >
               <div className="flex flex-col items-start gap-0.5">
                 <div className="font-medium">{row.user_name}</div>
-                <div className="text-xs text-muted-foreground">{row.organization_role}</div>
+                <div className="text-xs text-muted-foreground">
+                  {typeof row.organization_role === 'object' && row.organization_role
+                    ? row.organization_role.name
+                    : row.organization_role}
+                </div>
               </div>
             </button>
           </TooltipTrigger>

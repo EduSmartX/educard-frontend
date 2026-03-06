@@ -55,10 +55,15 @@ export function ProfileInformationForm() {
 
   useEffect(() => {
     if (profile) {
+      // Extract organization_role code properly
+      const organizationRoleCode = typeof profile.organization_role === 'string'
+        ? profile.organization_role
+        : profile.organization_role?.code || undefined;
+
       const formData = {
         first_name: profile.first_name || '',
         last_name: profile.last_name || '',
-        organization_role: profile.organization_role || undefined,
+        organization_role: organizationRoleCode,
         gender: profile.gender || undefined,
         blood_group: profile.blood_group || undefined,
         date_of_birth: profile.date_of_birth || '',

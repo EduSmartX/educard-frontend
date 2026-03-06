@@ -51,16 +51,16 @@ export const adminSidebarConfig: SidebarSection[] = [
         path: ROUTES.TEACHERS,
       },
       {
-        id: 'students',
-        label: 'Students',
-        icon: GraduationCap,
-        path: ROUTES.STUDENTS,
-      },
-      {
         id: 'classes',
         label: 'Classes',
         icon: School,
         path: ROUTES.CLASSES,
+      },
+      {
+        id: 'students',
+        label: 'Students',
+        icon: GraduationCap,
+        path: ROUTES.STUDENTS,
       },
       {
         id: 'subjects',
@@ -90,6 +90,12 @@ export const adminSidebarConfig: SidebarSection[] = [
         label: 'Monthly Report',
         icon: CalendarDays,
         path: '/attendance/monthly',
+      },
+      {
+        id: 'attendance-timesheet',
+        label: 'Timesheet',
+        icon: CalendarCheck,
+        path: ROUTES.ATTENDANCE.TIMESHEET,
       },
     ],
   },

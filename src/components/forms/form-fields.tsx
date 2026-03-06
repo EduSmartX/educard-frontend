@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { Control, FieldValues, Path } from 'react-hook-form';
+import { useFormContext, type Control, type FieldValues, type Path } from 'react-hook-form';
 import { getValidator, type ValidationResult } from '@/lib/utils/field-validators';
 
 /**
@@ -66,12 +66,14 @@ export function TextInputField<T extends FieldValues>({
   validationOptions,
 }: TextInputFieldProps<T>) {
   const [blurError, setBlurError] = useState<string | undefined>();
+  const form = useFormContext<T>();
 
-  const handleBlur = (value: string, onChange: (value: string) => void) => {
+  const handleBlur = async (value: string, onChange: (value: string) => void) => {
     // Clear previous blur error
     setBlurError(undefined);
 
     if (!validationType || !value || value.trim() === '') {
+      await form.trigger(name);
       return;
     }
 
@@ -83,6 +85,8 @@ export function TextInputField<T extends FieldValues>({
       // Trigger form validation by setting the field value again
       onChange(value);
     }
+
+    await form.trigger(name);
   };
 
   return (
@@ -105,7 +109,7 @@ export function TextInputField<T extends FieldValues>({
               min={min instanceof Date ? min.toISOString().split('T')[0] : min}
               onBlur={(e) => {
                 field.onBlur();
-                handleBlur(e.target.value, field.onChange);
+                void handleBlur(e.target.value, field.onChange);
               }}
               className={
                 readOnly
@@ -150,6 +154,8 @@ export function SelectField<T extends FieldValues>({
   description,
   options,
 }: SelectFieldProps<T>) {
+  const form = useFormContext<T>();
+
   return (
     <FormField
       control={control}
@@ -166,7 +172,11 @@ export function SelectField<T extends FieldValues>({
             </FormLabel>
             <Select
               key={`${name}-${selectValue || 'empty'}`}
-              onValueChange={field.onChange}
+              onValueChange={(value) => {
+                field.onChange(value);
+                field.onBlur();
+                void form.trigger(name);
+              }}
               value={selectValue}
               disabled={disabled}
             >
@@ -224,6 +234,7 @@ export function DateInputField<T extends FieldValues>({
   validationOptions,
 }: DateInputFieldProps<T>) {
   const [blurError, setBlurError] = useState<string | undefined>();
+  const form = useFormContext<T>();
 
   const handleDateChange = (date: Date | null, onChange: (value: string) => void) => {
     const dateString = date ? date.toISOString().split('T')[0] : '';
@@ -241,6 +252,8 @@ export function DateInputField<T extends FieldValues>({
         setBlurError(result.error);
       }
     }
+
+    void form.trigger(name);
   };
 
   return (

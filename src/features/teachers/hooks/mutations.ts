@@ -5,7 +5,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getErrorMessage, getFieldErrors } from '@/lib/utils/error-handler';
+import { getErrorMessage, getFieldErrors, isDeletedDuplicateError } from '@/lib/utils/error-handler';
 import { ErrorMessages, QueryKeys, SuccessMessages, ToastTitles } from '@/constants';
 import type { CreateTeacherPayload, UpdateTeacherPayload } from '../types';
 import {
@@ -78,13 +78,16 @@ export function useCreateTeacher(options?: MutationOptions) {
       const errorMessage = getErrorMessage(error, ErrorMessages.TEACHER.CREATE_FAILED);
       const fieldErrors = getFieldErrors(error) as TeacherFieldErrors | undefined;
 
-      // Only show toast if no custom error handler is provided
-      // If custom handler exists, let it decide whether to show toast or dialog
-      if (!options?.onError) {
-        toast.error(ToastTitles.ERROR, {
-          description: errorMessage,
-          duration: 5000,
-        });
+      // Don't show toast for deleted duplicate errors - the dialog will handle it
+      if (!isDeletedDuplicateError(error)) {
+        // Only show toast if no custom error handler is provided
+        // If custom handler exists, let it decide whether to show toast or dialog
+        if (!options?.onError) {
+          toast.error(ToastTitles.ERROR, {
+            description: errorMessage,
+            duration: 5000,
+          });
+        }
       }
 
       options?.onError?.(error, fieldErrors);
@@ -101,7 +104,11 @@ export function useReactivateTeacher(options?: MutationOptions) {
   return useMutation({
     mutationFn: (publicId: string) => reactivateTeacher(publicId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QueryKeys.TEACHERS.ALL });
+      // Invalidate all teacher queries to refresh both active and deleted lists
+      queryClient.invalidateQueries({
+        queryKey: QueryKeys.TEACHERS.ALL,
+        refetchType: 'all',
+      });
 
       toast.success(SuccessMessages.TEACHER.REACTIVATE_SUCCESS);
 
@@ -140,10 +147,12 @@ export function useUpdateTeacher(options?: MutationOptions) {
       const errorMessage = getErrorMessage(error, ErrorMessages.TEACHER.UPDATE_FAILED);
       const fieldErrors = getFieldErrors(error) as TeacherFieldErrors | undefined;
 
-      toast.error(ToastTitles.ERROR, {
-        description: errorMessage,
-        duration: 5000,
-      });
+      if (!isDeletedDuplicateError(error)) {
+        toast.error(ToastTitles.ERROR, {
+          description: errorMessage,
+          duration: 5000,
+        });
+      }
 
       options?.onError?.(error, fieldErrors);
     },
@@ -159,7 +168,11 @@ export function useDeleteTeacher(options?: MutationOptions) {
   return useMutation({
     mutationFn: (publicId: string) => deleteTeacher(publicId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QueryKeys.TEACHERS.ALL });
+      // Invalidate all teachers queries (with any params) to refresh the list
+      queryClient.invalidateQueries({
+        queryKey: QueryKeys.TEACHERS.ALL,
+        refetchType: 'all',
+      });
 
       toast.success(SuccessMessages.TEACHER.DELETE_SUCCESS);
 

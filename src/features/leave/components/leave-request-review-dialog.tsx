@@ -31,7 +31,7 @@ import { formatDate } from '@/lib/utils/date-utils';
 interface LeaveRequestReview {
   public_id: string;
   user_name: string;
-  organization_role: string;
+  organization_role: string | { code: string; name: string };
   email: string;
   leave_name: string;
   leave_type_code: string;
@@ -117,7 +117,9 @@ export function LeaveRequestReviewDialog({
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-blue-700">Role</span>
               <Badge variant="outline" className="border-blue-300 text-blue-700 bg-white">
-                {request.organization_role}
+                {typeof request.organization_role === 'object' && request.organization_role
+                  ? request.organization_role.name
+                  : request.organization_role}
               </Badge>
             </div>
             <div className="flex items-center justify-between">

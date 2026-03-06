@@ -18,7 +18,11 @@ export interface TeacherUser {
   gender?: string;
   date_of_birth?: string;
   blood_group?: string;
-  organization_role?: string;
+  organization_role?: {
+    id: number;
+    code: string;
+    name: string;
+  } | null;
   supervisor?: {
     email: string;
     full_name: string;
@@ -39,8 +43,8 @@ export interface TeacherUser {
  * Subject information (from core/master subjects)
  */
 export interface Subject {
-  public_id: string; // Actually the numeric ID converted to string
-  code: string;
+  public_id: string;
+  code?: string;
   name: string;
 }
 
@@ -57,7 +61,7 @@ export interface Teacher {
   specialization: string;
   highest_qualification?: string;
   experience_years?: number;
-  subjects: Subject[];
+  subjects?: Subject[];
   created_at: string;
   updated_at: string;
   created_by_public_id: string | null;
@@ -106,7 +110,7 @@ export interface CreateTeacherPayload {
     first_name: string;
     last_name: string;
     gender: string;
-    organization_role_code: string;
+    organization_role?: number; // Organization role ID
     phone?: string;
     blood_group?: string;
     date_of_birth?: string;
@@ -142,7 +146,7 @@ export interface UpdateTeacherPayload {
     last_name?: string;
     phone?: string;
     gender?: string;
-    organization_role?: string;
+    organization_role?: number; // Organization role ID
     supervisor_email?: string;
     blood_group?: string;
     date_of_birth?: string;

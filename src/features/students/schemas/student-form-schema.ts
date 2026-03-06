@@ -7,7 +7,7 @@ const alphanumericWithSymbolsRegex = /^[a-zA-Z0-9-_]+$/;
 
 const phoneTransform = (val: string | undefined) => {
   if (!val) return '';
-  return val.replace(/\D/g, '');
+  return val.trim();
 };
 
 const uppercaseTransform = (val: string | undefined) => {
@@ -65,7 +65,7 @@ export const studentFormSchema = z
     phone: z
       .string()
       .transform(phoneTransform)
-      .refine((val) => val === '' || val.length === 10, {
+      .refine((val) => val === '' || /^\d{10}$/.test(val), {
         message: 'Phone number must be exactly 10 digits',
       })
       .or(z.literal('')),
@@ -135,7 +135,7 @@ export const studentFormSchema = z
     guardian_phone: z
       .string()
       .transform(phoneTransform)
-      .refine((val) => val === '' || val.length === 10, {
+      .refine((val) => val === '' || /^\d{10}$/.test(val), {
         message: 'Guardian phone must be exactly 10 digits',
       })
       .or(z.literal('')),
@@ -161,7 +161,7 @@ export const studentFormSchema = z
     emergency_contact_phone: z
       .string()
       .transform(phoneTransform)
-      .refine((val) => val === '' || val.length === 10, {
+      .refine((val) => val === '' || /^\d{10}$/.test(val), {
         message: 'Emergency contact phone must be exactly 10 digits',
       })
       .or(z.literal('')),

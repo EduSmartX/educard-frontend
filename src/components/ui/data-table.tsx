@@ -8,11 +8,8 @@ import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Table,
-  TableBody,
   TableCell,
   TableHead,
-  TableHeader,
   TableRow,
 } from '@/components/ui/table';
 
@@ -226,14 +223,14 @@ export function DataTable<T>({
   return (
     <div className="w-full">
       <div
-        className="custom-scrollbar w-full overflow-auto"
+        className="custom-scrollbar w-full overflow-auto relative"
         style={{
           maxHeight,
           paddingBottom: '4px',
         }}
       >
-        <Table style={{ minWidth }}>
-          <TableHeader className="sticky top-0 z-10 bg-gradient-to-r from-gray-100 to-gray-50">
+        <table className="w-full caption-bottom text-sm" style={{ minWidth }}>
+          <thead className="sticky top-0 z-10 bg-gradient-to-r from-gray-100 to-gray-50 [&_tr]:border-b">
             <TableRow className="bg-gray-100 border-b-2 border-gray-300">
               {columns.map((column, index) => (
                 <TableHead
@@ -268,8 +265,8 @@ export function DataTable<T>({
                 </TableHead>
               ))}
             </TableRow>
-          </TableHeader>
-          <TableBody>
+          </thead>
+          <tbody className="[&_tr:last-child]:border-0">
             {sortedData.map((row, rowIndex) => (
               <TableRow
                 key={getRowKey(row, rowIndex)}
@@ -292,8 +289,8 @@ export function DataTable<T>({
                 ))}
               </TableRow>
             ))}
-          </TableBody>
-        </Table>
+          </tbody>
+        </table>
       </div>
       <style>{`
         .custom-scrollbar {

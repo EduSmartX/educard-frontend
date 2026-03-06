@@ -121,8 +121,7 @@ function handleApiError(error: AxiosError): void {
         }
         break;
 
-      case 401:
-        toast.error(ErrorMessages.AUTH_REQUIRED);
+      case 401:        
         break;
 
       case 403:

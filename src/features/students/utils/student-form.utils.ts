@@ -60,7 +60,7 @@ export const STUDENT_FORM_DEFAULT_VALUES: StudentFormData = {
   city: '',
   state: '',
   zipCode: '',
-  country: 'India',
+  country: '',
 };
 
 export function getStudentFormValuesFromInitialData(initialData: Student): StudentFormData {
@@ -114,7 +114,6 @@ export function transformStudentFormToPayload(data: StudentFormData): CreateStud
       gender: data.gender || '',
       blood_group: data.blood_group,
       date_of_birth: data.date_of_birth || undefined,
-      organization_role_code: 'STUDENT',
       supervisor_email: data.supervisor_email || undefined,
       address: hasAddress
         ? {
@@ -124,7 +123,7 @@ export function transformStudentFormToPayload(data: StudentFormData): CreateStud
             city: data.city || '',
             state: data.state || '',
             zip_code: data.zipCode || '',
-            country: data.country || 'India',
+            country: data.country || '',
           }
         : undefined,
     },
@@ -149,8 +148,53 @@ export function shouldShowValidationToast(message?: string): boolean {
   return !!message && message !== DEFAULT_FIELD_ERROR_TOAST_MESSAGE;
 }
 
-export function scrollToFirstFormError() {
+/**
+ * Scroll to the first field with an error
+ * Helps users quickly identify validation issues
+ * @param setIsAddressExpanded - Function to expand address section if error is in an address field
+ * @param setIsPreviousSchoolExpanded - Function to expand previous school section if error is in those fields
+ * @param formErrors - Form errors object to check which fields have errors
+ */
+export function scrollToFirstFormError(
+  setIsAddressExpanded?: (value: boolean) => void,
+  setIsPreviousSchoolExpanded?: (value: boolean) => void,
+  formErrors?: Record<string, any>
+) {
   setTimeout(() => {
+    // Address field names that require expanding the address section
+    const addressFields = [
+      'streetAddress',
+      'addressLine2',
+      'city',
+      'state',
+      'zipCode',
+      'country',
+      'addressType',
+    ];
+
+    // Previous school field names that require expanding that section
+    const previousSchoolFields = [
+      'previous_school_name',
+      'previous_school_address',
+      'previous_school_class',
+    ];
+
+    // Check if any address field has an error and expand the section
+    if (setIsAddressExpanded && formErrors) {
+      const hasAddressError = addressFields.some((field) => formErrors[field]);
+      if (hasAddressError) {
+        setIsAddressExpanded(true);
+      }
+    }
+
+    // Check if any previous school field has an error and expand the section
+    if (setIsPreviousSchoolExpanded && formErrors) {
+      const hasPreviousSchoolError = previousSchoolFields.some((field) => formErrors[field]);
+      if (hasPreviousSchoolError) {
+        setIsPreviousSchoolExpanded(true);
+      }
+    }
+
     const firstError = document.querySelector('[data-error="true"], [aria-invalid="true"]');
 
     if (firstError) {

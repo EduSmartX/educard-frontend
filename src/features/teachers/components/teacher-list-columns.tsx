@@ -74,10 +74,10 @@ export function createTeacherListColumns({
       header: 'Subjects',
       accessor: (row) => (
         <div className="flex flex-wrap gap-1">
-          {row.subjects && row.subjects.length > 0 ? (
+          {row.subjects && Array.isArray(row.subjects) && row.subjects.length > 0 ? (
             row.subjects.slice(0, 2).map((subject) => (
               <Badge key={subject.public_id} variant="outline" className="text-xs">
-                {subject.code}
+                {subject.name}
               </Badge>
             ))
           ) : (

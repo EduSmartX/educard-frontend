@@ -275,6 +275,8 @@ export function LeaveRequestFormPage() {
         ? 'Edit Leave Request'
         : 'Leave Request Details';
 
+  const hasNoAllocatedBalances = mode === 'create' && balances.length === 0;
+
   return (
     <div className="space-y-6">
       <PageHeader title={title} icon={Briefcase}>
@@ -290,6 +292,34 @@ export function LeaveRequestFormPage() {
           Back to Dashboard
         </Button>
       </PageHeader>
+
+      {hasNoAllocatedBalances && (
+        <Card>
+          <CardContent className="pt-8 pb-8">
+            <div className="mx-auto max-w-2xl text-center space-y-4">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
+                <AlertCircle className="h-6 w-6 text-amber-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900">No Allocated Leave Balances</h3>
+              <p className="text-sm text-muted-foreground">
+                You don&apos;t have any allocated leave balances yet, so you cannot submit a leave
+                request right now.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Please contact your supervisor or administrator to allocate leave balances for your
+                account.
+              </p>
+              <div className="pt-2">
+                <Button onClick={handleBack} variant="brandOutline">
+                  Back to Dashboard
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!hasNoAllocatedBalances && (
 
       <Card>
         <CardContent className="pt-6">
@@ -609,6 +639,7 @@ export function LeaveRequestFormPage() {
           </Form>
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }

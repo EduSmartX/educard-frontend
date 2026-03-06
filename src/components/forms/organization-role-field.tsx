@@ -1,7 +1,7 @@
 /**
  * Organization Role Select Field Component
  * Reusable dropdown for selecting organization roles
- * Fetches roles from API and provides default value option
+ * Fetches roles from API and uses IDs as values (matching subjects pattern)
  */
 
 import { useEffect } from 'react';
@@ -44,7 +44,7 @@ export function OrganizationRoleField<T extends FieldValues>({
   placeholder = 'Select organization role',
   required = false,
   disabled = false,
-  defaultRoleCode = 'TEACHER',
+  defaultRoleCode,
 }: OrganizationRoleFieldProps<T>) {
   const { data: orgRoles = [], isLoading } = useOrganizationRoles();
 
@@ -52,18 +52,16 @@ export function OrganizationRoleField<T extends FieldValues>({
     <FormField
       control={control}
       name={name}
-      render={({ field }) => {
-        // Auto-fill with default role code when roles are loaded
-        // eslint-disable-next-line react-hooks/rules-of-hooks
+      render={({ field }) => {        
         useEffect(() => {
           if (!field.value && defaultRoleCode && orgRoles.length > 0) {
             const defaultRole = orgRoles.find((role) => role.code === defaultRoleCode);
             if (defaultRole) {
-              field.onChange(defaultRoleCode);
+              field.onChange(defaultRole.id.toString());
             }
           }
           // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, [orgRoles.length, field.value]);
+        }, [orgRoles.length]);
 
         return (
           <FormItem>
@@ -82,7 +80,7 @@ export function OrganizationRoleField<T extends FieldValues>({
               </FormControl>
               <SelectContent className="max-h-[300px] overflow-y-auto">
                 {orgRoles.map((role) => (
-                  <SelectItem key={role.id} value={role.code}>
+                  <SelectItem key={role.id} value={role.id.toString()}>
                     {role.name}
                   </SelectItem>
                 ))}

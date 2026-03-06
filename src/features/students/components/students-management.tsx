@@ -109,6 +109,7 @@ export function StudentsManagement() {
 
   const handleDelete = (student: StudentListItem) => {
     if (showDeleted) {
+      setReactivateError(null);
       setStudentToReactivate(student);
     } else {
       setStudentToDelete(student);
@@ -137,6 +138,7 @@ export function StudentsManagement() {
 
   const handleConfirmReactivate = () => {
     if (studentToReactivate) {
+      setReactivateError(null);
       reactivateMutation.mutate(
         {
           classId: studentToReactivate.class_id,
@@ -146,9 +148,11 @@ export function StudentsManagement() {
           onSuccess: () => {
             toast.success(SuccessMessages.STUDENT.REACTIVATE_SUCCESS);
             setStudentToReactivate(null);
+            setReactivateError(null);
           },
           onError: (error: Error) => {
-            toast.error(error.message || ErrorMessages.STUDENT.REACTIVATE_FAILED);
+            const errorMessage = error.message || ErrorMessages.STUDENT.REACTIVATE_FAILED;
+            setReactivateError(errorMessage);
           },
         }
       );
@@ -221,11 +225,17 @@ export function StudentsManagement() {
       {showDeleted && (
         <ReactivateConfirmationDialog
           open={!!studentToReactivate}
-          onOpenChange={(open) => !open && setStudentToReactivate(null)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setStudentToReactivate(null);
+              setReactivateError(null);
+            }
+          }}
           onConfirm={handleConfirmReactivate}
           title="Reactivate Student"
           itemName={studentToReactivate?.full_name}
           isReactivating={reactivateMutation.isPending}
+          error={reactivateError}
         />
       )}
     </>

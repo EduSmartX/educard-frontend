@@ -5,6 +5,9 @@ import type {
   AttendanceRecord,
   BulkAttendancePayload,
   ComprehensiveAttendanceRecord,
+  EmployeeAttendanceBulkPayload,
+  EmployeeAttendanceRecord,
+  EmployeeSubmissionConfig,
 } from '../types';
 
 // Get eligible classes for attendance marking
@@ -83,4 +86,60 @@ export const bulkMarkAttendance = async (
     payload
   );
   return response.data;
+};
+
+export const getEmployeeAttendance = async (params: {
+  from_date: string;
+  to_date: string;
+}): Promise<{
+  records: EmployeeAttendanceRecord[];
+  stats: Record<string, number>;
+  submission_config: EmployeeSubmissionConfig;
+}> => {
+  const response = await apiClient.get('/attendance/employee-attendance/', { params });
+  const payload = response.data || {};
+
+  const records = Array.isArray(payload.results)
+    ? payload.results
+    : Array.isArray(payload.data)
+      ? payload.data
+      : [];
+
+  return {
+    records: records as EmployeeAttendanceRecord[],
+    stats: payload.stats || {},
+    submission_config: payload.submission_config || {},
+  };
+};
+
+export const bulkSubmitEmployeeAttendance = async (payload: EmployeeAttendanceBulkPayload) => {
+  const response = await apiClient.post('/attendance/employee-attendance/bulk_submit/', payload);
+  return response.data;
+};
+
+// Fetch organization holidays for a date range
+export const fetchOrganizationHolidays = async (params: {
+  from_date: string;
+  to_date: string;
+}): Promise<{
+  holidays: Array<{
+    public_id: string;
+    start_date: string;
+    end_date: string;
+    holiday_type: string;
+    description: string;
+  }>;
+}> => {
+  const response = await apiClient.get('/attendance/admin/holiday-calendar/', {
+    params,
+  });
+  
+  const payload = response.data || {};
+  const holidays = Array.isArray(payload.results)
+    ? payload.results
+    : Array.isArray(payload.data)
+      ? payload.data
+      : [];
+
+  return { holidays };
 };

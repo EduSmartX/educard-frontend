@@ -82,6 +82,16 @@ const MonthlyAttendanceReportPage = lazy(() =>
     default: m.MonthlyAttendanceReportPage,
   }))
 );
+const EmployeeTimesheetPage = lazy(() =>
+  import('./features/attendance/pages/employee-timesheet-page').then((m) => ({
+    default: m.EmployeeTimesheetPage,
+  }))
+);
+const EmployeeTimesheetSubmitPage = lazy(() =>
+  import('./features/attendance/pages/employee-timesheet-submit-page').then((m) => ({
+    default: m.EmployeeTimesheetSubmitPage,
+  }))
+);
 
 // Preferences
 const PreferencesPage = lazy(() => import('./features/preferences/pages/preferences-page'));
@@ -94,6 +104,9 @@ const ExceptionalWorkPage = lazy(() => import('./pages/exceptional-work-page'));
 
 // Profile
 const ProfilePage = lazy(() => import('./features/profile/pages/profile-page'));
+
+// Coming Soon
+const ComingSoonPage = lazy(() => import('./pages/coming-soon-page'));
 
 function App() {
   return (
@@ -155,10 +168,37 @@ function App() {
             {/* Profile */}
             <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
 
+            {/* Calendar - Coming Soon */}
+            <Route
+              path={ROUTES.CALENDAR}
+              element={
+                <ComingSoonPage
+                  title="Calendar"
+                  description="Calendar feature is currently under development and will be available soon."
+                />
+              }
+            />
+
+            {/* Analytics - Coming Soon */}
+            <Route
+              path={ROUTES.ANALYTICS}
+              element={
+                <ComingSoonPage
+                  title="Analytics"
+                  description="Analytics feature is currently under development and will be available soon."
+                />
+              }
+            />
+
             {/* Attendance */}
             <Route path="/attendance/mark" element={<MarkAttendancePage />} />
             <Route path="/attendance/summary" element={<AttendanceSummaryPage />} />
             <Route path="/attendance/monthly" element={<MonthlyAttendanceReportPage />} />
+            <Route path={ROUTES.ATTENDANCE.TIMESHEET} element={<EmployeeTimesheetPage />} />
+            <Route
+              path={ROUTES.ATTENDANCE.TIMESHEET_SUBMIT}
+              element={<EmployeeTimesheetSubmitPage />}
+            />
 
             {/* Leave Management (with nested layout) */}
             <Route element={<LeaveLayout />}>

@@ -38,7 +38,7 @@ import {
 import type { CreateStudentPayload, Student } from '../types';
 import { FormActions } from '@/components/form/form-actions';
 import { FormMetadata } from '@/components/form/form-metadata';
-import { DeleteConfirmationDialog, DeletedDuplicateDialog } from '@/components/common';
+import { DeletedDuplicateDialog } from '@/components/common';
 import { useDeletedDuplicateHandler } from '@/hooks/use-deleted-duplicate-handler';
 import { RELATIONSHIP_OPTIONS } from '@/constants/form-enums';
 import { MinimalStudentFields } from './minimal-student-fields';
@@ -57,6 +57,7 @@ import {
   STUDENT_FORM_FIELD_ERROR_MAP,
   transformStudentFormToPayload,
 } from '../utils/student-form.utils';
+import { STANDARD_FORM_VALIDATION_CONFIG } from '@/lib/utils/form-validation';
 
 interface StudentFormProps {
   mode: 'create' | 'edit' | 'view';
@@ -65,7 +66,6 @@ interface StudentFormProps {
   isLoading?: boolean;
   onSuccess: () => void;
   onCancel: () => void;
-  onDelete?: () => void;
 }
 
 export function StudentForm({
@@ -75,12 +75,10 @@ export function StudentForm({
   isLoading: isLoadingData,
   onSuccess,
   onCancel,
-  onDelete,
 }: StudentFormProps) {
   const [useQuickAdd, setUseQuickAdd] = useState(false);
   const [isAddressExpanded, setIsAddressExpanded] = useState(false);
   const [isPreviousSchoolExpanded, setIsPreviousSchoolExpanded] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Fetch classes for selection
   const { data: classesData } = useClasses({ page_size: 100 });
@@ -96,6 +94,7 @@ export function StudentForm({
 
   const form = useForm<StudentFormData>({
     resolver: zodResolver(studentFormSchema),
+    ...STANDARD_FORM_VALIDATION_CONFIG,
     defaultValues: STUDENT_FORM_DEFAULT_VALUES,
   });
 
@@ -148,7 +147,7 @@ export function StudentForm({
 
       // Scroll to first error field if there are field errors
       if (result.hasFieldErrors) {
-        scrollToFirstFormError();
+        scrollToFirstFormError(setIsAddressExpanded, setIsPreviousSchoolExpanded, form.formState.errors);
       }
 
       if (!result.hasFieldErrors) {
@@ -171,7 +170,7 @@ export function StudentForm({
 
       // Scroll to first error field if there are field errors
       if (result.hasFieldErrors) {
-        scrollToFirstFormError();
+        scrollToFirstFormError(setIsAddressExpanded, setIsPreviousSchoolExpanded, form.formState.errors);
       }
 
       if (!result.hasFieldErrors) {
@@ -214,7 +213,8 @@ export function StudentForm({
   const handleForceCreate = () => {
     if (duplicateHandler.pendingData) {
       const { classId, payload } = duplicateHandler.pendingData.payload;
-      createMutation.mutate({ classId, payload });
+      createMutation.mutate({ classId, payload, forceCreate: true });
+      duplicateHandler.closeDialog();
     }
   };
 
@@ -232,15 +232,8 @@ export function StudentForm({
     }
   };
 
-  const handleDelete = () => {
-    setShowDeleteDialog(true);
-  };
-
-  const confirmDelete = () => {
-    setShowDeleteDialog(false);
-    if (onDelete) {
-      onDelete();
-    }
+  const onInvalid = () => {
+    scrollToFirstFormError(setIsAddressExpanded, setIsPreviousSchoolExpanded, form.formState.errors);
   };
 
   const isViewMode = mode === 'view';
@@ -254,7 +247,7 @@ export function StudentForm({
   return (
     <>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-6">
           {/* Quick Add Toggle - Only for create mode */}
           {mode === 'create' && (
             <Card className="bg-blue-50 border-blue-200">
@@ -295,9 +288,13 @@ export function StudentForm({
                     </FormLabel>
                     <Select
                       key={`${initialData?.public_id}-${field.value}`}
-                      onValueChange={field.onChange}
+                      onValueChange={(value: string) => {
+                        field.onChange(value);
+                        field.onBlur();
+                        void form.trigger('class_id');
+                      }}
                       defaultValue={field.value}
-                      disabled={isViewMode}
+                      disabled={isViewMode || mode === 'edit'}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -324,7 +321,11 @@ export function StudentForm({
                     <FormLabel>Supervisor (Class Teacher)</FormLabel>
                     <Select
                       key={`supervisor-${field.value}`}
-                      onValueChange={field.onChange}
+                      onValueChange={(value: string) => {
+                        field.onChange(value);
+                        field.onBlur();
+                        void form.trigger('supervisor_email');
+                      }}
                       value={field.value || ''}
                       disabled={isViewMode || isSupervisorsLoading}
                     >
@@ -503,7 +504,11 @@ export function StudentForm({
                         <FormLabel>Relationship</FormLabel>
                         <Select
                           key={`${initialData?.public_id}-${field.value}`}
-                          onValueChange={field.onChange}
+                          onValueChange={(value: string) => {
+                            field.onChange(value);
+                            field.onBlur();
+                            void form.trigger('guardian_relationship');
+                          }}
                           defaultValue={field.value}
                           disabled={isViewMode || !isClassSelected}
                         >
@@ -581,7 +586,9 @@ export function StudentForm({
                   onClick={() => setIsPreviousSchoolExpanded(!isPreviousSchoolExpanded)}
                 >
                   <CardTitle className="flex items-center justify-between text-base font-medium">
-                    <span>Previous School Information (Optional)</span>
+                    <span>
+                      Previous School Information <span className="text-sm text-muted-foreground font-normal">(Optional)</span>
+                    </span>
                     {isPreviousSchoolExpanded ? (
                       <ChevronUp className="h-5 w-5" />
                     ) : (
@@ -638,7 +645,9 @@ export function StudentForm({
                   onClick={() => setIsAddressExpanded(!isAddressExpanded)}
                 >
                   <CardTitle className="flex items-center justify-between text-base font-medium">
-                    <span>Address (Optional)</span>
+                    <span>
+                      Address <span className="text-sm text-muted-foreground font-normal">(Optional)</span>
+                    </span>
                     {isAddressExpanded ? (
                       <ChevronUp className="h-5 w-5" />
                     ) : (
@@ -679,27 +688,11 @@ export function StudentForm({
           <FormActions
             mode={mode}
             onCancel={onCancel}
-            onDelete={isEditMode && onDelete ? handleDelete : undefined}
-            showDelete={isEditMode && !!onDelete}
             isSubmitting={isLoading}
             submitLabel={mode === 'create' ? 'Create Student' : 'Update Student'}
           />
         </form>
       </Form>
-
-      {/* Delete Confirmation Dialog */}
-      <DeleteConfirmationDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        onConfirm={confirmDelete}
-        title="Delete Student"
-        itemName={
-          initialData
-            ? `${initialData.user_info.full_name} (${initialData.roll_number})`
-            : undefined
-        }
-        isSoftDelete={true}
-      />
 
       {/* Deleted Duplicate Dialog */}
       <DeletedDuplicateDialog

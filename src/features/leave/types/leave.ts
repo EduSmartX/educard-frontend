@@ -64,7 +64,7 @@ export interface LeaveRequest {
   user_public_id: string;
   user_name: string;
   user_role: string;
-  organization_role: string | null;
+  organization_role: string | { code: string; name: string } | null;
   email: string;
   supervisor_name: string;
   supervisor_public_id: string;
@@ -111,8 +111,13 @@ export interface LeaveRequestQueryParams {
   page?: number;
   page_size?: number;
   status?: string;
+  status__in?: string;
   leave_type__name?: string;
+  start_date?: string;
   start_date__gte?: string;
+  start_date__lte?: string;
+  end_date?: string;
+  end_date__gte?: string;
   end_date__lte?: string;
   ordering?: string;
   search?: string;

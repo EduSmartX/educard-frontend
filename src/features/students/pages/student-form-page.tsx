@@ -29,6 +29,7 @@ export default function StudentFormPage() {
   const [showReactivateDialog, setShowReactivateDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
+  const [reactivateError, setReactivateError] = useState<string | null>(null);
 
   // Check if viewing deleted student (from query param)
   const searchParams = new URLSearchParams(location.search);
@@ -83,19 +84,16 @@ export default function StudentFormPage() {
 
   // Open reactivate confirmation dialog
   const handleReactivateClick = () => {
+    setReactivateError(null);
     setShowReactivateDialog(true);
   };
 
   // Confirm and execute reactivate
   const handleReactivateConfirm = () => {
     if (id && student) {
-      // Set reactivating flag to prevent error toast
       setIsReactivating(true);
-      // Close dialog and navigate immediately to avoid refetching deleted resource
-      setShowReactivateDialog(false);
-      // Navigate away first
-      navigate(ROUTES.STUDENTS, { replace: true });
-      // Then execute reactivate mutation
+      setReactivateError(null);
+      
       reactivateMutation.mutate(
         {
           classId: student.class_info.public_id,
@@ -105,9 +103,12 @@ export default function StudentFormPage() {
           onSuccess: () => {
             toast.success(SuccessMessages.STUDENT.REACTIVATE_SUCCESS);
             setIsReactivating(false);
+            setShowReactivateDialog(false);
+            navigate(ROUTES.STUDENTS, { replace: true });
           },
           onError: (error: Error) => {
-            toast.error(error.message || ErrorMessages.STUDENT.REACTIVATE_FAILED);
+            const errorMessage = error.message || ErrorMessages.STUDENT.REACTIVATE_FAILED;
+            setReactivateError(errorMessage);
             setIsReactivating(false);
           },
         }
@@ -258,12 +259,6 @@ export default function StudentFormPage() {
             className: 'border-2 border-gray-400 text-gray-700 hover:bg-gray-100',
           },
           {
-            label: 'Delete',
-            onClick: handleDeleteClick,
-            variant: 'destructive' as const,
-            icon: Trash2,
-          },
-          {
             label: 'Edit',
             onClick: handleSwitchToEdit,
             variant: 'default' as const,
@@ -331,6 +326,8 @@ export default function StudentFormPage() {
         title="Reactivate Student"
         itemName={student ? `${student.user_info.full_name} (${student.roll_number})` : undefined}
         description="Are you sure you want to reactivate this student? They will be restored to active status."
+        isReactivating={isReactivating}
+        error={reactivateError}
       />
     </div>
   );

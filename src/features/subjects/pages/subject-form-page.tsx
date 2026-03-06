@@ -16,7 +16,11 @@ import {
   ReactivateConfirmationDialog,
 } from '@/components/common';
 import { FormActions } from '@/components/form/form-actions';
-import { isDeletedDuplicateError, getDeletedDuplicateMessage } from '@/lib/utils/error-handler';
+import {
+  isDeletedDuplicateError,
+  getDeletedDuplicateMessage,
+  getDeletedRecordId,
+} from '@/lib/utils/error-handler';
 import { useDeletedDuplicateHandler } from '@/hooks/use-deleted-duplicate-handler';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -47,6 +51,7 @@ import { useSubjectMasters } from '@/features/core/hooks/use-subject-masters';
 import { useTeachers } from '@/features/teachers/hooks/use-teachers';
 import { ROUTES } from '@/constants/app-config';
 import { ErrorMessages, FormPlaceholders, SuccessMessages } from '@/constants';
+import { STANDARD_FORM_VALIDATION_CONFIG } from '@/lib/utils/form-validation';
 
 const subjectSchema = z.object({
   class_id: z.string().min(1, 'Class is required'),
@@ -76,7 +81,10 @@ export default function SubjectFormPage() {
   const firstErrorRef = useRef<HTMLDivElement>(null);
 
   // Duplicate handling
-  const duplicateHandler = useDeletedDuplicateHandler();
+  const duplicateHandler = useDeletedDuplicateHandler<{
+    formData: SubjectFormData;
+    deletedRecordId?: string | null;
+  }>();
 
   // Delete and reactivate dialog states
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -91,6 +99,7 @@ export default function SubjectFormPage() {
 
   const form = useForm<SubjectFormData>({
     resolver: zodResolver(subjectSchema),
+    ...STANDARD_FORM_VALIDATION_CONFIG,
     defaultValues: {
       class_id: '',
       subject_id: 0,
@@ -120,7 +129,11 @@ export default function SubjectFormPage() {
   const handleFormErrors = (error: Error, fieldErrors?: Record<string, string | undefined>) => {
     if (isDeletedDuplicateError(error)) {
       const message = getDeletedDuplicateMessage(error);
-      duplicateHandler.openDialog(message, form.getValues());
+      const deletedRecordId = getDeletedRecordId(error);
+      duplicateHandler.openDialog(message, {
+        formData: form.getValues(),
+        deletedRecordId,
+      });
       return;
     }
 
@@ -164,7 +177,7 @@ export default function SubjectFormPage() {
   const deleteMutation = useDeleteSubject({
     onSuccess: () => {
       toast.success(SuccessMessages.SUBJECT.DELETE_SUCCESS);
-      navigate(ROUTES.SUBJECTS);
+      // Navigation happens before mutation is called
     },
     onError: (error: Error) => {
       toast.error(error.message || ErrorMessages.SUBJECT.DELETE_FAILED);
@@ -174,13 +187,7 @@ export default function SubjectFormPage() {
   const reactivateMutation = useReactivateSubject({
     onSuccess: () => {
       toast.success(SuccessMessages.SUBJECT.REACTIVATE_SUCCESS);
-      // Navigate to the view page without the deleted flag to prevent 404 on refetch
-      if (id) {
-        // Use replace: true to replace the history entry so back button works correctly
-        navigate(ROUTES.SUBJECTS_VIEW.replace(':id', id), { replace: true });
-      } else {
-        navigate(ROUTES.SUBJECTS);
-      }
+      // Navigation already happened before mutation was called
     },
     onError: (error: Error) => {
       toast.error(error.message || ErrorMessages.SUBJECT.REACTIVATE_FAILED);
@@ -195,6 +202,9 @@ export default function SubjectFormPage() {
   const confirmDelete = () => {
     setShowDeleteDialog(false);
     if (subject) {
+      // Navigate away first to avoid refetching deleted resource
+      navigate(ROUTES.SUBJECTS, { replace: true });
+      // Then execute delete mutation
       deleteMutation.mutate(subject.public_id);
     }
   };
@@ -206,20 +216,32 @@ export default function SubjectFormPage() {
 
   const confirmReactivate = () => {
     setShowReactivateDialog(false);
-    if (subject) {
+    if (subject && id) {
+      navigate(ROUTES.SUBJECTS_VIEW.replace(':id', id), { replace: true });
       reactivateMutation.mutate(subject.public_id);
     }
   };
 
   // Handle reactivate from duplicate dialog
   const handleReactivate = () => {
-    duplicateHandler.closeDialog();
-    navigate(`${ROUTES.SUBJECTS}?showDeleted=true`);
+    const deletedRecordId = duplicateHandler.pendingData?.deletedRecordId;
+
+    if (!deletedRecordId) {
+      toast.error(ErrorMessages.SUBJECT.NOT_FOUND);
+      return;
+    }
+
+    reactivateMutation.mutate(deletedRecordId, {
+      onSuccess: () => {
+        duplicateHandler.closeDialog();
+        navigate(ROUTES.SUBJECTS, { replace: true });
+      },
+    });
   };
 
   // Handle force create from duplicate dialog
   const handleForceCreate = () => {
-    const pendingData = duplicateHandler.pendingData as SubjectFormData | null;
+    const pendingData = duplicateHandler.pendingData?.formData;
     if (pendingData) {
       createMutation.mutate({
         data: {
@@ -326,13 +348,6 @@ export default function SubjectFormPage() {
             variant: 'outline' as const,
             icon: X,
             className: 'border-2 border-gray-400 text-gray-700 hover:bg-gray-100',
-          },
-          {
-            label: 'Delete',
-            onClick: handleDelete,
-            variant: 'outline' as const,
-            icon: Trash2,
-            className: 'border-2 border-red-500 text-red-600 hover:bg-red-50',
           },
           {
             label: 'Edit',

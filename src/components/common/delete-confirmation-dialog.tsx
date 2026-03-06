@@ -120,14 +120,14 @@ export function DeleteConfirmationDialog({
           <AlertDialogFooter>
             <AlertDialogCancel
               disabled={isDeleting}
-              className="border-orange-200 hover:bg-orange-50"
+              className="border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md hover:scale-105 active:scale-95 transition-all duration-200 font-medium"
             >
               {cancelButtonText}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={onConfirm}
               disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-md hover:shadow-lg transition-all duration-200"
+              className="bg-gradient-to-r from-red-600 to-red-700 text-white border-2 border-red-700 hover:from-red-700 hover:to-red-800 hover:border-red-800 hover:shadow-lg hover:shadow-red-500/50 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-md transition-all duration-200 font-semibold"
             >
               {isDeleting ? (
                 <>

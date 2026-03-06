@@ -47,7 +47,7 @@ interface UserInfo {
   phone: string;
   role: string;
   role_display: string;
-  organization_role: string;
+  organization_role: string | { code: string; name: string };
   employee_id?: string;
   profile_image?: string;
 }
@@ -231,7 +231,11 @@ export function LeaveDashboard() {
                   <div className="space-y-2">
                     <div>
                       <h2 className="text-2xl font-bold text-gray-900">{userInfo.full_name}</h2>
-                      <p className="text-sm text-gray-600">{userInfo.organization_role}</p>
+                      <p className="text-sm text-gray-600">
+                        {typeof userInfo.organization_role === 'object' && userInfo.organization_role
+                          ? userInfo.organization_role.name
+                          : userInfo.organization_role}
+                      </p>
                     </div>
                     <div className="flex flex-wrap gap-4 text-sm text-gray-700">
                       <div className="flex items-center gap-1.5">

@@ -14,6 +14,7 @@ import { Form } from '@/components/ui/form';
 import { AddressForm } from '@/components/forms/address-form';
 import { useUpdateOrganizationAddress } from '../hooks/mutations';
 import type { Organization } from '../api/organization-api';
+import { STANDARD_FORM_VALIDATION_CONFIG } from '@/lib/utils/form-validation';
 
 const organizationAddressSchema = z.object({
   street_address: z.string().min(1, 'Street address is required'),
@@ -36,6 +37,7 @@ export function OrganizationAddressForm({ organization, isLoading }: Organizatio
 
   const form = useForm<OrganizationAddressFormData>({
     resolver: zodResolver(organizationAddressSchema),
+    ...STANDARD_FORM_VALIDATION_CONFIG,
     defaultValues: {
       street_address: '',
       address_line_2: '',

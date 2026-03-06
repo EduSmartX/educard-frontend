@@ -5,7 +5,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getErrorMessage, getFieldErrors } from '@/lib/utils/error-handler';
+import { getErrorMessage, getFieldErrors, isDeletedDuplicateError } from '@/lib/utils/error-handler';
 import { ErrorMessages, QueryKeys, SuccessMessages, ToastTitles } from '@/constants';
 import type { CreateClassPayload, UpdateClassPayload } from '../types';
 import {
@@ -49,10 +49,15 @@ export function useCreateClass(options?: MutationOptions) {
     onError: (error: Error) => {
       const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.CREATE_FAILED);
       const fieldErrors = getFieldErrors(error) as ClassFieldErrors | undefined;
-      toast.error(ToastTitles.ERROR, {
-        description: errorMessage,
-        duration: 5000,
-      });
+      
+      // Don't show toast for deleted duplicate errors - the dialog will handle it
+      if (!isDeletedDuplicateError(error)) {
+        toast.error(ToastTitles.ERROR, {
+          description: errorMessage,
+          duration: 5000,
+        });
+      }
+      
       options?.onError?.(error, fieldErrors);
     },
   });
@@ -64,11 +69,9 @@ export function useReactivateClass(options?: MutationOptions) {
   return useMutation({
     mutationFn: (publicId: string) => reactivateClass(publicId),
     onSuccess: () => {
-      // Only invalidate the list queries, not individual class queries
-      // The navigation will handle refreshing the detail view
       queryClient.invalidateQueries({
         queryKey: QueryKeys.CLASSES.ALL,
-        exact: true, // Only invalidate the exact list query, not detail queries
+        refetchType: 'all',
       });
       toast.success(SuccessMessages.CLASS.REACTIVATE_SUCCESS);
       options?.onSuccess?.();
@@ -98,10 +101,15 @@ export function useUpdateClass(options?: MutationOptions) {
     onError: (error: Error) => {
       const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.UPDATE_FAILED);
       const fieldErrors = getFieldErrors(error) as ClassFieldErrors | undefined;
-      toast.error(ToastTitles.ERROR, {
-        description: errorMessage,
-        duration: 5000,
-      });
+      
+      // Don't show toast for deleted duplicate errors - the dialog will handle it
+      if (!isDeletedDuplicateError(error)) {
+        toast.error(ToastTitles.ERROR, {
+          description: errorMessage,
+          duration: 5000,
+        });
+      }
+      
       options?.onError?.(error, fieldErrors);
     },
   });
@@ -113,7 +121,11 @@ export function useDeleteClass(options?: MutationOptions) {
   return useMutation({
     mutationFn: (publicId: string) => deleteClass(publicId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QueryKeys.CLASSES.ALL });
+      // Invalidate all classes queries (with any params) to refresh the list
+      queryClient.invalidateQueries({
+        queryKey: QueryKeys.CLASSES.ALL,
+        refetchType: 'all',
+      });
       toast.success(SuccessMessages.CLASS.DELETE_SUCCESS);
       options?.onSuccess?.();
     },

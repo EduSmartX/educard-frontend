@@ -181,3 +181,26 @@ export interface AttendanceFormData {
   period: AttendancePeriod;
   students: StudentAttendanceRow[];
 }
+
+export interface EmployeeAttendanceRecord {
+  public_id: string;
+  date: string;
+  morning_present: boolean;
+  afternoon_present: boolean;
+  approval_status: string;
+  remarks?: string;
+}
+
+export interface EmployeeAttendanceBulkPayload {
+  attendance_records: Array<{
+    date: string;
+    morning_present: boolean;
+    afternoon_present: boolean;
+    remarks?: string;
+  }>;
+}
+
+export interface EmployeeSubmissionConfig {
+  default_present: boolean;
+  timesheet_deadline_day: number;
+}

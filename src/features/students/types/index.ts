@@ -61,7 +61,7 @@ export interface StudentUserInfo {
   gender: GenderValue | '';
   blood_group?: BloodGroupValue;
   date_of_birth?: string;
-  organization_role: string;
+  organization_role: string | { code: string; name: string };
   supervisor: SupervisorInfo | null;
   address?: Address;
   is_active: boolean;
@@ -120,7 +120,6 @@ export interface StudentUserPayload {
   gender?: GenderValue | '';
   blood_group?: BloodGroupValue;
   date_of_birth?: string;
-  organization_role_code: 'STUDENT';
   supervisor_email?: string;
   address?: Address;
 }

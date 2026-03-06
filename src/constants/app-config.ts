@@ -204,6 +204,8 @@ export const ROUTES = {
   ATTENDANCE: {
     STUDENTS: '/attendance/students',
     STAFF: '/attendance/staff',
+    TIMESHEET: '/attendance/timesheet',
+    TIMESHEET_SUBMIT: '/attendance/timesheet/submit',
   },
   LEAVE: {
     DASHBOARD: '/leave/dashboard',
