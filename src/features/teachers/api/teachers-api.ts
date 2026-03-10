@@ -107,3 +107,41 @@ export async function reactivateTeacher(publicId: string): Promise<Teacher> {
   const response = await api.post<ApiResponse<Teacher>>(`${BASE_URL}${publicId}/activate/`);
   return response.data.data;
 }
+
+/**
+ * Validate email verification token and get user details
+ */
+export async function validateVerificationToken(token: string): Promise<{
+  email: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+}> {
+  const response = await api.get<ApiResponse<{
+    email: string;
+    username: string;
+    first_name: string;
+    last_name: string;
+  }>>(`/teacher/verify-email/`, {
+    params: { token },
+  });
+  return response.data.data;
+}
+
+/**
+ * Verify email and set password for new teacher
+ */
+export async function verifyEmailAndSetPassword(data: {
+  token: string;
+  password: string;
+  confirm_password: string;
+}): Promise<{
+  username: string;
+  email: string;
+}> {
+  const response = await api.post<ApiResponse<{
+    username: string;
+    email: string;
+  }>>(`/teacher/verify-email/`, data);
+  return response.data.data;
+}

@@ -92,6 +92,13 @@ export const ErrorMessages = {
     VALIDATE_DATE_FAILED: 'Failed to validate date. Please try again.',
     INVALID_DATE: 'Invalid attendance date.',
     NO_PERMISSION: 'You do not have permission to mark attendance for this class.',
+    TIMESHEET_SUBMIT_FAILED: 'Failed to submit timesheet. Please try again.',
+    TIMESHEET_FETCH_FAILED: 'Failed to load timesheet submissions. Please try again.',
+    TIMESHEET_REVIEW_FAILED: 'Failed to review timesheet. Please try again.',
+    TIMESHEET_APPROVE_FAILED: 'Failed to approve timesheet. Please try again.',
+    TIMESHEET_REJECT_FAILED: 'Failed to reject timesheet. Please try again.',
+    EMPLOYEE_ATTENDANCE_FETCH_FAILED: 'Failed to load employee attendance. Please try again.',
+    REJECTION_COMMENT_REQUIRED: 'Comments are required when rejecting a timesheet.',
   },
 
   HOLIDAY: {
@@ -351,6 +358,10 @@ export const SuccessMessages = {
     BULK_MARK_SUCCESS: 'Attendance marked for all students successfully.',
     APPROVE_SUCCESS: 'Attendance approved successfully.',
     UPDATE_SUCCESS: 'Attendance updated successfully.',
+    TIMESHEET_SUBMIT_SUCCESS: 'Timesheet submitted successfully.',
+    TIMESHEET_APPROVE_SUCCESS: 'Timesheet approved successfully.',
+    TIMESHEET_REJECT_SUCCESS: 'Timesheet rejected successfully.',
+    TIMESHEET_REVIEW_SUCCESS: 'Timesheet reviewed successfully.',
   },
 
   HOLIDAY: {

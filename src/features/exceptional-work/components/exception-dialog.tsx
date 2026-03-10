@@ -52,6 +52,7 @@ export function ExceptionDialog({
   );
   const [reason, setReason] = useState(exception?.reason || '');
   const [isAllClasses, setIsAllClasses] = useState(exception?.is_applicable_to_all_classes ?? true);
+  const [isAllTeachers, setIsAllTeachers] = useState(exception?.is_applicable_to_all_teachers ?? true);
   const [selectedClasses, setSelectedClasses] = useState<string[]>(exception?.classes || []);
 
   // Validation state
@@ -73,12 +74,14 @@ export function ExceptionDialog({
         setOverrideType(exception.override_type);
         setReason(exception.reason);
         setIsAllClasses(exception.is_applicable_to_all_classes);
+        setIsAllTeachers(exception.is_applicable_to_all_teachers);
         setSelectedClasses(exception.classes || []);
       } else {
         setDate(undefined);
         setOverrideType('FORCE_WORKING');
         setReason('');
         setIsAllClasses(true);
+        setIsAllTeachers(true);
         setSelectedClasses([]);
       }
       setErrors({});
@@ -159,13 +162,16 @@ export function ExceptionDialog({
 
   // Handle submit
   const handleSubmit = () => {
-    if (!validate()) return;
+    if (!validate()) {
+      return;
+    }
 
     const data: CalendarExceptionCreate = {
       date: format(date!, 'yyyy-MM-dd'),
       override_type: overrideType,
       reason: reason.trim(),
       is_applicable_to_all_classes: isAllClasses,
+      is_applicable_to_all_teachers: isAllTeachers,
       classes: isAllClasses ? [] : selectedClasses,
     };
 
@@ -351,12 +357,46 @@ export function ExceptionDialog({
             </div>
           </div>
 
-          {/* Step 4: Class Selection (only if not all classes) */}
+          {/* Step 4: Apply to All Teachers Toggle */}
+          <div className="space-y-3 pb-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-violet-600 text-white flex items-center justify-center text-sm font-bold shadow-md flex-shrink-0">
+                  4
+                </div>
+                <div>
+                  <Label className="text-base font-semibold">
+                    Apply to All Teachers
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Include this exception for teacher/employee attendance
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAllTeachers(!isAllTeachers)}
+                className={cn(
+                  'relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 flex-shrink-0',
+                  isAllTeachers ? 'bg-purple-600' : 'bg-gray-300'
+                )}
+              >
+                <span
+                  className={cn(
+                    'inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-md',
+                    isAllTeachers ? 'translate-x-6' : 'translate-x-1'
+                  )}
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* Step 5: Class Selection (only if not all classes) */}
           {!isAllClasses && (
             <div className="space-y-3">
               <div className="flex items-center gap-3 mb-3">
                 <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-violet-600 text-white flex items-center justify-center text-sm font-bold shadow-md">
-                  4
+                  5
                 </div>
                 <div>
                   <Label className="text-base font-semibold">
@@ -388,7 +428,7 @@ export function ExceptionDialog({
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {classes.map((cls: { public_id: string; name: string }) => {
+                        {classes.map((cls: { public_id: string; name: string; class_master?: { name: string } }) => {
                           const isSelected = selectedClasses.includes(cls.public_id);
                           return (
                             <button
@@ -427,7 +467,7 @@ export function ExceptionDialog({
                       <div className="flex flex-wrap gap-2">
                         {selectedClasses.map((classId) => {
                           const cls = classes.find(
-                            (c: { public_id: string; name: string }) => c.public_id === classId
+                            (c: { public_id: string; name: string; class_master?: { name: string } }) => c.public_id === classId
                           );
                           return cls ? (
                             <Badge
@@ -461,11 +501,11 @@ export function ExceptionDialog({
             </div>
           )}
 
-          {/* Step 5: Reason */}
+          {/* Step 6: Reason */}
           <div className="space-y-3">
             <div className="flex items-center gap-3 mb-3">
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-violet-600 text-white flex items-center justify-center text-sm font-bold shadow-md">
-                {isAllClasses ? '4' : '5'}
+                {isAllClasses ? '5' : '6'}
               </div>
               <div>
                 <Label className="text-base font-semibold">

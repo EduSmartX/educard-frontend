@@ -63,8 +63,17 @@ export default function LoginPage() {
 
       toast.success(SuccessMessages.LOGIN_SUCCESS);
 
-      // Redirect to dashboard (role-based routing handled by DashboardRouter)
-      navigate(ROUTES.DASHBOARD);
+      // Redirect to role-specific dashboard
+      const userRole = response.user.role;
+      if (userRole === 'ADMIN') {
+        navigate(ROUTES.ADMIN.DASHBOARD);
+      } else if (userRole === 'TEACHER' || userRole === 'STAFF') {
+        navigate(ROUTES.EMPLOYEE.DASHBOARD);
+      } else if (userRole === 'PARENT') {
+        navigate(ROUTES.PARENT.DASHBOARD);
+      } else {
+        navigate('/'); // Fallback to home
+      }
     } catch (error: any) {
       // Extract error message from API response
       const errorMessage = 

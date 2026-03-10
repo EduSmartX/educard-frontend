@@ -18,12 +18,32 @@ const RegistrationSuccessPage = lazy(
   () => import('./features/auth/pages/registration-success-page')
 );
 const ForgotPasswordPage = lazy(() => import('./features/auth/pages/forgot-password-page'));
+const VerifyEmailPage = lazy(() => import('./pages/verify-email-page'));
 const OrganizationNotApprovedPage = lazy(
   () => import('./features/auth/pages/organization-not-approved-page')
 );
 
-// Dashboard router - Routes to appropriate dashboard based on user role
-const DashboardRouter = lazy(() => import('./features/dashboard/dashboard-router'));
+// Role-based route guards
+const AdminRoute = lazy(() =>
+  import('./components/guards/role-guards').then((m) => ({ default: m.AdminRoute }))
+);
+const EmployeeRoute = lazy(() =>
+  import('./components/guards/role-guards').then((m) => ({ default: m.EmployeeRoute }))
+);
+const ParentRoute = lazy(() =>
+  import('./components/guards/role-guards').then((m) => ({ default: m.ParentRoute }))
+);
+
+// Role-specific dashboards
+const AdminDashboardPage = lazy(
+  () => import('./features/admin/dashboard/pages/admin-dashboard-page')
+);
+const EmployeeDashboardPage = lazy(
+  () => import('./features/employee/dashboard/pages/employee-dashboard-page')
+);
+const ParentDashboardPage = lazy(
+  () => import('./features/parent/dashboard/pages/parent-dashboard-page')
+);
 
 // Student pages
 const StudentsListPage = lazy(() => import('./features/students/pages/students-list-page'));
@@ -82,6 +102,11 @@ const MonthlyAttendanceReportPage = lazy(() =>
     default: m.MonthlyAttendanceReportPage,
   }))
 );
+const AttendanceReportPage = lazy(() =>
+  import('./features/attendance/pages/attendance-report-page').then((m) => ({
+    default: m.AttendanceReportPage,
+  }))
+);
 const EmployeeTimesheetPage = lazy(() =>
   import('./features/attendance/pages/employee-timesheet-page').then((m) => ({
     default: m.EmployeeTimesheetPage,
@@ -91,6 +116,9 @@ const EmployeeTimesheetSubmitPage = lazy(() =>
   import('./features/attendance/pages/employee-timesheet-submit-page').then((m) => ({
     default: m.EmployeeTimesheetSubmitPage,
   }))
+);
+const TimesheetApprovalsPage = lazy(() =>
+  import('./features/attendance/pages/timesheet-approvals-page')
 );
 
 // Preferences
@@ -119,6 +147,7 @@ function App() {
           <Route path={ROUTES.AUTH.SIGNUP} element={<SignupPage />} />
           <Route path={ROUTES.AUTH.REGISTRATION_SUCCESS} element={<RegistrationSuccessPage />} />
           <Route path={ROUTES.AUTH.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
+          <Route path={ROUTES.AUTH.VERIFY_EMAIL} element={<VerifyEmailPage />} />
           <Route
             path={ROUTES.AUTH.ORGANIZATION_NOT_APPROVED}
             element={<OrganizationNotApprovedPage />}
@@ -126,8 +155,18 @@ function App() {
 
           {/* Protected Routes - Header rendered once in ProtectedLayout */}
           <Route element={<ProtectedLayout />}>
-            {/* Dashboard (role-based routing) */}
-            <Route path={ROUTES.DASHBOARD} element={<DashboardRouter />} />
+            {/* Role-based Dashboard Routes */}
+            <Route path="/admin" element={<AdminRoute />}>
+              <Route path="dashboard" element={<AdminDashboardPage />} />
+            </Route>
+
+            <Route path="/employee" element={<EmployeeRoute />}>
+              <Route path="dashboard" element={<EmployeeDashboardPage />} />
+            </Route>
+
+            <Route path="/parent" element={<ParentRoute />}>
+              <Route path="dashboard" element={<ParentDashboardPage />} />
+            </Route>
 
             {/* Students */}
             <Route path={ROUTES.STUDENTS} element={<StudentsListPage />} />
@@ -193,11 +232,16 @@ function App() {
             {/* Attendance */}
             <Route path="/attendance/mark" element={<MarkAttendancePage />} />
             <Route path="/attendance/summary" element={<AttendanceSummaryPage />} />
+            <Route path="/attendance/report" element={<AttendanceReportPage />} />
             <Route path="/attendance/monthly" element={<MonthlyAttendanceReportPage />} />
             <Route path={ROUTES.ATTENDANCE.TIMESHEET} element={<EmployeeTimesheetPage />} />
             <Route
               path={ROUTES.ATTENDANCE.TIMESHEET_SUBMIT}
               element={<EmployeeTimesheetSubmitPage />}
+            />
+            <Route
+              path={ROUTES.ATTENDANCE.TIMESHEET_APPROVALS}
+              element={<TimesheetApprovalsPage />}
             />
 
             {/* Leave Management (with nested layout) */}
@@ -239,8 +283,8 @@ function NotFound() {
       <div className="text-center">
         <h1 className="text-4xl font-bold">404</h1>
         <p className="mt-2 text-muted-foreground">Page not found</p>
-        <a href={ROUTES.DASHBOARD} className="mt-4 inline-block text-primary hover:underline">
-          Go to Dashboard
+        <a href="/" className="mt-4 inline-block text-primary hover:underline">
+          Go to Home
         </a>
       </div>
     </div>

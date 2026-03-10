@@ -2,10 +2,10 @@
  * Utility to get sidebar configuration based on user role
  */
 
-import { adminSidebarConfig } from '@/features/dashboard/admin/sidebar-config';
-import { staffSidebarConfig } from '@/features/dashboard/staff/sidebar-config';
+import { adminSidebarConfig } from '@/features/admin/config/sidebar-config';
+import { employeeSidebarConfig } from '@/features/employee/config/sidebar-config';
+import { parentSidebarConfig } from '@/features/parent/config/sidebar-config';
 import { getStoredUserRole } from '@/lib/utils/storage';
-// import { parentSidebarConfig } from '@/features/dashboard/parent/sidebar-config';
 
 export function getSidebarConfig() {
   const role = getStoredUserRole();
@@ -18,10 +18,9 @@ export function getSidebarConfig() {
       return adminSidebarConfig;
     case 'teacher':
     case 'staff':
-      return staffSidebarConfig;
+      return employeeSidebarConfig;
     case 'parent':
-      // return parentSidebarConfig;
-      return adminSidebarConfig; // Fallback until parent sidebar is created
+      return parentSidebarConfig;
     default:
       return adminSidebarConfig;
   }

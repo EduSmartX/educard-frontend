@@ -1,18 +1,16 @@
 import { useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   eachDayOfInterval,
   endOfMonth,
   endOfWeek,
   format,
   getDay,
-  isAfter,
-  isSameDay,
   parseISO,
   startOfMonth,
   startOfWeek,
 } from 'date-fns';
-import { ArrowLeft, Calendar, Check, ChevronDown, ChevronUp, FileText, Loader2, PlusCircle, Trash2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Check, ChevronDown, ChevronUp, FileText, Loader2, PlusCircle, RotateCcw, Trash2, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -24,17 +22,19 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ROUTES } from '@/constants/app-config';
+import { TimesheetStatus } from '@/constants/attendance';
+import { TimesheetStatusBadge } from '@/features/attendance/components';
+import { useSubmitTimesheet, useReturnTimesheetToDraft } from '@/features/attendance/hooks';
 import {
-  bulkSubmitEmployeeAttendance,
   fetchOrganizationHolidays,
   getEmployeeAttendance,
+  checkTimesheetStatus,
 } from '@/features/attendance/api/attendance-api';
 import { fetchMyLeaveRequests } from '@/features/leave/api/leave-api';
 import type { LeaveRequest } from '@/features/leave/types';
 import { fetchCalendarExceptions } from '@/features/exceptional-work/api/calendar-exception-api';
 import type { CalendarException }from '@/features/exceptional-work/types';
 import { getCurrentWorkingDayPolicy } from '@/lib/api/working-day-policy-api';
-import type { WorkingDayPolicy } from '@/lib/api/working-day-policy-api';
 import { LeaveRequestDialog } from '@/features/attendance/components/leave-request-dialog';
 
 type WeekRow = {
@@ -42,9 +42,13 @@ type WeekRow = {
   morning_present: boolean;
   afternoon_present: boolean;
   remarks: string;
-  locked_reason?: 'holiday' | 'leave' | 'non_working_day' | 'exception_holiday';
+  locked_reason?: 'holiday' | 'leave' | 'non_working_day' | 'exception_holiday' | 'exception_working';
   holiday_description?: string;
   is_working_day: boolean;
+  leave_type_name?: string | null;
+  leave_status?: string | null;
+  exception_type?: string | null;
+  exception_reason?: string | null;
 };
 
 // Improved attendance indicator with side-by-side morning and afternoon buttons
@@ -106,6 +110,9 @@ type WeekBlock = {
   end: string;
   rows: WeekRow[];
   collapsed: boolean;
+  submissionStatus?: keyof typeof TimesheetStatus | null;
+  submissionStatusLabel?: string | null;
+  reviewComments?: string | null; // Added to show rejection reason
 };
 
 export function EmployeeTimesheetSubmitPage() {
@@ -125,65 +132,26 @@ export function EmployeeTimesheetSubmitPage() {
 
   const { data: attendanceData } = useQuery({
     queryKey: ['timesheet', 'attendance', fromDate, toDate],
-    queryFn: async () => getEmployeeAttendance({ from_date: fromDate, to_date: toDate }),
+    queryFn: () => getEmployeeAttendance({ from_date: fromDate, to_date: toDate }),
   });
 
   const defaultPresent = attendanceData?.submission_config?.default_present ?? true;
 
-  const submitMutation = useMutation({
-    mutationFn: async (rows: WeekRow[]) => {
-      return bulkSubmitEmployeeAttendance({
-        attendance_records: rows.map((row) => ({
-          date: row.date,
-          morning_present: row.morning_present,
-          afternoon_present: row.afternoon_present,
-          remarks: row.remarks,
-        })),
-      });
+  // Submit timesheet mutation - extracted to custom hook with enhanced error handling
+  const submitMutation = useSubmitTimesheet({
+    onSuccessCallback: () => {
+      // Redirect to timesheet page after successful submission
+      setTimeout(() => {
+        navigate(ROUTES.ATTENDANCE.TIMESHEET);
+      }, 1000);
     },
-    onSuccess: () => {
-      toast.success('Attendance submitted successfully.');
-      queryClient.invalidateQueries({ queryKey: ['timesheet'] });
-      queryClient.invalidateQueries({ queryKey: ['attendance'] });
-    },
-    onError: (error: unknown) => {
-      const err = error as { 
-        response?: { 
-          data?: { 
-            message?: string; 
-            errors?: {
-              attendance_records?: Array<{
-                date?: string[];
-                [key: string]: unknown;
-              }>;
-              [key: string]: unknown;
-            }
-          } 
-        } 
-      };
-      
-      // Check if there are specific validation errors
-      const errors = err?.response?.data?.errors;
-      if (errors?.attendance_records && Array.isArray(errors.attendance_records)) {
-        // Extract date-specific errors
-        const dateErrors: string[] = [];
-        errors.attendance_records.forEach((recordError, index) => {
-          if (recordError.date && Array.isArray(recordError.date)) {
-            recordError.date.forEach((msg: string) => {
-              dateErrors.push(`Record ${index + 1}: ${msg}`);
-            });
-          }
-        });
-        
-        if (dateErrors.length > 0) {
-          dateErrors.forEach(msg => toast.error(msg, { duration: 5000 }));
-          return;
-        }
-      }
-      
-      // Fallback to general error message
-      toast.error(err?.response?.data?.message || 'Failed to submit attendance.');
-    },
+  });
+
+  // Return to draft mutation
+  const returnToDraftMutation = useReturnTimesheetToDraft(() => {
+    toast.success('Timesheet returned to draft. You can now edit and resubmit.');
+    queryClient.invalidateQueries({ queryKey: ['timesheet'] });
+    queryClient.invalidateQueries({ queryKey: ['attendance'] });
   });
 
   const addWeek = async () => {
@@ -192,8 +160,9 @@ export function EmployeeTimesheetSubmitPage() {
       return;
     }
 
-    const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
-    const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
+    // Week starts on Sunday (0) and ends on Saturday (6)
+    const weekStart = startOfWeek(selectedDate, { weekStartsOn: 0 });
+    const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 0 });
     const weekId = format(weekStart, 'yyyy-MM-dd');
 
     if (weeks.some((week) => week.id === weekId)) {
@@ -206,7 +175,7 @@ export function EmployeeTimesheetSubmitPage() {
       const fromDate = format(weekStart, 'yyyy-MM-dd');
       const toDate = format(weekEnd, 'yyyy-MM-dd');
 
-      const [leaveResponse, holidayResponse, workingDayPolicy, calendarExceptions] = await Promise.all([
+      const [leaveResponse, holidayResponse, workingDayPolicy, calendarExceptions, submissionStatus] = await Promise.all([
         fetchMyLeaveRequests({
           start_date__lte: toDate,
           end_date__gte: fromDate,
@@ -220,14 +189,21 @@ export function EmployeeTimesheetSubmitPage() {
           to_date: toDate,
           page_size: 100 
         }).catch(() => ({ data: [] as CalendarException[] })),
+        checkTimesheetStatus({
+          week_start_date: fromDate,
+          week_end_date: toDate,
+        }).catch(() => ({ submission: null })),
       ]);
 
-      const leaveByDate = new Set<string>();
+      const leaveByDate = new Map<string, { leave_name: string; status: string }>();
       (leaveResponse?.data || []).forEach((leave: LeaveRequest) => {
         const start = parseISO(leave.start_date);
         const end = parseISO(leave.end_date);
         eachDayOfInterval({ start, end }).forEach((day) => {
-          leaveByDate.add(format(day, 'yyyy-MM-dd'));
+          leaveByDate.set(format(day, 'yyyy-MM-dd'), {
+            leave_name: leave.leave_name || 'Leave',
+            status: leave.status,
+          });
         });
       });
 
@@ -316,13 +292,19 @@ export function EmployeeTimesheetSubmitPage() {
       };
 
       const today = new Date();
+      today.setHours(0, 0, 0, 0); // Set to start of day for comparison
+
       const rows: WeekRow[] = eachDayOfInterval({ start: weekStart, end: weekEnd })
-        .filter((day) => !isAfter(day, today) || isSameDay(day, today))
+        .filter((day) => {
+          // Only include dates up to today (exclude future dates)
+          return day <= today;
+        })
         .map((day) => {
           const key = format(day, 'yyyy-MM-dd');
           const holiday = holidayByDate.get(key);
           const isHoliday = !!holiday;
-          const isLeave = leaveByDate.has(key);
+          const leaveInfo = leaveByDate.get(key);
+          const isLeave = !!leaveInfo;
           const exception = exceptionByDate.get(key);
           const workingDay = isWorkingDay(day);
 
@@ -338,14 +320,15 @@ export function EmployeeTimesheetSubmitPage() {
             if (exception.override_type === 'FORCE_HOLIDAY') {
               lockedReason = 'exception_holiday';
               description = `Exception: ${exception.reason}`;
+            } else if (exception.override_type === 'FORCE_WORKING') {
+              lockedReason = 'exception_working';
             }
-            // If FORCE_WORKING, don't lock it
           } else if (!workingDay) {
             lockedReason = 'non_working_day';
             description = 'Non-working day';
           }
 
-          const isLocked = !!lockedReason;
+          const isLocked = !!lockedReason && lockedReason !== 'exception_working';
 
           return {
             date: key,
@@ -355,9 +338,15 @@ export function EmployeeTimesheetSubmitPage() {
             locked_reason: lockedReason,
             holiday_description: description,
             is_working_day: workingDay,
+            leave_type_name: leaveInfo?.leave_name,
+            leave_status: leaveInfo?.status,
+            exception_type: exception?.override_type,
+            exception_reason: exception?.reason,
           };
         });
 
+      const submission = submissionStatus?.submission;
+      
       setWeeks((prev) => [
         ...prev,
         {
@@ -366,6 +355,9 @@ export function EmployeeTimesheetSubmitPage() {
           end: toDate,
           rows,
           collapsed: false,
+          submissionStatus: submission?.submission_status || null,
+          submissionStatusLabel: submission?.status_display || null,
+          reviewComments: submission?.review_comments || null, // Include rejection reason
         },
       ]);
     } catch (error) {
@@ -384,7 +376,9 @@ export function EmployeeTimesheetSubmitPage() {
   ) => {
     setWeeks((prev) =>
       prev.map((week) => {
-        if (week.id !== weekId) return week;
+        if (week.id !== weekId) {
+          return week;
+        }
         return {
           ...week,
           rows: week.rows.map((row) =>
@@ -402,13 +396,28 @@ export function EmployeeTimesheetSubmitPage() {
 
   const editableRowsByWeek = (week: WeekBlock) => week.rows.filter((row) => !row.locked_reason);
 
-  const submitWeek = (week: WeekBlock) => {
+  const submitWeek = async (week: WeekBlock) => {
     const rows = editableRowsByWeek(week);
     if (!rows.length) {
       toast.error('No editable attendance records found in this week.');
       return;
     }
-    submitMutation.mutate(rows);
+    
+    try {
+      // Submit attendance records with timesheet submission in single transaction
+      await submitMutation.mutateAsync({
+        records: rows.map((row) => ({
+          date: row.date,
+          morning_present: row.morning_present,
+          afternoon_present: row.afternoon_present,
+          remarks: row.remarks,
+        })),
+        week_start_date: week.start,
+        week_end_date: week.end,
+      });
+    } catch {
+      // Error already handled by mutation
+    }
   };
 
   const toggleWeekCollapse = (weekId: string) => {
@@ -424,21 +433,22 @@ export function EmployeeTimesheetSubmitPage() {
     toast.success('Week removed successfully.');
   };
 
-  const submitAllWeeks = () => {
-    const rowsMap = new Map<string, WeekRow>();
-    weeks.forEach((week) => {
-      editableRowsByWeek(week).forEach((row) => {
-        rowsMap.set(row.date, row);
-      });
-    });
-
-    const rows = Array.from(rowsMap.values());
-    if (!rows.length) {
-      toast.error('No editable attendance records found in selected weeks.');
+  const returnToDraft = async (week: WeekBlock) => {
+    if (!confirm('This will delete all attendance records and timesheet submission for this week. Are you sure?')) {
       return;
     }
 
-    submitMutation.mutate(rows);
+    try {
+      await returnToDraftMutation.mutateAsync({
+        week_start_date: week.start,
+        week_end_date: week.end,
+      });
+      
+      // Remove week from view after successful return to draft
+      removeWeek(week.id);
+    } catch {
+      // Error already handled by mutation
+    }
   };
 
   const handleRequestLeave = (date: string) => {
@@ -487,6 +497,9 @@ export function EmployeeTimesheetSubmitPage() {
           <div className="text-sm text-muted-foreground bg-blue-50 px-4 py-2 rounded-lg border border-blue-200">
             <span className="font-medium text-blue-700">Default:</span> {defaultPresent ? '✓ Present' : '✗ Absent'}
           </div>
+          <div className="text-sm text-amber-700 bg-amber-50 px-4 py-2 rounded-lg border border-amber-200">
+            <span className="font-medium">Note:</span> Only dates up to today are shown
+          </div>
         </CardContent>
       </Card>
 
@@ -511,7 +524,23 @@ export function EmployeeTimesheetSubmitPage() {
                 <span className="ml-3 text-sm text-gray-600 font-normal">
                   ({week.rows.length} days)
                 </span>
+                {week.submissionStatus && week.submissionStatusLabel && (
+                  <TimesheetStatusBadge status={week.submissionStatus} className="ml-3" />
+                )}
               </CardTitle>
+              {/* Show rejection reason prominently */}
+              {week.submissionStatus === TimesheetStatus.REJECTED && week.reviewComments && (
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm font-semibold text-red-800 mb-1 flex items-center">
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Rejection Reason:
+                  </p>
+                  <p className="text-sm text-red-700">{week.reviewComments}</p>
+                  <p className="text-xs text-red-600 mt-2 italic">
+                    Please review the reason, make necessary changes, and resubmit your timesheet.
+                  </p>
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -522,16 +551,54 @@ export function EmployeeTimesheetSubmitPage() {
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
+              {week.submissionStatus === TimesheetStatus.SUBMITTED && (
+                <Button
+                  variant="outline"
+                  size="default"
+                  onClick={() => returnToDraft(week)}
+                  className="text-orange-600 hover:bg-orange-50 hover:text-orange-700 border-orange-300 font-semibold"
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Return to Draft
+                </Button>
+              )}
               <Button
                 size="default"
                 onClick={() => submitWeek(week)}
-                disabled={submitMutation.isPending || editableRowsByWeek(week).length === 0}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6"
+                disabled={
+                  submitMutation.isPending || 
+                  editableRowsByWeek(week).length === 0 ||
+                  week.submissionStatus === TimesheetStatus.SUBMITTED ||
+                  week.submissionStatus === TimesheetStatus.APPROVED
+                }
+                className={`font-semibold px-6 ${
+                  week.submissionStatus === TimesheetStatus.SUBMITTED || week.submissionStatus === TimesheetStatus.APPROVED
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : week.submissionStatus === TimesheetStatus.RETURNED
+                    ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                    : week.submissionStatus === TimesheetStatus.REJECTED
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
               >
                 {submitMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Submitting...
+                  </>
+                ) : week.submissionStatus === TimesheetStatus.SUBMITTED ? (
+                  'Already Submitted'
+                ) : week.submissionStatus === TimesheetStatus.APPROVED ? (
+                  <>
+                    <Check className="mr-2 h-4 w-4" />
+                    Approved
+                  </>
+                ) : week.submissionStatus === TimesheetStatus.RETURNED ? (
+                  'Resubmit Week'
+                ) : week.submissionStatus === TimesheetStatus.REJECTED ? (
+                  <>
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Resubmit After Fix
                   </>
                 ) : (
                   'Submit Week'
@@ -570,6 +637,12 @@ export function EmployeeTimesheetSubmitPage() {
                               {row.holiday_description}
                             </Badge>
                           )}
+                          {row.locked_reason === 'exception_working' && row.exception_reason && (
+                            <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 font-medium w-fit">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              Exceptional Working Day: {row.exception_reason}
+                            </Badge>
+                          )}
                           {row.locked_reason === 'leave' && (
                             <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300 font-medium w-fit">
                               <FileText className="h-3 w-3 mr-1" />
@@ -588,13 +661,56 @@ export function EmployeeTimesheetSubmitPage() {
                         <AttendanceIndicator
                           morningPresent={row.morning_present}
                           afternoonPresent={row.afternoon_present}
-                          disabled={!!row.locked_reason}
+                          disabled={
+                            // If status is SUBMITTED or APPROVED, lock everything
+                            (week.submissionStatus === TimesheetStatus.SUBMITTED || 
+                             week.submissionStatus === TimesheetStatus.APPROVED)
+                            ? true
+                            // Otherwise (DRAFT, REJECTED, RETURNED), only lock holidays/leaves/non-working days
+                            : (!!row.locked_reason && row.locked_reason !== 'exception_working')
+                          }
                           onMorningClick={() => updateRow(week.id, row.date, 'morning_present', !row.morning_present)}
                           onAfternoonClick={() => updateRow(week.id, row.date, 'afternoon_present', !row.afternoon_present)}
                         />
                       </TableCell>
                       <TableCell className="text-center">
-                        {!row.locked_reason ? (
+                        {row.locked_reason === 'leave' && row.leave_type_name && row.leave_status ? (
+                          <div className="flex flex-col gap-1 items-center">
+                            <Badge 
+                              variant="outline" 
+                              className={`font-medium ${
+                                row.leave_status === 'approved' 
+                                  ? 'bg-green-100 text-green-700 border-green-300' 
+                                  : 'bg-orange-100 text-orange-700 border-orange-300'
+                              }`}
+                            >
+                              {row.leave_type_name}
+                            </Badge>
+                            <Badge 
+                              variant="outline" 
+                              className={`font-medium text-xs ${
+                                row.leave_status === 'approved' 
+                                  ? 'bg-green-50 text-green-600 border-green-200' 
+                                  : 'bg-orange-50 text-orange-600 border-orange-200'
+                              }`}
+                            >
+                              {row.leave_status.charAt(0).toUpperCase() + row.leave_status.slice(1)}
+                            </Badge>
+                          </div>
+                        ) : row.locked_reason === 'exception_working' && row.exception_reason ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 font-medium cursor-help">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                Exceptional Day
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="font-semibold">{row.exception_type}</p>
+                              <p>{row.exception_reason}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : !row.locked_reason || row.locked_reason === 'exception_working' ? (
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -624,38 +740,6 @@ export function EmployeeTimesheetSubmitPage() {
           )}
         </Card>
       ))}
-
-      <div className="flex justify-end gap-3">
-        <Button
-          variant="outline"
-          size="lg"
-          onClick={() => {
-            setSelectedDateForLeave(new Date());
-            setLeaveDialogOpen(true);
-          }}
-        >
-          <Calendar className="mr-2 h-4 w-4" />
-          Apply Leave
-        </Button>
-        <Button 
-          onClick={submitAllWeeks} 
-          disabled={submitMutation.isPending || weeks.length === 0}
-          size="lg"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8"
-        >
-          {submitMutation.isPending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Submitting All Weeks...
-            </>
-          ) : (
-            <>
-              <Check className="mr-2 h-5 w-5" />
-              Submit Selected Weeks
-            </>
-          )}
-        </Button>
-      </div>
 
       {/* Leave Request Dialog */}
       <LeaveRequestDialog

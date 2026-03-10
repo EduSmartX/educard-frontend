@@ -147,7 +147,7 @@ export function ExceptionalWorkManagement() {
       sortKey: 'override_type',
     },
     {
-      header: 'Applicable To',
+      header: 'Student Scope',
       accessor: (row: CalendarException) => {
         if (row.is_applicable_to_all_classes) {
           return (
@@ -159,6 +159,23 @@ export function ExceptionalWorkManagement() {
         return (
           <Badge variant="outline" className="font-normal">
             {row.classes.length} {row.classes.length === 1 ? 'Class' : 'Classes'}
+          </Badge>
+        );
+      },
+    },
+    {
+      header: 'Teacher Scope',
+      accessor: (row: CalendarException) => {
+        if (row.is_applicable_to_all_teachers) {
+          return (
+            <Badge variant="default" className="font-normal bg-blue-100 text-blue-700 border-blue-200">
+              All Teachers
+            </Badge>
+          );
+        }
+        return (
+          <Badge variant="outline" className="font-normal text-gray-500">
+            Students Only
           </Badge>
         );
       },

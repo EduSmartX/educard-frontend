@@ -131,6 +131,7 @@ function PreferencesByCategory({ preferences }: PreferencesByCategoryProps) {
         const textPrefs = categoryPrefs.filter(
           (p) => p.field_type === 'string' || p.field_type === 'number'
         );
+        const timePrefs = categoryPrefs.filter((p) => p.field_type === 'time');
         const choicePrefs = categoryPrefs.filter((p) => p.field_type === 'choice');
         const multiChoicePrefs = categoryPrefs.filter((p) => p.field_type === 'multi-choice');
 
@@ -174,6 +175,17 @@ function PreferencesByCategory({ preferences }: PreferencesByCategoryProps) {
 
                 {/* Text/Number Fields */}
                 {textPrefs.map((preference) => (
+                  <PreferenceField
+                    key={preference.public_id}
+                    preference={preference}
+                    value={changedValues[preference.public_id] ?? preference.value}
+                    onChange={(value) => handlePreferenceChange(preference.public_id, value)}
+                    disabled={savingStates[preference.public_id]}
+                  />
+                ))}
+
+                {/* Time Picker Fields */}
+                {timePrefs.map((preference) => (
                   <PreferenceField
                     key={preference.public_id}
                     preference={preference}

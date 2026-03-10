@@ -6,7 +6,6 @@
 import { Clock } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ROUTES } from '@/constants/app-config';
 import { useNavigate } from 'react-router-dom';
 
 interface ComingSoonPageProps {
@@ -39,10 +38,10 @@ export default function ComingSoonPage({
             {/* Button */}
             <div className="pt-4">
               <Button
-                onClick={() => navigate(ROUTES.DASHBOARD)}
+                onClick={() => navigate(-1)}
                 className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white"
               >
-                Back to Dashboard
+                Go Back
               </Button>
             </div>
           </div>

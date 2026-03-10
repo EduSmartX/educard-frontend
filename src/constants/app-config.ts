@@ -177,9 +177,9 @@ export const ROUTES = {
     REGISTRATION_SUCCESS: '/auth/registration-success',
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password',
+    VERIFY_EMAIL: '/auth/verify-email',
     ORGANIZATION_NOT_APPROVED: '/auth/organization-not-approved',
   },
-  DASHBOARD: '/dashboard',
   // Common routes (role-agnostic)
   ORGANIZATION: '/organization',
   STUDENTS: '/students',
@@ -204,8 +204,10 @@ export const ROUTES = {
   ATTENDANCE: {
     STUDENTS: '/attendance/students',
     STAFF: '/attendance/staff',
+    REPORT: '/attendance/report',
     TIMESHEET: '/attendance/timesheet',
     TIMESHEET_SUBMIT: '/attendance/timesheet/submit',
+    TIMESHEET_APPROVALS: '/attendance/timesheet/approvals',
   },
   LEAVE: {
     DASHBOARD: '/leave/dashboard',
@@ -217,8 +219,9 @@ export const ROUTES = {
   HOLIDAYS: '/holidays',
   PREFERENCES: '/preferences',
   EXCEPTIONAL_WORK: '/exceptional-work',
-  // Role-specific routes (legacy - kept for backward compatibility)
+  // Role-specific routes
   ADMIN: {
+    DASHBOARD: '/admin/dashboard',
     ORGANIZATION: '/admin/organization',
     STUDENTS: '/admin/students',
     TEACHERS: '/admin/teachers',
@@ -231,6 +234,8 @@ export const ROUTES = {
     ATTENDANCE: {
       STUDENTS: '/admin/attendance/students',
       STAFF: '/admin/attendance/staff',
+      REPORT: '/admin/attendance/report',
+      APPROVALS: '/admin/attendance/approvals',
     },
     LEAVE: {
       REQUESTS: '/admin/leave/requests',
@@ -238,7 +243,26 @@ export const ROUTES = {
       BALANCES: '/admin/leave/balances',
       ALLOCATIONS: '/admin/leave/allocations',
     },
+    HOLIDAYS: '/admin/holidays',
+    EXCEPTIONAL_WORK: '/admin/exceptional-work',
     PREFERENCES: '/admin/preferences',
+  },
+  EMPLOYEE: {
+    DASHBOARD: '/employee/dashboard',
+    MY_CLASSES: '/employee/classes',
+    MY_STUDENTS: '/employee/students',
+    ATTENDANCE: {
+      MARK: '/employee/attendance/mark',
+      TIMESHEET: '/employee/attendance/timesheet',
+      SUBMIT: '/employee/attendance/submit',
+    },
+    LEAVE: {
+      DASHBOARD: '/employee/leave/dashboard',
+      APPLY: '/employee/leave/apply',
+      HISTORY: '/employee/leave/history',
+      BALANCE: '/employee/leave/balance',
+    },
+    PROFILE: '/employee/profile',
   },
   TEACHER: {
     MY_CLASSES: '/teacher/classes',
@@ -246,8 +270,14 @@ export const ROUTES = {
     LEAVE: '/teacher/leave',
   },
   PARENT: {
+    DASHBOARD: '/parent/dashboard',
     MY_CHILDREN: '/parent/children',
     ATTENDANCE: '/parent/attendance',
+    LEAVE: {
+      APPLY: '/parent/leave/apply',
+      HISTORY: '/parent/leave/history',
+    },
+    PROFILE: '/parent/profile',
   },
   PROFILE: '/profile',
 } as const;

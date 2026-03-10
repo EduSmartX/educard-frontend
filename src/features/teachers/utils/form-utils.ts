@@ -198,7 +198,7 @@ export function transformTeacherToForm(
   teacher: TeacherDetail
 ): Partial<TeacherFormValues> {
   let organizationRoleId = '';
-  if (teacher.user?.organization_role) {
+  if (teacher.user?.organization_role?.id) {
     organizationRoleId = teacher.user.organization_role.id.toString();
   }
 

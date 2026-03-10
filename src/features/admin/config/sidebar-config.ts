@@ -1,3 +1,8 @@
+/**
+ * Admin Sidebar Configuration
+ * Navigation menu for administrators/principals
+ */
+
 import {
   LayoutDashboard,
   Calendar,
@@ -25,7 +30,7 @@ export const adminSidebarConfig: SidebarSection[] = [
         id: 'dashboard',
         label: 'Dashboard',
         icon: LayoutDashboard,
-        path: ROUTES.DASHBOARD,
+        path: ROUTES.ADMIN.DASHBOARD,
       },
       {
         id: 'calendar',

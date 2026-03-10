@@ -1,3 +1,8 @@
+/**
+ * Employee Sidebar Configuration
+ * Navigation menu for teachers and staff members
+ */
+
 import {
   LayoutDashboard,
   Calendar,
@@ -12,21 +17,22 @@ import {
   Briefcase,
 } from 'lucide-react';
 import type { SidebarSection } from '@/components/layout/dashboard-sidebar';
+import { ROUTES } from '@/constants/app-config';
 
-export const staffSidebarConfig: SidebarSection[] = [
+export const employeeSidebarConfig: SidebarSection[] = [
   {
     items: [
       {
         id: 'dashboard',
         label: 'Dashboard',
         icon: LayoutDashboard,
-        path: '/dashboard/staff',
+        path: ROUTES.EMPLOYEE.DASHBOARD,
       },
       {
         id: 'calendar',
         label: 'My Calendar',
         icon: Calendar,
-        path: '/dashboard/staff/calendar',
+        path: ROUTES.CALENDAR,
       },
     ],
   },
@@ -37,13 +43,13 @@ export const staffSidebarConfig: SidebarSection[] = [
         id: 'my-classes',
         label: 'My Classes',
         icon: Users,
-        path: '/dashboard/staff/classes',
+        path: ROUTES.CLASSES,
       },
       {
         id: 'subjects',
         label: 'Subjects',
         icon: BookOpen,
-        path: '/dashboard/staff/subjects',
+        path: ROUTES.SUBJECTS,
       },
     ],
   },
@@ -54,25 +60,19 @@ export const staffSidebarConfig: SidebarSection[] = [
         id: 'mark-attendance',
         label: 'Mark Attendance',
         icon: ClipboardCheck,
-        path: '/attendance/mark',
-      },
-      {
-        id: 'attendance-summary',
-        label: 'View Summary',
-        icon: FileText,
-        path: '/attendance/summary',
-      },
-      {
-        id: 'attendance-reports',
-        label: 'Monthly Report',
-        icon: CalendarDays,
-        path: '/attendance/monthly',
+        path: ROUTES.EMPLOYEE.ATTENDANCE.MARK,
       },
       {
         id: 'attendance-timesheet',
-        label: 'Timesheet',
+        label: 'My Timesheet',
         icon: CalendarCheck,
-        path: '/attendance/timesheet',
+        path: ROUTES.EMPLOYEE.ATTENDANCE.TIMESHEET,
+      },
+      {
+        id: 'submit-timesheet',
+        label: 'Submit Timesheet',
+        icon: FileText,
+        path: ROUTES.EMPLOYEE.ATTENDANCE.SUBMIT,
       },
     ],
   },
@@ -81,33 +81,27 @@ export const staffSidebarConfig: SidebarSection[] = [
     items: [
       {
         id: 'leave-dashboard',
-        label: 'Leave Dashboard',
+        label: 'My Leave Dashboard',
         icon: Briefcase,
-        path: '/leave/dashboard',
+        path: ROUTES.EMPLOYEE.LEAVE.DASHBOARD,
       },
       {
-        id: 'leave-reviews',
-        label: 'Leave Reviews',
-        icon: ClipboardCheck,
-        path: '/leave/reviews',
-      },
-      {
-        id: 'my-leaves',
-        label: 'My Leaves',
-        icon: FileText,
-        path: '/dashboard/staff/leaves',
-      },
-      {
-        id: 'leave-requests',
+        id: 'apply-leave',
         label: 'Apply Leave',
         icon: Calendar,
-        path: '/leave/requests/new',
+        path: ROUTES.EMPLOYEE.LEAVE.APPLY,
       },
       {
-        id: 'leave-balances',
-        label: 'Manage Leave Balances',
+        id: 'leave-history',
+        label: 'Leave History',
+        icon: FileText,
+        path: ROUTES.EMPLOYEE.LEAVE.HISTORY,
+      },
+      {
+        id: 'leave-balance',
+        label: 'Leave Balance',
         icon: CalendarDays,
-        path: '/leave/balances',
+        path: ROUTES.EMPLOYEE.LEAVE.BALANCE,
       },
     ],
   },
@@ -118,7 +112,7 @@ export const staffSidebarConfig: SidebarSection[] = [
         id: 'messages',
         label: 'Messages',
         icon: MessageSquare,
-        path: '/dashboard/staff/messages',
+        path: '/messages',
         badge: 5,
       },
     ],
@@ -130,13 +124,13 @@ export const staffSidebarConfig: SidebarSection[] = [
         id: 'holidays',
         label: 'Holiday Calendar',
         icon: CalendarDays,
-        path: '/holidays',
+        path: ROUTES.HOLIDAYS,
       },
       {
         id: 'profile',
         label: 'My Profile',
         icon: Settings,
-        path: '/dashboard/staff/profile',
+        path: ROUTES.PROFILE,
       },
     ],
   },
