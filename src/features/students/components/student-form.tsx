@@ -7,7 +7,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
@@ -58,6 +59,8 @@ import {
   transformStudentFormToPayload,
 } from '../utils/student-form.utils';
 import { STANDARD_FORM_VALIDATION_CONFIG } from '@/lib/utils/form-validation';
+import { useAuth } from '@/hooks/use-auth';
+import { USER_ROLES } from '@/constants/user-constants';
 
 interface StudentFormProps {
   mode: 'create' | 'edit' | 'view';
@@ -80,8 +83,15 @@ export function StudentForm({
   const [isAddressExpanded, setIsAddressExpanded] = useState(false);
   const [isPreviousSchoolExpanded, setIsPreviousSchoolExpanded] = useState(false);
 
+  const { user } = useAuth();
+  const isTeacher = user?.role === USER_ROLES.TEACHER;
+
   // Fetch classes for selection
-  const { data: classesData } = useClasses({ page_size: 100 });
+  // For teachers in create mode, only fetch classes where they are class teacher
+  const { data: classesData } = useClasses({ 
+    page_size: 100,
+    ...(isTeacher && mode === 'create' ? { for_student_form: true } : {})
+  });
   const classes = useMemo<Class[]>(() => classesData?.data || [], [classesData]);
 
   // Supervisors (teachers) for supervisor dropdown
@@ -173,12 +183,17 @@ export function StudentForm({
         scrollToFirstFormError(setIsAddressExpanded, setIsPreviousSchoolExpanded, form.formState.errors);
       }
 
-      if (!result.hasFieldErrors) {
-        toast.error(ErrorMessages.STUDENT.UPDATE_FAILED);
-      } else if (shouldShowValidationToast(result.toastMessage)) {
+      // Show the actual error message from backend
+      if (!result.hasFieldErrors && result.toastMessage) {
+        toast.error(ToastTitles.ERROR, {
+          description: result.toastMessage,
+        });
+      } else if (result.hasFieldErrors) {
         toast.error(ToastTitles.VALIDATION_ERROR, {
           description: result.toastMessage,
         });
+      } else {
+        toast.error(ErrorMessages.STUDENT.UPDATE_FAILED);
       }
     },
   });
@@ -265,6 +280,16 @@ export function StudentForm({
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {/* Teacher Information Alert */}
+          {isTeacher && mode === 'create' && (
+            <Alert className="border-blue-200 bg-blue-50">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800">
+                You can add students only for classes where you are assigned as the class teacher.
+              </AlertDescription>
+            </Alert>
           )}
 
           {/* Class Selection - Required First Step */}

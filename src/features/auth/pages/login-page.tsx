@@ -8,6 +8,7 @@ import { Mail, Lock, LogIn, UserCircle2 } from 'lucide-react';
 import { authApi, type LoginCredentials } from '@/lib/api/auth-api';
 import { CommonUiText, ErrorMessages, FormPlaceholders, SuccessMessages } from '@/constants/error-messages';
 import { ROUTES } from '@/constants/app-config';
+import { USER_ROLES } from '@/constants/user-constants';
 import { BRANDING } from '@/constants/branding';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -64,21 +65,22 @@ export default function LoginPage() {
       toast.success(SuccessMessages.LOGIN_SUCCESS);
 
       // Redirect to role-specific dashboard
-      const userRole = response.user.role;
-      if (userRole === 'ADMIN') {
+      const userRole = response.user.role.toLowerCase();
+      if (userRole === USER_ROLES.ADMIN) {
         navigate(ROUTES.ADMIN.DASHBOARD);
-      } else if (userRole === 'TEACHER' || userRole === 'STAFF') {
+      } else if (userRole === USER_ROLES.TEACHER || userRole === USER_ROLES.STAFF) {
         navigate(ROUTES.EMPLOYEE.DASHBOARD);
-      } else if (userRole === 'PARENT') {
+      } else if (userRole === USER_ROLES.PARENT) {
         navigate(ROUTES.PARENT.DASHBOARD);
       } else {
         navigate('/'); // Fallback to home
       }
-    } catch (error: any) {
+    } catch (error) {
       // Extract error message from API response
+      const apiError = error as { response?: { data?: { message?: string; detail?: string } } };
       const errorMessage = 
-        error?.response?.data?.message || 
-        error?.response?.data?.detail || 
+        apiError?.response?.data?.message || 
+        apiError?.response?.data?.detail || 
         'Invalid username or password';
       setLoginError(errorMessage);
     } finally {

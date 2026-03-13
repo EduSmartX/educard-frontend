@@ -12,7 +12,8 @@ import type {
   SubjectBulkUploadPayload,
 } from '../types/subject';
 
-const BASE_URL = '/subjects/';
+// Base URL for subjects API (all users use same endpoint, backend handles permissions)
+const BASE_URL = '/subjects';
 
 /**
  * Fetch list of subjects
@@ -20,18 +21,39 @@ const BASE_URL = '/subjects/';
 export async function fetchSubjects(params?: SubjectListParams): Promise<ApiListResponse<Subject>> {
   const queryParams = new URLSearchParams();
 
-  if (params?.page) queryParams.append('page', params.page.toString());
-  if (params?.page_size) queryParams.append('page_size', params.page_size.toString());
-  if (params?.search) queryParams.append('search', params.search);
-  if (params?.class_assigned) queryParams.append('class_assigned', params.class_assigned);
-  if (params?.subject_master)
+  if (params?.page) {
+    queryParams.append('page', params.page.toString());
+  }
+  if (params?.page_size) {
+    queryParams.append('page_size', params.page_size.toString());
+  }
+  if (params?.search) {
+    queryParams.append('search', params.search);
+  }
+  if (params?.class_assigned) {
+    queryParams.append('class_assigned', params.class_assigned);
+  }
+  if (params?.subject_master) {
     queryParams.append('subject_master', params.subject_master.toString());
-  if (params?.teacher) queryParams.append('teacher', params.teacher);
-  if (params?.is_deleted !== undefined)
+  }
+  if (params?.teacher) {
+    queryParams.append('teacher', params.teacher);
+  }
+  if (params?.is_deleted !== undefined) {
     queryParams.append('is_deleted', params.is_deleted.toString());
+  }
 
-  const url = queryParams.toString() ? `${BASE_URL}?${queryParams}` : BASE_URL;
+  const url = queryParams.toString() ? `${BASE_URL}/?${queryParams}` : `${BASE_URL}/`;
   const response = await apiClient.get<ApiListResponse<Subject>>(url);
+  
+  // Backend handles can_manage field, default to true for UI
+  if (response.data.data) {
+    response.data.data = response.data.data.map((subject) => ({
+      ...subject,
+      can_manage: subject.can_manage ?? true,
+    }));
+  }
+  
   return response.data;
 }
 
@@ -41,7 +63,7 @@ export async function fetchSubjects(params?: SubjectListParams): Promise<ApiList
 export async function fetchSubject(publicId: string, isDeleted = false): Promise<Subject> {
   const params = isDeleted ? { is_deleted: 'true' } : {};
   const response = await apiClient.get<{ success: boolean; data: Subject }>(
-    `${BASE_URL}${publicId}/`,
+    `${BASE_URL}/${publicId}/`,
     { params }
   );
   return response.data.data;
@@ -55,7 +77,7 @@ export async function createSubject(
   forceCreate = false
 ): Promise<Subject> {
   const params = forceCreate ? { force_create: 'true' } : {};
-  const response = await apiClient.post<{ success: boolean; data: Subject }>(BASE_URL, data, {
+  const response = await apiClient.post<{ success: boolean; data: Subject }>(`${BASE_URL}/`, data, {
     params,
   });
   return response.data.data;
@@ -69,7 +91,7 @@ export async function updateSubject(
   data: SubjectUpdatePayload
 ): Promise<Subject> {
   const response = await apiClient.patch<{ success: boolean; data: Subject }>(
-    `${BASE_URL}${publicId}/`,
+    `${BASE_URL}/${publicId}/`,
     data
   );
   return response.data.data;
@@ -79,7 +101,7 @@ export async function updateSubject(
  * Delete a subject (soft delete)
  */
 export async function deleteSubject(publicId: string): Promise<void> {
-  await apiClient.delete(`${BASE_URL}${publicId}/`);
+  await apiClient.delete(`${BASE_URL}/${publicId}/`);
 }
 
 /**
@@ -87,7 +109,7 @@ export async function deleteSubject(publicId: string): Promise<void> {
  */
 export async function reactivateSubject(publicId: string): Promise<Subject> {
   const response = await apiClient.post<{ success: boolean; data: Subject }>(
-    `${BASE_URL}${publicId}/activate/`
+    `${BASE_URL}/${publicId}/activate/`
   );
   return response.data.data;
 }
@@ -106,7 +128,7 @@ export async function bulkUploadSubjects(data: SubjectBulkUploadPayload): Promis
   const formData = new FormData();
   formData.append('file', data.file);
 
-  const response = await apiClient.post(`${BASE_URL}bulk-upload/`, formData, {
+  const response = await apiClient.post(`${BASE_URL}/bulk-upload/`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -118,7 +140,7 @@ export async function bulkUploadSubjects(data: SubjectBulkUploadPayload): Promis
  * Download subject template
  */
 export async function downloadSubjectTemplate(): Promise<Blob> {
-  const response = await apiClient.get(`${BASE_URL}download-template/`, {
+  const response = await apiClient.get(`${BASE_URL}/download-template/`, {
     responseType: 'blob',
   });
   return response.data;

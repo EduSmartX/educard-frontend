@@ -5,6 +5,9 @@
 
 import api from '@/lib/api';
 import { BulkUploadDialog } from '@/components/common/bulk-upload-dialog';
+import { useAuth } from '@/hooks/use-auth';
+import { USER_ROLES } from '@/constants/user-constants';
+import { InfoMessages } from '@/constants/error-messages';
 
 const SUBJECTS_API = '/subjects';
 
@@ -31,6 +34,9 @@ async function uploadSubjectsFile(file: File) {
 }
 
 export function BulkUploadSubjectsDialog() {
+  const { user } = useAuth();
+  const isTeacher = user?.role === USER_ROLES.TEACHER;
+
   return (
     <BulkUploadDialog
       title="Bulk Upload Subjects"
@@ -42,6 +48,7 @@ export function BulkUploadSubjectsDialog() {
       invalidateQueryKeys={['subjects']}
       templateFileName="subjects_template.xlsx"
       acceptedFileTypes=".xlsx,.xls"
+      customInfoMessage={isTeacher ? InfoMessages.CLASS_TEACHER.BULK_UPLOAD_SUBJECTS : undefined}
     />
   );
 }

@@ -70,7 +70,7 @@ export function createSubjectListColumns({
       accessor: (row) => <span className="text-gray-700">{row.description || '—'}</span>,
       width: 200,
     },
-    // Common columns: Created, Updated, Actions
+    // Common columns with can_manage support: Created, Updated, Actions
     ...(isDeletedView
       ? [
           {

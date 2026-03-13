@@ -34,6 +34,9 @@ export default function TeacherFormPage() {
   const searchParams = new URLSearchParams(location.search);
   const isViewingDeleted = searchParams.get('deleted') === 'true';
 
+  // Check if accessing from employee section
+  const isEmployeeView = location.pathname.startsWith('/employee/');
+
   // Determine mode based on URL path
   const getMode = (): 'create' | 'edit' | 'view' => {
     if (!id) return 'create';
@@ -57,15 +60,15 @@ export default function TeacherFormPage() {
   }, [error, mode, isDeleting, isReactivating]);
 
   const handleBackToList = () => {
-    navigate(ROUTES.TEACHERS);
+    navigate(isEmployeeView ? ROUTES.EMPLOYEE.TEACHERS : ROUTES.TEACHERS);
   };
 
   const handleFormSuccess = () => {
-    navigate(ROUTES.TEACHERS);
+    navigate(isEmployeeView ? ROUTES.EMPLOYEE.TEACHERS : ROUTES.TEACHERS);
   };
 
   const handleSwitchToEdit = () => {
-    if (id) {
+    if (id && !isEmployeeView) {
       navigate(ROUTES.TEACHERS_EDIT.replace(':id', id));
     }
   };
@@ -253,12 +256,17 @@ export default function TeacherFormPage() {
             icon: X,
             className: 'border-2 border-gray-400 text-gray-700 hover:bg-gray-100',
           },
-          {
-            label: 'Edit',
-            onClick: handleSwitchToEdit,
-            variant: 'default' as const,
-            icon: Edit,
-          },
+          // Hide Edit button for employee view
+          ...(!isEmployeeView
+            ? [
+                {
+                  label: 'Edit',
+                  onClick: handleSwitchToEdit,
+                  variant: 'default' as const,
+                  icon: Edit,
+                },
+              ]
+            : []),
         ],
       };
     }

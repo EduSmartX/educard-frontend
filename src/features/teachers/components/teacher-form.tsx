@@ -37,7 +37,6 @@ import { STANDARD_FORM_VALIDATION_CONFIG } from '@/lib/utils/form-validation';
 import { FormMetadata } from '@/components/form/form-metadata';
 import { DeletedDuplicateDialog } from '@/components/common';
 import { useDeletedDuplicateHandler } from '@/hooks/use-deleted-duplicate-handler';
-import { useOrganizationRoles } from '@/hooks/use-organization-roles';
 import type { CreateTeacherPayload } from '../types';
 import { ErrorMessages, FormPlaceholders, SuccessMessages, ToastTitles } from '@/constants';
 

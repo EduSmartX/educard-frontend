@@ -14,6 +14,7 @@ interface GetColumnsOptions {
   onEdit: (student: StudentListItem) => void;
   onDelete: (student: StudentListItem) => void;
   isDeletedView?: boolean;
+  isClassTeacher?: boolean;  // NEW: Whether user is class teacher
 }
 
 export function getStudentColumns({
@@ -21,6 +22,7 @@ export function getStudentColumns({
   onEdit,
   onDelete,
   isDeletedView = false,
+  isClassTeacher = false,  // Default false
 }: GetColumnsOptions): Column<StudentListItem>[] {
   return [
     {
@@ -98,33 +100,41 @@ export function getStudentColumns({
     },
     {
       header: 'Actions',
-      accessor: (row) => (
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => onView(row)} className="h-8 w-8 p-0">
-            <Eye className="h-4 w-4" />
-            <span className="sr-only">View</span>
-          </Button>
-          {!isDeletedView && (
-            <Button variant="ghost" size="sm" onClick={() => onEdit(row)} className="h-8 w-8 p-0">
-              <Pencil className="h-4 w-4" />
-              <span className="sr-only">Edit</span>
+      accessor: (row) => {
+        // Check if user can manage this student
+        // For class teachers, use can_manage field; admins can manage all
+        const canManage = row.can_manage ?? true; // Default true for admins
+        
+        return (
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => onView(row)} className="h-8 w-8 p-0">
+              <Eye className="h-4 w-4" />
+              <span className="sr-only">View</span>
             </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDelete(row)}
-            className={
-              isDeletedView
-                ? 'h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50'
-                : 'h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50'
-            }
-          >
-            {isDeletedView ? <RotateCcw className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
-            <span className="sr-only">{isDeletedView ? 'Reactivate' : 'Delete'}</span>
-          </Button>
-        </div>
-      ),
+            {!isDeletedView && canManage && (
+              <Button variant="ghost" size="sm" onClick={() => onEdit(row)} className="h-8 w-8 p-0">
+                <Pencil className="h-4 w-4" />
+                <span className="sr-only">Edit</span>
+              </Button>
+            )}
+            {canManage && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDelete(row)}
+                className={
+                  isDeletedView
+                    ? 'h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50'
+                    : 'h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50'
+                }
+              >
+                {isDeletedView ? <RotateCcw className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
+                <span className="sr-only">{isDeletedView ? 'Reactivate' : 'Delete'}</span>
+              </Button>
+            )}
+          </div>
+        );
+      },
       width: 150,
     },
   ];

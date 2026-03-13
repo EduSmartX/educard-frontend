@@ -41,6 +41,12 @@ const AdminDashboardPage = lazy(
 const EmployeeDashboardPage = lazy(
   () => import('./features/employee/dashboard/pages/employee-dashboard-page')
 );
+const EmployeeTeachersPage = lazy(
+  () => import('./features/employee/pages/employee-teachers-page')
+);
+const EmployeeClassesPage = lazy(
+  () => import('./features/employee/pages/employee-classes-page')
+);
 const ParentDashboardPage = lazy(
   () => import('./features/parent/dashboard/pages/parent-dashboard-page')
 );
@@ -148,6 +154,8 @@ function App() {
           <Route path={ROUTES.AUTH.REGISTRATION_SUCCESS} element={<RegistrationSuccessPage />} />
           <Route path={ROUTES.AUTH.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
           <Route path={ROUTES.AUTH.VERIFY_EMAIL} element={<VerifyEmailPage />} />
+          {/* Backward compatibility: redirect /verify-email to /auth/verify-email */}
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route
             path={ROUTES.AUTH.ORGANIZATION_NOT_APPROVED}
             element={<OrganizationNotApprovedPage />}
@@ -162,6 +170,11 @@ function App() {
 
             <Route path="/employee" element={<EmployeeRoute />}>
               <Route path="dashboard" element={<EmployeeDashboardPage />} />
+              <Route path="holidays" element={<HolidayCalendarPage />} />
+              <Route path="exceptional-work" element={<ExceptionalWorkPage />} />
+              <Route path="teachers" element={<EmployeeTeachersPage />} />
+              <Route path="teachers/:id" element={<TeacherFormPage />} />
+              <Route path="classes-list" element={<EmployeeClassesPage />} />
             </Route>
 
             <Route path="/parent" element={<ParentRoute />}>

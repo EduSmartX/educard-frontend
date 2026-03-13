@@ -100,6 +100,7 @@ export interface StudentListItem {
   full_name: string;
   roll_number: string;
   admission_number: string;
+  admission_date?: string;
   email?: string;
   phone?: string;
   class_name: string;
@@ -107,6 +108,7 @@ export interface StudentListItem {
   class_master_name: string;
   gender: GenderValue | '';
   is_active: boolean;
+  can_manage?: boolean; // For class teachers - indicates if they can edit/delete this student
 }
 
 // User Payload for Create

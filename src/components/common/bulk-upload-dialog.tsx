@@ -76,6 +76,9 @@ interface BulkUploadDialogProps {
 
   // Optional callback after successful upload
   onUploadSuccess?: (result: BulkUploadResult) => void;
+  
+  // Optional custom alert/info message to display
+  customInfoMessage?: string;
 }
 
 export function BulkUploadDialog({
@@ -94,6 +97,7 @@ export function BulkUploadDialog({
   onMinimalFieldsChange,
   minimalFieldsLabel = 'Minimal Fields Only',
   onUploadSuccess,
+  customInfoMessage,
 }: BulkUploadDialogProps) {
   const [open, setOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -385,6 +389,16 @@ export function BulkUploadDialog({
         {/* Content area */}
         <div className="overflow-y-auto max-h-[calc(90vh-280px)] px-6 py-6">
           <div className="space-y-4">
+            {/* Custom Info Message */}
+            {customInfoMessage && (
+              <Alert className="border-blue-200 bg-blue-50">
+                <AlertCircle className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800 text-sm">
+                  {customInfoMessage}
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Minimal Fields Toggle */}
             {showMinimalFieldsCheckbox && (
               <div className="flex items-center justify-between rounded-lg border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 p-4 shadow-sm">

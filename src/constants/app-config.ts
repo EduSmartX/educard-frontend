@@ -251,6 +251,11 @@ export const ROUTES = {
     DASHBOARD: '/employee/dashboard',
     MY_CLASSES: '/employee/classes',
     MY_STUDENTS: '/employee/students',
+    HOLIDAYS: '/employee/holidays',
+    EXCEPTIONAL_WORK: '/employee/exceptional-work',
+    TEACHERS: '/employee/teachers',
+    TEACHERS_VIEW: '/employee/teachers/:id',
+    CLASSES: '/employee/classes-list',
     ATTENDANCE: {
       MARK: '/employee/attendance/mark',
       TIMESHEET: '/employee/attendance/timesheet',

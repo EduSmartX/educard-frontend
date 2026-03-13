@@ -58,10 +58,11 @@ export function ExceptionDialog({
   // Validation state
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Fetch classes
+  // Fetch classes - Only fetch when dialog is open
   const { data: classesData, isLoading: isLoadingClasses } = useQuery({
     queryKey: ['classes', 'all'],
     queryFn: () => fetchClasses({ page_size: 1000 }),
+    enabled: open, // Only fetch when dialog is open
   });
 
   const classes = classesData?.data || [];

@@ -14,6 +14,7 @@
  */
 
 import { useAuth } from './use-auth';
+import { USER_ROLES, type UserRoleValue } from '@/constants/user-constants';
 
 export type UserRole = 'ADMIN' | 'TEACHER' | 'STAFF' | 'PARENT' | 'STUDENT';
 
@@ -31,16 +32,17 @@ export interface UseRoleReturn {
 export function useRole(): UseRoleReturn {
   const { user } = useAuth();
 
-  const role = (user?.role as UserRole) || null;
+  const role = user?.role ? (user.role.toUpperCase() as UserRole) : null;
+  const lowerRole = user?.role?.toLowerCase() as UserRoleValue | undefined;
 
   return {
     role,
-    isAdmin: role === 'ADMIN',
-    isEmployee: role === 'TEACHER' || role === 'STAFF',
-    isTeacher: role === 'TEACHER',
-    isStaff: role === 'STAFF',
-    isParent: role === 'PARENT',
-    isStudent: role === 'STUDENT',
+    isAdmin: lowerRole === USER_ROLES.ADMIN,
+    isEmployee: lowerRole === USER_ROLES.TEACHER || lowerRole === USER_ROLES.STAFF,
+    isTeacher: lowerRole === USER_ROLES.TEACHER,
+    isStaff: lowerRole === USER_ROLES.STAFF,
+    isParent: lowerRole === USER_ROLES.PARENT,
+    isStudent: lowerRole === USER_ROLES.STUDENT,
     isLoading: false,
   };
 }

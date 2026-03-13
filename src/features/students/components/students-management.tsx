@@ -9,12 +9,15 @@ import { toast } from 'sonner';
 import { ROUTES } from '@/constants/app-config';
 import { ErrorMessages, SuccessMessages } from '@/constants';
 import { useStudents } from '../hooks/use-students';
+import { useManagedClasses } from '../hooks/use-managed-classes';
 import { useDeleteStudent, useReactivateStudent } from '../hooks/mutations';
 import { StudentsList } from './students-list';
 import StudentFormPage from '../pages/student-form-page';
 import type { StudentListItem } from '../types';
 import { DeleteConfirmationDialog, ReactivateConfirmationDialog } from '@/components/common';
 import { useDeletedView } from '@/hooks/use-deleted-view';
+import { useAuth } from '@/hooks/use-auth';
+import { USER_ROLES } from '@/constants/user-constants';
 
 type PageMode = 'list' | 'create' | 'edit' | 'view';
 
@@ -22,6 +25,7 @@ export function StudentsManagement() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -32,11 +36,19 @@ export function StudentsManagement() {
   // Dialog states
   const [studentToDelete, setStudentToDelete] = useState<StudentListItem | null>(null);
   const [studentToReactivate, setStudentToReactivate] = useState<StudentListItem | null>(null);
+  const [reactivateError, setReactivateError] = useState<string | null>(null);
 
   // Deleted view management
   const { showDeleted, toggleDeletedView } = useDeletedView({
     onPageChange: setCurrentPage,
   });
+
+  // Fetch managed classes for class teacher permissions
+  const { data: managedClasses = [] } = useManagedClasses();
+  
+  // Determine if user can create students
+  const isClassTeacher = user?.role === USER_ROLES.TEACHER && managedClasses.length > 0;
+  const canCreateStudents = user?.role === USER_ROLES.ADMIN || isClassTeacher;
 
   // Sync filters with URL query params
   useEffect(() => {
@@ -208,6 +220,8 @@ export function StudentsManagement() {
         onPageSizeChange={handlePageSizeChange}
         onSearch={handleSearch}
         onFilterChange={handleFilterChange}
+        canCreateStudents={canCreateStudents}
+        isClassTeacher={isClassTeacher}
       />
 
       {!showDeleted && (

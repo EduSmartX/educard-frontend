@@ -15,7 +15,12 @@ import { ROUTES } from '@/constants/app-config';
 import { useDeletedView } from '@/hooks/use-deleted-view';
 import type { Class } from '../types';
 
-export function ClassesManagement() {
+interface ClassesManagementProps {
+  viewMode?: 'admin' | 'employee'; // Admin = full CRUD, Employee = read-only
+}
+
+export function ClassesManagement({ viewMode = 'admin' }: ClassesManagementProps) {
+  const isEmployeeView = viewMode === 'employee';
   const navigate = useNavigate();
 
   // Pagination state
@@ -129,7 +134,7 @@ export function ClassesManagement() {
         error={error || undefined}
         pagination={pagination}
         showDeleted={showDeleted}
-        onToggleDeleted={toggleDeletedView}
+        onToggleDeleted={isEmployeeView ? undefined : toggleDeletedView} // No deleted toggle for employees
         onCreateNew={handleCreateNew}
         onView={handleView}
         onEdit={handleEdit}
@@ -138,9 +143,10 @@ export function ClassesManagement() {
         onPageSizeChange={handlePageSizeChange}
         onSearch={handleSearch}
         onFilterChange={handleFilterChange}
+        viewMode={viewMode} // Pass viewMode to list
       />
 
-      {!showDeleted && (
+      {!showDeleted && !isEmployeeView && (
         <DeleteConfirmationDialog
           open={!!classToDelete}
           onOpenChange={(open) => !open && setClassToDelete(undefined)}
@@ -156,7 +162,7 @@ export function ClassesManagement() {
         />
       )}
 
-      {showDeleted && (
+      {showDeleted && !isEmployeeView && (
         <ReactivateConfirmationDialog
           open={!!classToReactivate}
           onOpenChange={(open) => !open && setClassToReactivate(undefined)}

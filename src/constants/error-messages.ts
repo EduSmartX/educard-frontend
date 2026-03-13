@@ -441,6 +441,16 @@ export const SuccessMessages = {
 } as const;
 
 /**
+ * Informational messages for user guidance
+ */
+export const InfoMessages = {
+  CLASS_TEACHER: {
+    BULK_UPLOAD_STUDENTS: 'As a class teacher, you can bulk upload students only for classes where you are assigned as the class teacher. Please ensure the class information in your template matches your assigned class.',
+    BULK_UPLOAD_SUBJECTS: 'As a class teacher, you can bulk upload subjects only for classes where you are assigned as the class teacher. Please ensure the class information in your template matches your assigned class.',
+  },
+} as const;
+
+/**
  * Confirmation messages for user actions
  */
 export const ConfirmationMessages = {

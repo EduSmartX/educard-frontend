@@ -37,6 +37,7 @@ interface TeachersListProps {
   onPageSizeChange?: (pageSize: number) => void;
   onSearch?: (query: string) => void;
   onFilterChange?: (filters: Record<string, string>) => void;
+  viewMode?: 'admin' | 'employee'; // Admin = full CRUD, Employee = read-only
 }
 
 export function TeachersList({
@@ -54,7 +55,9 @@ export function TeachersList({
   onPageSizeChange,
   onSearch,
   onFilterChange,
+  viewMode = 'admin',
 }: TeachersListProps) {
+  const isEmployeeView = viewMode === 'employee';
   const [appliedSearchQuery, setAppliedSearchQuery] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [showFilters, setShowFilters] = useState(false);
@@ -105,16 +108,21 @@ export function TeachersList({
     onEdit,
     onDelete,
     isDeletedView: showDeleted,
+    viewMode, // Pass viewMode to configure columns
   });
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        title={getListTitle('Teachers', showDeleted)}
-        description={getListDescription('Teachers', showDeleted)}
+        title={isEmployeeView ? 'Teachers' : getListTitle('Teachers', showDeleted)}
+        description={
+          isEmployeeView
+            ? 'View all teachers in your organization'
+            : getListDescription('Teachers', showDeleted)
+        }
         actions={[
-          ...(!showDeleted
+          ...(!showDeleted && !isEmployeeView
             ? [
                 {
                   label: 'Add Teacher',
@@ -127,14 +135,14 @@ export function TeachersList({
         ]}
       >
         <div className="flex gap-2 items-center">
-          {onToggleDeleted && (
+          {onToggleDeleted && !isEmployeeView && (
             <DeletedViewToggle
               showDeleted={showDeleted}
               onToggle={onToggleDeleted}
               resourceName="teachers"
             />
           )}
-          {!showDeleted && <BulkUploadTeachersDialog />}
+          {!showDeleted && !isEmployeeView && <BulkUploadTeachersDialog />}
         </div>
       </PageHeader>
 

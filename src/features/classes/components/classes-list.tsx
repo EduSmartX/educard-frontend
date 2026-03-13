@@ -9,11 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { DataTable } from '@/components/ui/data-table';
+import { DataTable, type PaginationInfo } from '@/components/ui/data-table';
 import { ResourceFilter, type FilterField } from '@/components/filters/resource-filter';
 import { PageHeader, DeletedViewToggle } from '@/components/common';
 import type { Class } from '../types';
-import type { PaginationInfo } from '@/components/ui/data-table';
 import { createClassListColumns } from './class-table-columns';
 import { BulkUploadDialog } from './bulk-upload-dialog';
 import {
@@ -37,6 +36,7 @@ interface ClassesListProps {
   onPageSizeChange?: (pageSize: number) => void;
   onSearch?: (query: string) => void;
   onFilterChange?: (filters: Record<string, string>) => void;
+  viewMode?: 'admin' | 'employee'; // Admin = full CRUD, Employee = read-only
 }
 
 export function ClassesList({
@@ -54,7 +54,9 @@ export function ClassesList({
   onPageSizeChange,
   onSearch,
   onFilterChange,
+  viewMode = 'admin',
 }: ClassesListProps) {
+  const isEmployeeView = viewMode === 'employee';
   const [appliedSearchQuery, setAppliedSearchQuery] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [showFilters, setShowFilters] = useState(false);
@@ -73,16 +75,21 @@ export function ClassesList({
     onEdit,
     onDelete,
     isDeletedView: showDeleted,
+    viewMode, // Pass viewMode to configure columns
   });
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        title={getListTitle('Classes', showDeleted)}
-        description={getListDescription('Classes', showDeleted)}
+        title={isEmployeeView ? 'Classes' : getListTitle('Classes', showDeleted)}
+        description={
+          isEmployeeView
+            ? 'View all classes in your organization'
+            : getListDescription('Classes', showDeleted)
+        }
         actions={[
-          ...(!showDeleted
+          ...(!showDeleted && !isEmployeeView
             ? [
                 {
                   label: 'Add Class',
@@ -95,14 +102,14 @@ export function ClassesList({
         ]}
       >
         <div className="flex gap-2 items-center">
-          {onToggleDeleted && (
+          {onToggleDeleted && !isEmployeeView && (
             <DeletedViewToggle
               showDeleted={showDeleted}
               onToggle={onToggleDeleted}
               resourceName="classes"
             />
           )}
-          {!showDeleted && <BulkUploadDialog />}
+          {!showDeleted && !isEmployeeView && <BulkUploadDialog />}
         </div>
       </PageHeader>
 

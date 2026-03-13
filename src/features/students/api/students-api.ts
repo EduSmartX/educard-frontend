@@ -11,8 +11,10 @@ import type {
 } from '../types';
 import type { ApiListResponse, ApiDetailResponse } from '@/lib/utils/api-response-handler';
 
-const STUDENTS_BASE = '/students';
-const CLASS_STUDENTS_BASE = (classId: string) => `/students/classes/${classId}/students`;
+// Base URLs for students API (all users use same endpoints, backend handles permissions)
+const STUDENTS_BASE = '/students'; // Organization-level list
+const STUDENTS_BULK_BASE = '/students/bulk-operations'; // Bulk operations
+const CLASS_STUDENTS_BASE = (classId: string) => `/students/classes/${classId}/students`; // Class-level CRUD
 
 // API Response types for transformation
 interface StudentApiResponse {
@@ -36,6 +38,7 @@ interface StudentApiResponse {
   guardian_name?: string;
   gender?: string; // Some backends return gender at root level
   is_deleted?: boolean;
+  can_manage?: boolean; // Permission flag from backend
   created_at: string;
   updated_at: string;
   created_by_public_id?: string | null;
@@ -66,6 +69,7 @@ export async function fetchStudents(
       // Gender can be in user_info or at root level (depending on backend)
       gender: (student.user_info?.gender || student.gender || '') as StudentListItem['gender'],
       is_active: !student.is_deleted,
+      can_manage: student.can_manage ?? true, // Use backend value, default to true if not provided
     })
   );
 
@@ -83,15 +87,16 @@ export async function fetchStudent(publicId: string, isDeleted = false): Promise
   return response.data.data;
 }
 
-// Class-level (full CRUD)
+// Class-level (full CRUD) - Uses class-based endpoints
 export async function createStudent(
   classId: string,
   payload: CreateStudentPayload,
   forceCreate?: boolean
 ): Promise<Student> {
   const params = forceCreate ? { force_create: 'true' } : {};
+  
   const response = await api.post<ApiDetailResponse<Student>>(
-    `${CLASS_STUDENTS_BASE(classId)}/`,
+    CLASS_STUDENTS_BASE(classId),
     payload,
     { params }
   );
@@ -124,7 +129,7 @@ export async function reactivateStudent(classId: string, publicId: string): Prom
 // Bulk operations
 export async function downloadStudentTemplate(minimalFields = false): Promise<Blob> {
   const params = minimalFields ? { minimal_fields: 'true' } : {};
-  const response = await api.get(`${STUDENTS_BASE}/bulk-operations/download_template/`, {
+  const response = await api.get(`${STUDENTS_BULK_BASE}/download_template/`, {
     params,
     responseType: 'blob',
   });
@@ -134,9 +139,9 @@ export async function downloadStudentTemplate(minimalFields = false): Promise<Bl
 export async function bulkUploadStudents(file: File): Promise<BulkUploadResult> {
   const formData = new FormData();
   formData.append('file', file);
-
+  
   const response = await api.post<BulkUploadResult>(
-    `${STUDENTS_BASE}/bulk-operations/bulk_upload/`,
+    `${STUDENTS_BULK_BASE}/bulk_upload/`,
     formData,
     {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -149,8 +154,15 @@ export async function exportStudents(
   payload: ExportStudentsPayload = {}
 ): Promise<ExportStudentsResult> {
   const response = await api.post<ExportStudentsResult>(
-    `${STUDENTS_BASE}/bulk-operations/export_students_data/`,
+    `${STUDENTS_BULK_BASE}/export_students_data/`,
     payload
   );
   return response.data;
 }
+
+// Managed Classes - This endpoint doesn't exist in the reverted backend
+// Remove this function as it's not supported
+// export async function fetchManagedClasses(): Promise<ManagedClass[]> {
+//   const response = await api.get<ManagedClassesResponse>(`${STUDENTS_BASE}/managed-classes/`);
+//   return response.data.data.classes;
+// }

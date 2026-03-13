@@ -18,7 +18,12 @@ import { useDeletedView } from '@/hooks/use-deleted-view';
 
 type PageMode = 'list' | 'create' | 'edit' | 'view';
 
-export function TeachersManagement() {
+interface TeachersManagementProps {
+  viewMode?: 'admin' | 'employee'; // Admin = full CRUD, Employee = read-only
+}
+
+export function TeachersManagement({ viewMode = 'admin' }: TeachersManagementProps) {
+  const isEmployeeView = viewMode === 'employee';
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
 
@@ -78,7 +83,9 @@ export function TeachersManagement() {
 
   // Navigation handlers
   const handleView = (teacher: Teacher) => {
-    const path = ROUTES.TEACHERS_VIEW.replace(':id', teacher.public_id);
+    const path = isEmployeeView
+      ? ROUTES.EMPLOYEE.TEACHERS_VIEW.replace(':id', teacher.public_id)
+      : ROUTES.TEACHERS_VIEW.replace(':id', teacher.public_id);
     // Add query param if viewing deleted teacher
     navigate(showDeleted ? `${path}?deleted=true` : path);
   };
@@ -132,6 +139,11 @@ export function TeachersManagement() {
 
   // Render form modes (create, edit, view)
   if (mode !== 'list') {
+    // Employee view cannot access create/edit/view forms
+    if (isEmployeeView) {
+      navigate(ROUTES.EMPLOYEE.TEACHERS); // Redirect back to list
+      return null;
+    }
     return <TeacherFormPage />;
   }
 
@@ -147,7 +159,7 @@ export function TeachersManagement() {
         error={error || undefined}
         pagination={pagination}
         showDeleted={showDeleted}
-        onToggleDeleted={toggleDeletedView}
+        onToggleDeleted={isEmployeeView ? undefined : toggleDeletedView} // No deleted toggle for employees
         onCreateNew={handleCreateNew}
         onView={handleView}
         onEdit={handleEdit}
@@ -156,9 +168,10 @@ export function TeachersManagement() {
         onPageSizeChange={handlePageSizeChange}
         onSearch={handleSearch}
         onFilterChange={handleFilterChange}
+        viewMode={viewMode} // Pass viewMode to list
       />
 
-      {!showDeleted && (
+      {!showDeleted && !isEmployeeView && (
         <DeleteConfirmationDialog
           open={!!teacherToDelete}
           onOpenChange={(open) => !open && setTeacherToDelete(null)}
@@ -170,7 +183,7 @@ export function TeachersManagement() {
         />
       )}
 
-      {showDeleted && (
+      {showDeleted && !isEmployeeView && (
         <ReactivateConfirmationDialog
           open={!!teacherToReactivate}
           onOpenChange={(open) => !open && setTeacherToReactivate(null)}

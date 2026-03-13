@@ -39,6 +39,8 @@ interface StudentsListProps {
   onPageSizeChange?: (pageSize: number) => void;
   onSearch?: (query: string) => void;
   onFilterChange?: (filters: Record<string, string>) => void;
+  canCreateStudents?: boolean;  // NEW: Whether user can create students
+  isClassTeacher?: boolean;      // NEW: Whether user is a class teacher
 }
 
 export function StudentsList({
@@ -56,6 +58,8 @@ export function StudentsList({
   onPageSizeChange,
   onSearch,
   onFilterChange,
+  canCreateStudents = true,  // Default true for admins
+  isClassTeacher = false,
 }: StudentsListProps) {
   const [appliedSearchQuery, setAppliedSearchQuery] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -115,6 +119,7 @@ export function StudentsList({
     onEdit,
     onDelete: onDelete || (() => {}),
     isDeletedView: showDeleted,
+    isClassTeacher,  // Pass to columns for conditional Edit/Delete
   });
 
   return (
@@ -124,7 +129,7 @@ export function StudentsList({
         title={getListTitle('Students', showDeleted)}
         description={getListDescription('Students', showDeleted)}
         actions={[
-          ...(!showDeleted
+          ...(!showDeleted && canCreateStudents
             ? [
                 {
                   label: 'Add Student',
@@ -144,7 +149,7 @@ export function StudentsList({
               resourceName="students"
             />
           )}
-          {!showDeleted && <BulkUploadStudentsDialog />}
+          {!showDeleted && canCreateStudents && <BulkUploadStudentsDialog />}
         </div>
       </PageHeader>
 

@@ -4,7 +4,7 @@
  */
 
 /**
- * User role values as used by backend API
+ * User role values as used by backend API (lowercase)
  */
 export const USER_ROLES = {
   ADMIN: 'admin',
@@ -15,6 +15,20 @@ export const USER_ROLES = {
 } as const;
 
 export type UserRoleValue = (typeof USER_ROLES)[keyof typeof USER_ROLES];
+
+/**
+ * User role values in uppercase (for frontend comparisons)
+ * Used when comparing roles that have been normalized to uppercase
+ */
+export const USER_ROLES_UPPER = {
+  ADMIN: 'ADMIN',
+  TEACHER: 'TEACHER',
+  STUDENT: 'STUDENT',
+  PARENT: 'PARENT',
+  STAFF: 'STAFF',
+} as const;
+
+export type UserRoleUpper = (typeof USER_ROLES_UPPER)[keyof typeof USER_ROLES_UPPER];
 
 /**
  * Gender values as used by backend API

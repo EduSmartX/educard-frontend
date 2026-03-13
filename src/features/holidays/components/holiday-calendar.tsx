@@ -1,7 +1,7 @@
 /**
  * Organization Holiday Calendar Page
  * Main component for managing organization-wide holidays
- * Features: Calendar view, Table view, Bulk upload
+ * Features: Calendar view, Table view, Bulk upload (admin only)
  */
 
 import { useState, useMemo } from 'react';
@@ -20,6 +20,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { PageHeader } from '@/components/common';
+import { useRole } from '@/hooks/use-role';
 import type { ViewMode, Holiday } from '../types';
 import { fetchHolidays, fetchWorkingDayPolicy } from '../api/holidays-api';
 import { generateWeekendHolidays } from '../utils/holiday-utils';
@@ -30,10 +31,15 @@ import { HolidayFormDialog } from './holiday-form-dialog';
 
 /**
  * Main Holiday Calendar Component
+ * Automatically adapts UI based on user role
  */
 export function HolidayCalendar() {
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
   const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // Get user role to determine permissions
+  const { role } = useRole();
+  const isAdmin = role === 'ADMIN';
 
   // Calculate date range for fetching
   const { fetchFromDate, fetchToDate } = useMemo(() => {
@@ -75,7 +81,9 @@ export function HolidayCalendar() {
 
   // Generate weekend holidays based on policy
   const generatedWeekendHolidays = useMemo(() => {
-    if (!workingDayPolicy) return [];
+    if (!workingDayPolicy) {
+      return [];
+    }
 
     return generateWeekendHolidays({
       startDate: new Date(fetchFromDate),
@@ -109,12 +117,19 @@ export function HolidayCalendar() {
       {/* Page Header */}
       <PageHeader
         title="Holiday Calendar"
-        description="Manage organization-wide holidays and working days"
+        description={
+          isAdmin
+            ? 'Manage organization-wide holidays and working days'
+            : 'View organization-wide holidays and working days'
+        }
       >
-        <div className="flex items-center gap-3">
-          <BulkUploadDialog />
-          <HolidayFormDialog mode="create" showTrigger={true} />
-        </div>
+        {/* Action buttons - Only show for admins */}
+        {isAdmin && (
+          <div className="flex items-center gap-3">
+            <BulkUploadDialog />
+            <HolidayFormDialog mode="create" showTrigger={true} />
+          </div>
+        )}
       </PageHeader>
 
       {/* Main Card */}

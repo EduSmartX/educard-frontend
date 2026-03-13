@@ -8,13 +8,16 @@ import {
   Calendar,
   CalendarDays,
   CalendarCheck,
-  Users,
   BookOpen,
   ClipboardCheck,
   FileText,
   Settings,
   MessageSquare,
   Briefcase,
+  AlertTriangle,
+  UserCog,
+  School,
+  GraduationCap,
 } from 'lucide-react';
 import type { SidebarSection } from '@/components/layout/dashboard-sidebar';
 import { ROUTES } from '@/constants/app-config';
@@ -33,23 +36,6 @@ export const employeeSidebarConfig: SidebarSection[] = [
         label: 'My Calendar',
         icon: Calendar,
         path: ROUTES.CALENDAR,
-      },
-    ],
-  },
-  {
-    title: 'TEACHING',
-    items: [
-      {
-        id: 'my-classes',
-        label: 'My Classes',
-        icon: Users,
-        path: ROUTES.CLASSES,
-      },
-      {
-        id: 'subjects',
-        label: 'Subjects',
-        icon: BookOpen,
-        path: ROUTES.SUBJECTS,
       },
     ],
   },
@@ -118,13 +104,48 @@ export const employeeSidebarConfig: SidebarSection[] = [
     ],
   },
   {
+    title: 'MANAGE',
+    items: [
+      {
+        id: 'students',
+        label: 'Students',
+        icon: GraduationCap,
+        path: ROUTES.STUDENTS,
+      },
+      {
+        id: 'subjects',
+        label: 'Subjects',
+        icon: BookOpen,
+        path: ROUTES.SUBJECTS,
+      },
+      {
+        id: 'teachers',
+        label: 'Teachers',
+        icon: UserCog,
+        path: ROUTES.EMPLOYEE.TEACHERS,
+      },
+      {
+        id: 'classes',
+        label: 'Classes',
+        icon: School,
+        path: ROUTES.EMPLOYEE.CLASSES,
+      },
+    ],
+  },
+  {
     title: 'SETTINGS',
     items: [
       {
         id: 'holidays',
         label: 'Holiday Calendar',
         icon: CalendarDays,
-        path: ROUTES.HOLIDAYS,
+        path: ROUTES.EMPLOYEE.HOLIDAYS,
+      },
+      {
+        id: 'exceptional-work',
+        label: 'Exceptional Work Policy',
+        icon: AlertTriangle,
+        path: ROUTES.EMPLOYEE.EXCEPTIONAL_WORK,
       },
       {
         id: 'profile',
