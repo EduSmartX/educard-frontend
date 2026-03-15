@@ -73,10 +73,37 @@ export const QUERY_KEYS = {
   },
   // Leave
   leave: {
-    requests: (filters?: unknown) => ['leave', 'requests', filters],
+    all: ['leave'],
+    requests: (filters?: unknown) => ['leave-requests', filters],
+    request: (id: string) => ['leave-request', id],
     myRequests: (filters?: unknown) => ['leave', 'my-requests', filters],
+    reviews: (filters?: unknown) => ['leave-request-reviews', filters],
     balance: (userId?: string | number) => ['leave', 'balance', userId],
-    allocations: ['leave', 'allocations'],
+    balances: (filters?: unknown) => ['leave-balances', filters],
+    userBalances: (userId?: string | number) => ['user-leave-balances', userId],
+    allocations: (filters?: unknown) => ['leave-allocations', filters],
+    userAllocations: (userId?: string | number) => ['user-leave-allocations', userId],
+    types: ['leave-types'],
+    teacherContext: ['leave', 'teacher-context'],
+  },
+  // Users & Classes (for leave management)
+  users: {
+    manageable: (userRole?: string) => ['manageable-users', userRole],
+  },
+  classesForLeave: {
+    forReviews: (userRole?: string, isAdmin?: boolean, context?: unknown) => [
+      'classes-list-for-reviews',
+      userRole,
+      isAdmin,
+      context,
+    ],
+    forBalances: (userRole?: string, isAdmin?: boolean, context?: unknown) => [
+      'classes-list-for-balances',
+      userRole,
+      isAdmin,
+      context,
+    ],
+    students: (classId?: string | number) => ['class-students', classId],
   },
   // Organization
   organization: {
@@ -266,6 +293,9 @@ export const ROUTES = {
       APPLY: '/employee/leave/apply',
       HISTORY: '/employee/leave/history',
       BALANCE: '/employee/leave/balance',
+      REVIEWS: '/employee/leave/reviews',
+      ALLOCATIONS: '/employee/leave/allocations',
+      MANAGE_BALANCE: '/employee/leave/manage-balance',
     },
     PROFILE: '/employee/profile',
   },

@@ -80,7 +80,7 @@ export function LeaveBalanceDialog({
   const createBalanceMutation = useCreateLeaveBalance();
   const updateBalanceMutation = useUpdateLeaveBalance();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!userPublicId) {
@@ -137,7 +137,7 @@ export function LeaveBalanceDialog({
 
   return (
     <Dialog open={open} onOpenChange={() => onClose()}>
-      <DialogContent className="sm:max-w-[550px] bg-white">
+      <DialogContent className="bg-white sm:max-w-[550px]">
         <DialogHeader className="space-y-3">
           <DialogTitle className="text-2xl font-bold text-gray-900">
             {mode === 'add' ? 'Add Leave Balance' : 'Edit Leave Balance'}
@@ -163,12 +163,12 @@ export function LeaveBalanceDialog({
               disabled={mode === 'edit'} // Can't change allocation once created
             />
             {mode === 'edit' && (
-              <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
+              <p className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-600">
                 ⚠️ Leave allocation cannot be changed after creation
               </p>
             )}
             {mode === 'add' && availableAllocations.length === 0 && (
-              <p className="text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">
+              <p className="rounded border border-red-200 bg-red-50 p-2 text-xs text-red-600">
                 ⚠️ No available leave allocation policies. All policies have been assigned.
               </p>
             )}
@@ -187,7 +187,7 @@ export function LeaveBalanceDialog({
               step={0.5}
               required
               placeholder={FormPlaceholders.ENTER_ALLOCATED_DAYS}
-              className="text-base h-11"
+              className="h-11 text-base"
             />
           </div>
 
@@ -203,7 +203,7 @@ export function LeaveBalanceDialog({
               min={0}
               step={0.5}
               placeholder={FormPlaceholders.ENTER_CARRY_FORWARD_DAYS}
-              className="text-base h-11"
+              className="h-11 text-base"
             />
           </div>
 

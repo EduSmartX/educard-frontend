@@ -35,10 +35,9 @@ function hasLeaveAllocation(obj: LeaveObject): obj is LeaveBalance | LeaveWithNa
 }
 
 /**
- * Get proper leave type name with priority:
- * 1. Custom name (leave_name) if set
- * 2. Display name (leave_allocation.display_name) if set
- * 3. Master name (leave_allocation.leave_type_name or leave_type_name) as fallback
+ * Get proper leave type name with format:
+ * - If custom name exists: "Master Leave Name (Custom Name)"
+ * - Otherwise: "Master Leave Name"
  */
 export function getLeaveTypeName(leave: LeaveObject): string {
   // Handle simple summary object with just leave_type_name
@@ -48,18 +47,16 @@ export function getLeaveTypeName(leave: LeaveObject): string {
 
   // Handle objects with leave_allocation structure
   if (hasLeaveAllocation(leave)) {
-    // Check custom name first
-    if (leave.leave_name?.trim()) {
-      return leave.leave_name.trim();
+    const masterName = leave.leave_allocation?.leave_type_name || 'Unknown';
+    const customName = leave.leave_name?.trim();
+
+    // If custom name exists and is different from master name, show both
+    if (customName && customName !== masterName) {
+      return `${masterName} (${customName})`;
     }
 
-    // Check display name
-    if (leave.leave_allocation?.display_name?.trim()) {
-      return leave.leave_allocation.display_name.trim();
-    }
-
-    // Fallback to master name
-    return leave.leave_allocation?.leave_type_name || 'Unknown';
+    // Otherwise just show master name
+    return masterName;
   }
 
   return 'Unknown';

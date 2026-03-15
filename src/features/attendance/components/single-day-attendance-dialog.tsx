@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { format } from 'date-fns';
+import { format, startOfWeek, endOfWeek } from 'date-fns';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Sun, Moon } from 'lucide-react';
+import { Loader2, Sun, Moon, XCircle, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -12,7 +12,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { bulkSubmitEmployeeAttendance } from '@/features/attendance/api/attendance-api';
+import { useTimesheetSubmissions } from '../hooks';
 
 interface SingleDayAttendanceDialogProps {
   open: boolean;
@@ -21,27 +23,54 @@ interface SingleDayAttendanceDialogProps {
 }
 
 type AttendanceSession = 'MORNING' | 'AFTERNOON';
+type AttendanceMode = 'sessions' | 'absent';
 
 export function SingleDayAttendanceDialog({
   open,
   onOpenChange,
   date,
 }: SingleDayAttendanceDialogProps) {
+  const [mode, setMode] = useState<AttendanceMode>('sessions');
   const [selectedSessions, setSelectedSessions] = useState<AttendanceSession[]>([]);
   const queryClient = useQueryClient();
+
+  const weekStart = startOfWeek(date, { weekStartsOn: 0 }); // Sunday
+  const weekEnd = endOfWeek(date, { weekStartsOn: 0 }); // Saturday
+
+  // Check if timesheet for this week is approved
+  const { data: timesheetData } = useTimesheetSubmissions({
+    week_start_date: format(weekStart, 'yyyy-MM-dd'),
+    week_end_date: format(weekEnd, 'yyyy-MM-dd'),
+  });
+
+  const timesheetSubmissions = timesheetData?.results || [];
+  const weekTimesheet = timesheetSubmissions[0];
+  const isTimesheetApproved = weekTimesheet?.submission_status === 'APPROVED';
 
   const mutation = useMutation({
     mutationFn: () => {
       const dateStr = format(date, 'yyyy-MM-dd');
-      
-      // Determine attendance status based on selected sessions
+
+      // Determine attendance status based on mode and selected sessions
       let status: 'P' | 'HP' | 'A';
-      if (selectedSessions.length === 2) {
-        status = 'P'; // Full day present
-      } else if (selectedSessions.length === 1) {
-        status = 'HP'; // Half day present
+      let morningPresent: boolean;
+      let afternoonPresent: boolean;
+
+      if (mode === 'absent') {
+        status = 'A';
+        morningPresent = false;
+        afternoonPresent = false;
       } else {
-        status = 'A'; // Absent (no sessions selected)
+        morningPresent = selectedSessions.includes('MORNING');
+        afternoonPresent = selectedSessions.includes('AFTERNOON');
+
+        if (selectedSessions.length === 2) {
+          status = 'P';
+        } else if (selectedSessions.length === 1) {
+          status = 'HP';
+        } else {
+          status = 'A';
+        }
       }
 
       const submission = {
@@ -53,8 +82,8 @@ export function SingleDayAttendanceDialog({
           {
             date: dateStr,
             attendance_status: status,
-            morning_present: selectedSessions.includes('MORNING'),
-            afternoon_present: selectedSessions.includes('AFTERNOON'),
+            morning_present: morningPresent,
+            afternoon_present: afternoonPresent,
           },
         ],
       };
@@ -65,17 +94,19 @@ export function SingleDayAttendanceDialog({
       toast.success('Attendance submitted successfully', {
         description: `Submitted for ${format(date, 'MMMM d, yyyy')}`,
       });
-      
+
       // Invalidate attendance queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['timesheet', 'attendance'] });
-      
+
       // Reset and close
+      setMode('sessions');
       setSelectedSessions([]);
       onOpenChange(false);
     },
     onError: (error: unknown) => {
       const err = error as { response?: { data?: { detail?: string } }; message?: string };
-      const errorMessage = err?.response?.data?.detail || err?.message || 'Failed to submit attendance';
+      const errorMessage =
+        err?.response?.data?.detail || err?.message || 'Failed to submit attendance';
       toast.error('Submission Failed', {
         description: errorMessage,
         duration: 6000,
@@ -84,16 +115,20 @@ export function SingleDayAttendanceDialog({
   });
 
   const toggleSession = (session: AttendanceSession) => {
+    setMode('sessions');
     setSelectedSessions((prev) =>
-      prev.includes(session)
-        ? prev.filter((s) => s !== session)
-        : [...prev, session]
+      prev.includes(session) ? prev.filter((s) => s !== session) : [...prev, session]
     );
   };
 
+  const handleAbsent = () => {
+    setMode('absent');
+    setSelectedSessions([]);
+  };
+
   const handleSubmit = () => {
-    if (selectedSessions.length === 0) {
-      toast.error('Please select at least one session');
+    if (mode === 'sessions' && selectedSessions.length === 0) {
+      toast.error('Please select at least one session or mark as absent');
       return;
     }
     mutation.mutate();
@@ -101,6 +136,7 @@ export function SingleDayAttendanceDialog({
 
   const handleClose = () => {
     if (!mutation.isPending) {
+      setMode('sessions');
       setSelectedSessions([]);
       onOpenChange(false);
     }
@@ -108,7 +144,7 @@ export function SingleDayAttendanceDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md bg-white">
+      <DialogContent className="bg-white sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Submit Attendance</DialogTitle>
           <DialogDescription>
@@ -116,22 +152,32 @@ export function SingleDayAttendanceDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4 bg-white">
-          <div className="text-sm text-gray-600 mb-2">
-            Select the sessions you were present:
+        {isTimesheetApproved && (
+          <Alert className="border-amber-200 bg-amber-50">
+            <Lock className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              <strong>Timesheet Approved:</strong> The timesheet for this week has been approved.
+              You cannot modify attendance for this date.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <div className="space-y-4 bg-white py-4">
+          <div className="mb-2 text-sm text-gray-600">
+            Select the sessions you were present, or mark as absent:
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <Button
               type="button"
               variant={selectedSessions.includes('MORNING') ? 'default' : 'outline'}
-              className={`h-20 flex flex-col gap-2 ${
-                selectedSessions.includes('MORNING') 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+              className={`flex h-20 flex-col gap-2 ${
+                selectedSessions.includes('MORNING')
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
                   : 'hover:bg-gray-50'
               }`}
               onClick={() => toggleSession('MORNING')}
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || mode === 'absent' || isTimesheetApproved}
             >
               <Sun className="h-6 w-6" />
               <span className="text-sm font-medium">Morning</span>
@@ -140,26 +186,58 @@ export function SingleDayAttendanceDialog({
             <Button
               type="button"
               variant={selectedSessions.includes('AFTERNOON') ? 'default' : 'outline'}
-              className={`h-20 flex flex-col gap-2 ${
-                selectedSessions.includes('AFTERNOON') 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+              className={`flex h-20 flex-col gap-2 ${
+                selectedSessions.includes('AFTERNOON')
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
                   : 'hover:bg-gray-50'
               }`}
               onClick={() => toggleSession('AFTERNOON')}
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || mode === 'absent' || isTimesheetApproved}
             >
               <Moon className="h-6 w-6" />
               <span className="text-sm font-medium">Afternoon</span>
             </Button>
           </div>
 
-          {selectedSessions.length > 0 && (
-            <div className="text-sm text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="text-muted-foreground bg-white px-2">Or</span>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant={mode === 'absent' ? 'destructive' : 'outline'}
+            className={`flex h-16 w-full items-center justify-center gap-2 ${
+              mode === 'absent'
+                ? 'bg-red-600 text-white hover:bg-red-700'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+            onClick={handleAbsent}
+            disabled={mutation.isPending || isTimesheetApproved}
+          >
+            <XCircle className="h-5 w-5" />
+            <span className="font-medium">Mark as Absent</span>
+          </Button>
+
+          {mode === 'sessions' && selectedSessions.length > 0 && (
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-center text-sm">
               {selectedSessions.length === 2 ? (
-                <span className="text-blue-700 font-medium">✓ Full Day Present</span>
+                <span className="font-medium text-blue-700">✓ Full Day Present</span>
               ) : (
-                <span className="text-blue-700 font-medium">✓ Half Day Present ({selectedSessions[0].toLowerCase()})</span>
+                <span className="font-medium text-blue-700">
+                  ✓ Half Day Present ({selectedSessions[0].toLowerCase()})
+                </span>
               )}
+            </div>
+          )}
+
+          {mode === 'absent' && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-center text-sm">
+              <span className="font-medium text-red-700">✗ Marked as Absent (Full Day)</span>
             </div>
           )}
         </div>
@@ -175,7 +253,11 @@ export function SingleDayAttendanceDialog({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={mutation.isPending || selectedSessions.length === 0}
+            disabled={
+              mutation.isPending ||
+              (mode === 'sessions' && selectedSessions.length === 0) ||
+              isTimesheetApproved
+            }
             className="flex-1"
           >
             {mutation.isPending ? (

@@ -4,12 +4,81 @@
  */
 
 import api from '../api';
+import { isAdminUser } from '../utils/auth-utils';
 import {
   handleListResponse,
   handleDetailResponse,
   handlePaginatedResponse,
   type ApiListResponse,
 } from '../utils/api-response-handler';
+
+// ============================================================================
+// API Endpoint Configuration
+// ============================================================================
+
+// Admin endpoints - Full CRUD operations
+const ADMIN_ENDPOINTS = {
+  ALLOCATIONS: '/leave/admin/allocations/',
+  BALANCES: '/leave/admin/balances/',
+  REQUESTS: '/leave/admin/requests/',
+};
+
+// Employee endpoints - Employee self-service and class teacher access
+const EMPLOYEE_ENDPOINTS = {
+  ALLOCATIONS: '/leave/employee/allocations/',
+  BALANCES: '/leave/employee/balances/',
+  REQUESTS: '/leave/employee/requests/',
+  REVIEWS: '/leave/employee/reviews/',
+};
+
+/**
+ * Get the appropriate endpoint based on user role and operation type
+ */
+function getEndpoint(
+  type: 'allocations' | 'balances' | 'requests' | 'reviews',
+  isWriteOperation = false
+): string {
+  // Write operations always use admin endpoint
+  if (isWriteOperation) {
+    switch (type) {
+      case 'allocations':
+        return ADMIN_ENDPOINTS.ALLOCATIONS;
+      case 'balances':
+        return ADMIN_ENDPOINTS.BALANCES;
+      case 'requests':
+        return ADMIN_ENDPOINTS.REQUESTS;
+      default:
+        return ADMIN_ENDPOINTS.REQUESTS;
+    }
+  }
+
+  // Read operations: use employee endpoint for non-admins, admin endpoint for admins
+  if (isAdminUser()) {
+    switch (type) {
+      case 'allocations':
+        return ADMIN_ENDPOINTS.ALLOCATIONS;
+      case 'balances':
+        return ADMIN_ENDPOINTS.BALANCES;
+      case 'requests':
+        return ADMIN_ENDPOINTS.REQUESTS;
+      default:
+        return ADMIN_ENDPOINTS.REQUESTS;
+    }
+  } else {
+    switch (type) {
+      case 'allocations':
+        return EMPLOYEE_ENDPOINTS.ALLOCATIONS;
+      case 'balances':
+        return EMPLOYEE_ENDPOINTS.BALANCES;
+      case 'requests':
+        return EMPLOYEE_ENDPOINTS.REQUESTS;
+      case 'reviews':
+        return EMPLOYEE_ENDPOINTS.REVIEWS;
+      default:
+        return EMPLOYEE_ENDPOINTS.REQUESTS;
+    }
+  }
+}
 
 // ============================================================================
 // Types & Interfaces
@@ -157,9 +226,12 @@ export const leaveApi = {
     search?: string;
     leave_type?: number;
     ordering?: string;
+    readOnly?: boolean;
   }): Promise<ApiListResponse<LeaveAllocation>> => {
-    const { data } = await api.get('/leave/leave-allocations/', {
-      params,
+    const endpoint = getEndpoint('allocations', false); // Read operation
+    const { readOnly: _readOnly, ...apiParams } = params || {};
+    const { data } = await api.get(endpoint, {
+      params: apiParams,
     });
     return handlePaginatedResponse<LeaveAllocation>(data, 'getAllocations');
   },
@@ -168,7 +240,8 @@ export const leaveApi = {
    * Get a specific leave allocation by ID
    */
   getAllocation: async (publicId: string): Promise<LeaveAllocation> => {
-    const { data } = await api.get(`/leave/leave-allocations/${publicId}/`);
+    const endpoint = getEndpoint('allocations', false);
+    const { data } = await api.get(`${endpoint}${publicId}/`);
     return handleDetailResponse<LeaveAllocation>(data, 'getAllocation');
   },
 
@@ -176,7 +249,8 @@ export const leaveApi = {
    * Create a new leave allocation
    */
   createAllocation: async (payload: LeaveAllocationPayload): Promise<LeaveAllocation> => {
-    const { data } = await api.post('/leave/leave-allocations/', payload);
+    const endpoint = getEndpoint('allocations', true); // Write operation
+    const { data } = await api.post(endpoint, payload);
     return handleDetailResponse<LeaveAllocation>(data, 'createAllocation');
   },
 
@@ -187,7 +261,8 @@ export const leaveApi = {
     publicId: string,
     payload: Partial<LeaveAllocationPayload>
   ): Promise<LeaveAllocation> => {
-    const { data } = await api.patch(`/leave/leave-allocations/${publicId}/`, payload);
+    const endpoint = getEndpoint('allocations', true); // Write operation
+    const { data } = await api.patch(`${endpoint}${publicId}/`, payload);
     return handleDetailResponse<LeaveAllocation>(data, 'updateAllocation');
   },
 
@@ -195,7 +270,8 @@ export const leaveApi = {
    * Delete a leave allocation
    */
   deleteAllocation: async (publicId: string): Promise<void> => {
-    await api.delete(`/leave/leave-allocations/${publicId}/`);
+    const endpoint = getEndpoint('allocations', true); // Write operation
+    await api.delete(`${endpoint}${publicId}/`);
   },
 
   // ========== Leave Balances ==========
@@ -210,7 +286,8 @@ export const leaveApi = {
     user?: string;
     leave_type?: number;
   }): Promise<ApiListResponse<LeaveBalance>> => {
-    const { data } = await api.get('/leave/leave-balances/', {
+    const endpoint = getEndpoint('balances', false); // Read operation
+    const { data } = await api.get(endpoint, {
       params,
     });
     return handlePaginatedResponse<LeaveBalance>(data, 'getBalances');
@@ -220,7 +297,8 @@ export const leaveApi = {
    * Get a specific leave balance by ID
    */
   getBalance: async (publicId: string): Promise<LeaveBalance> => {
-    const { data } = await api.get(`/leave/leave-balances/${publicId}/`);
+    const endpoint = getEndpoint('balances', false);
+    const { data } = await api.get(`${endpoint}${publicId}/`);
     return handleDetailResponse<LeaveBalance>(data, 'getBalance');
   },
 
@@ -236,7 +314,8 @@ export const leaveApi = {
     status?: string;
     user?: string;
   }): Promise<ApiListResponse<LeaveRequest>> => {
-    const { data } = await api.get('/leave/leave-requests/', {
+    const endpoint = getEndpoint('requests', false); // Read operation
+    const { data } = await api.get(endpoint, {
       params,
     });
     return handlePaginatedResponse<LeaveRequest>(data, 'getRequests');
@@ -246,7 +325,8 @@ export const leaveApi = {
    * Get a specific leave request by ID
    */
   getRequest: async (publicId: string): Promise<LeaveRequest> => {
-    const { data } = await api.get(`/leave/leave-requests/${publicId}/`);
+    const endpoint = getEndpoint('requests', false);
+    const { data } = await api.get(`${endpoint}${publicId}/`);
     return handleDetailResponse<LeaveRequest>(data, 'getRequest');
   },
 };

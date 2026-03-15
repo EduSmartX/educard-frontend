@@ -41,12 +41,8 @@ const AdminDashboardPage = lazy(
 const EmployeeDashboardPage = lazy(
   () => import('./features/employee/dashboard/pages/employee-dashboard-page')
 );
-const EmployeeTeachersPage = lazy(
-  () => import('./features/employee/pages/employee-teachers-page')
-);
-const EmployeeClassesPage = lazy(
-  () => import('./features/employee/pages/employee-classes-page')
-);
+const EmployeeTeachersPage = lazy(() => import('./features/employee/pages/employee-teachers-page'));
+const EmployeeClassesPage = lazy(() => import('./features/employee/pages/employee-classes-page'));
 const ParentDashboardPage = lazy(
   () => import('./features/parent/dashboard/pages/parent-dashboard-page')
 );
@@ -123,8 +119,8 @@ const EmployeeTimesheetSubmitPage = lazy(() =>
     default: m.EmployeeTimesheetSubmitPage,
   }))
 );
-const TimesheetApprovalsPage = lazy(() =>
-  import('./features/attendance/pages/timesheet-approvals-page')
+const TimesheetApprovalsPage = lazy(
+  () => import('./features/attendance/pages/timesheet-approvals-page')
 );
 
 // Preferences
@@ -144,7 +140,7 @@ const ComingSoonPage = lazy(() => import('./pages/coming-soon-page'));
 
 function App() {
   return (
-    <div className="min-h-screen bg-background font-sans antialiased">
+    <div className="bg-background min-h-screen font-sans antialiased">
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public Routes */}
@@ -175,6 +171,12 @@ function App() {
               <Route path="teachers" element={<EmployeeTeachersPage />} />
               <Route path="teachers/:id" element={<TeacherFormPage />} />
               <Route path="classes-list" element={<EmployeeClassesPage />} />
+
+              {/* Employee Leave Management */}
+              <Route path="leave/dashboard" element={<LeaveDashboardPage />} />
+              <Route path="leave/reviews" element={<LeaveRequestReviewsPage />} />
+              <Route path="leave/allocations" element={<LeaveAllocationsPage />} />
+              <Route path="leave/manage-balance" element={<ManageLeaveBalances />} />
             </Route>
 
             <Route path="/parent" element={<ParentRoute />}>
@@ -295,8 +297,8 @@ function NotFound() {
     <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">
         <h1 className="text-4xl font-bold">404</h1>
-        <p className="mt-2 text-muted-foreground">Page not found</p>
-        <a href="/" className="mt-4 inline-block text-primary hover:underline">
+        <p className="text-muted-foreground mt-2">Page not found</p>
+        <a href="/" className="text-primary mt-4 inline-block hover:underline">
           Go to Home
         </a>
       </div>

@@ -50,8 +50,7 @@ import {
   useCalculateWorkingDays,
 } from '../hooks';
 import { leaveRequestFormSchema, type LeaveRequestFormData } from '../schemas';
-import type { HolidayInfo } from '../types';
-import { LEAVE_STATUS_CONFIG } from '../types';
+import { LEAVE_STATUS_CONFIG, type HolidayInfo } from '../types';
 
 type PageMode = 'create' | 'edit' | 'view';
 
@@ -67,8 +66,12 @@ export function LeaveRequestFormPageNew() {
   const formPopulated = useRef(false);
 
   const getMode = (): PageMode => {
-    if (!id) return 'create';
-    if (location.pathname.endsWith('/edit')) return 'edit';
+    if (!id) {
+      return 'create';
+    }
+    if (location.pathname.endsWith('/edit')) {
+      return 'edit';
+    }
     return 'view';
   };
 
@@ -123,8 +126,12 @@ export function LeaveRequestFormPageNew() {
 
   useEffect(() => {
     if (startDate && endDate) {
-      if (mode === 'view') return;
-      if (mode === 'edit' && isInitialMount.current) return;
+      if (mode === 'view') {
+        return;
+      }
+      if (mode === 'edit' && isInitialMount.current) {
+        return;
+      }
 
       const start = new Date(startDate);
       const end = new Date(endDate);
@@ -196,7 +203,9 @@ export function LeaveRequestFormPageNew() {
   const handleBack = () => navigate('/leave/dashboard');
 
   const handleEdit = () => {
-    if (id) navigate(`/leave/requests/${id}/edit`);
+    if (id) {
+      navigate(`/leave/requests/${id}/edit`);
+    }
   };
 
   const isLoading = isLoadingBalances || (!!id && isLoadingRequest);
@@ -378,7 +387,7 @@ export function LeaveRequestFormPageNew() {
                   control={form.control}
                   name="is_half_day"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormItem className="flex flex-row items-start space-y-0 space-x-3 rounded-md border p-4">
                       <FormControl>
                         <Checkbox
                           checked={field.value}
@@ -464,7 +473,7 @@ export function LeaveRequestFormPageNew() {
 
               {/* Submit Button */}
               {mode !== 'view' && (
-                <div className="flex justify-end gap-2 pt-4 border-t">
+                <div className="flex justify-end gap-2 border-t pt-4">
                   <Button
                     type="button"
                     variant="outline"

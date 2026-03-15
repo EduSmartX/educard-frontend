@@ -5,9 +5,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, Users, User, Check, X, Eye } from 'lucide-react';
+import { RefreshCw, Users, User, Check, X, Eye, Info } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/use-auth';
+import {
+  USER_ROLES,
+  ErrorMessages,
+  FormPlaceholders,
+  SuccessMessages,
+  QUERY_KEYS,
+} from '@/constants';
 import { PageHeader } from '@/components/common/page-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +24,6 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { Combobox } from '@/components/ui/combobox';
-import { ErrorMessages, FormPlaceholders, SuccessMessages } from '@/constants';
 import {
   Select,
   SelectContent,
@@ -24,10 +31,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import api from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/utils/date-utils';
-import { useApproveLeaveRequest, useRejectLeaveRequest } from '../hooks';
+import {
+  useApproveLeaveRequest,
+  useRejectLeaveRequest,
+  useTeacherManagementContext,
+} from '../hooks';
 import { LeaveRequestReviewDialog } from './leave-request-review-dialog';
 
 type UserRole = 'staff' | 'student';
@@ -101,6 +113,14 @@ const STATUS_CONFIG = {
 
 export function LeaveRequestReviews() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Check if user is admin
+  const isAdmin = user?.role === USER_ROLES.ADMIN;
+
+  // Fetch teacher's management context (only for non-admins)
+  const { data: teacherContext, isLoading: isLoadingContext } = useTeacherManagementContext();
+
   const [userRole, setUserRole] = useState<UserRole>('staff');
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedUser, setSelectedUser] = useState('');
@@ -146,7 +166,7 @@ export function LeaveRequestReviews() {
 
   // Fetch leave types
   const { data: leaveTypesData } = useQuery({
-    queryKey: ['leave-types'],
+    queryKey: QUERY_KEYS.leave.types,
     queryFn: async () => {
       const response = await api.get('/core/leave-types/');
       return response.data;
@@ -157,23 +177,69 @@ export function LeaveRequestReviews() {
 
   // Fetch classes for student mode
   const { data: classesData, isLoading: isLoadingClasses } = useQuery({
-    queryKey: ['classes-list'],
+    queryKey: QUERY_KEYS.classesForLeave.forReviews(userRole, isAdmin, teacherContext),
     queryFn: async () => {
-      const response = await api.get('/classes/admin/?page=1&page_size=100&is_active=true');
-      return response.data;
+      // For admins, fetch all active classes
+      if (isAdmin) {
+        const response = await api.get('/classes/admin/?page=1&page_size=100&is_deleted=false');
+        return response.data;
+      }
+
+      // For teachers, get classes where they are class teacher from management context
+      if (teacherContext?.class_teacher_for) {
+        return { data: teacherContext.class_teacher_for };
+      }
+      return { data: [] };
     },
     enabled: userRole === 'student',
   });
 
-  const classes = useMemo(() => {
-    if (!classesData?.data) return [];
-    if (Array.isArray(classesData.data)) return classesData.data as ClassData[];
+  const classes = useMemo((): ClassData[] => {
+    if (!classesData?.data) {
+      return [];
+    }
+    if (Array.isArray(classesData.data)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return classesData.data.map((cls: any) => {
+        // Handle admin API response (has full class_master object)
+        if (
+          cls.class_master &&
+          typeof cls.class_master === 'object' &&
+          'name' in cls.class_master
+        ) {
+          return {
+            public_id: cls.public_id,
+            name: cls.name,
+            class_master: {
+              id: cls.class_master.id || 0,
+              name: cls.class_master.name,
+              code: cls.class_master.code || '',
+              display_order: cls.class_master.display_order || 0,
+            },
+            is_active: !cls.is_deleted,
+          };
+        }
+
+        // Handle teacher management context response (class_master is just a string)
+        return {
+          public_id: cls.public_id,
+          name: cls.name,
+          class_master: {
+            id: 0,
+            name: typeof cls.class_master === 'string' ? cls.class_master : 'Unknown',
+            code: '',
+            display_order: 0,
+          },
+          is_active: true,
+        };
+      });
+    }
     return [];
   }, [classesData]);
 
   // Fetch manageable users
   const { data: usersData, isLoading: isLoadingUsers } = useQuery({
-    queryKey: ['manageable-users', userRole],
+    queryKey: QUERY_KEYS.users.manageable(userRole),
     queryFn: async () => {
       const response = await api.get(`/users/profile/manageable-users/?role=${userRole}`);
       return response.data;
@@ -182,7 +248,9 @@ export function LeaveRequestReviews() {
   });
 
   const users = useMemo(() => {
-    if (!usersData?.data?.users) return [];
+    if (!usersData?.data?.users) {
+      return [];
+    }
     return usersData.data.users as ManageableUser[];
   }, [usersData]);
 
@@ -227,10 +295,10 @@ export function LeaveRequestReviews() {
     isLoading: isLoadingRequests,
     refetch,
   } = useQuery({
-    queryKey: ['leave-request-reviews', queryParams],
+    queryKey: QUERY_KEYS.leave.reviews(queryParams),
     queryFn: async () => {
       const queryString = new URLSearchParams(queryParams).toString();
-      const response = await api.get(`/leave/leave-request-reviews/?${queryString}`);
+      const response = await api.get(`/leave/employee/reviews/?${queryString}`);
       return response.data;
     },
     enabled: userRole === 'staff' || (userRole === 'student' && !!selectedClass),
@@ -253,7 +321,9 @@ export function LeaveRequestReviews() {
   };
 
   const handleSubmitReview = (comments: string) => {
-    if (!reviewDialog.request || !reviewDialog.action) return;
+    if (!reviewDialog.request || !reviewDialog.action) {
+      return;
+    }
 
     const publicId = reviewDialog.request.public_id;
 
@@ -338,12 +408,12 @@ export function LeaveRequestReviews() {
                 e.stopPropagation();
                 navigate(`/leave/dashboard/${row.user_public_id}`);
               }}
-              className="text-blue-600 hover:text-blue-700 focus:outline-none focus:underline text-left w-full"
+              className="w-full text-left text-blue-600 hover:text-blue-700 focus:underline focus:outline-none"
               aria-label={`View ${row.user_name}'s leave dashboard`}
             >
               <div className="flex flex-col items-start gap-0.5">
                 <div className="font-medium">{row.user_name}</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-muted-foreground text-xs">
                   {typeof row.organization_role === 'object' && row.organization_role
                     ? row.organization_role.name
                     : row.organization_role}
@@ -360,7 +430,7 @@ export function LeaveRequestReviews() {
       accessor: (row) => (
         <div>
           <div className="font-medium">{row.leave_name}</div>
-          <div className="text-xs text-muted-foreground">{row.leave_type_code}</div>
+          <div className="text-muted-foreground text-xs">{row.leave_type_code}</div>
         </div>
       ),
     },
@@ -397,7 +467,7 @@ export function LeaveRequestReviews() {
             variant="ghost"
             size="sm"
             onClick={() => handleApprove(row)}
-            className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+            className="h-8 w-8 p-0 text-green-600 hover:bg-green-50 hover:text-green-700"
             disabled={row.status !== 'pending'}
             title="Approve"
           >
@@ -407,7 +477,7 @@ export function LeaveRequestReviews() {
             variant="ghost"
             size="sm"
             onClick={() => handleReject(row)}
-            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+            className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 hover:text-red-700"
             disabled={row.status !== 'pending'}
             title="Reject"
           >
@@ -417,7 +487,7 @@ export function LeaveRequestReviews() {
             variant="ghost"
             size="sm"
             onClick={() => setReviewDialog({ open: true, request: row, action: null })}
-            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
             title="View Details"
           >
             <Eye className="h-4 w-4" />
@@ -454,172 +524,230 @@ export function LeaveRequestReviews() {
         </div>
       </PageHeader>
 
-      {/* Staff/Student Toggle */}
-      <div className="flex gap-2">
-        <Button
-          variant={userRole === 'staff' ? 'default' : 'outline'}
-          onClick={() => setUserRole('staff')}
-          className={cn(
-            'flex-1',
-            userRole === 'staff' && 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
-          )}
-        >
-          <Users className="mr-2 h-4 w-4" />
-          Staff
-        </Button>
-        <Button
-          variant={userRole === 'student' ? 'default' : 'outline'}
-          onClick={() => setUserRole('student')}
-          className={cn(
-            'flex-1',
-            userRole === 'student' && 'bg-green-600 hover:bg-green-700 text-white shadow-md'
-          )}
-        >
-          <User className="mr-2 h-4 w-4" />
-          Students
-        </Button>
-      </div>
-
-      {/* Class Selection for Students */}
-      {userRole === 'student' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Select Class</CardTitle>
-            <CardDescription>Choose a class to view student leave requests</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Combobox
-              value={selectedClass}
-              onValueChange={(value) => {
-                setSelectedClass(value);
-                setCurrentPage(1);
-              }}
-              options={classes.map((cls) => ({
-                label: `${cls.class_master.name} (${cls.name})`,
-                value: cls.public_id,
-              }))}
-              placeholder={FormPlaceholders.SELECT_CLASS}
-              emptyText="No classes found"
-              searchPlaceholder={FormPlaceholders.SEARCH_CLASSES}
-              disabled={isLoadingClasses}
-            />
-          </CardContent>
-        </Card>
+      {/* Show info message if teacher has no permissions (not for admins) */}
+      {!isAdmin && !isLoadingContext && teacherContext && !teacherContext.can_review_requests && (
+        <Alert className="border-blue-200 bg-blue-50">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-900">
+            <div className="space-y-2">
+              <p className="font-medium">No leave requests to review</p>
+              <p className="text-sm">You can review leave requests when you:</p>
+              <ul className="ml-2 list-inside list-disc space-y-1 text-sm">
+                <li>Are assigned as a supervisor for staff members, or</li>
+                <li>Are designated as a class teacher for one or more classes</li>
+              </ul>
+              <p className="mt-2 text-sm">
+                Please contact your administrator if you believe you should have access to this
+                feature.
+              </p>
+            </div>
+          </AlertDescription>
+        </Alert>
       )}
 
-      {/* Filters */}
-      {showFilters && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Filters</CardTitle>
-              <Button variant="ghost" size="sm" onClick={handleResetFilters}>
-                Reset
-              </Button>
+      {/* Show context info if teacher has permissions (not for admins) */}
+      {!isAdmin && !isLoadingContext && teacherContext && teacherContext.can_review_requests && (
+        <Alert className="border-green-200 bg-green-50">
+          <Info className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-900">
+            <div className="space-y-1">
+              <p className="font-medium">Your Review Permissions:</p>
+              <ul className="space-y-0.5 text-sm">
+                {teacherContext.is_supervisor && (
+                  <li>
+                    ✓ You can review leave requests from {teacherContext.subordinate_count} staff
+                    member(s)
+                  </li>
+                )}
+                {teacherContext.is_class_teacher && (
+                  <li>
+                    ✓ You can review leave requests from {teacherContext.student_count} student(s)
+                    across {teacherContext.class_teacher_for.length} class(es)
+                  </li>
+                )}
+              </ul>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {/* Review Status Filter */}
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={FormPlaceholders.SELECT_STATUS} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
-              {/* Leave Type Filter */}
-              <div className="space-y-2">
-                <Label>Leave Type</Label>
-                <Select value={selectedLeaveType} onValueChange={setSelectedLeaveType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={FormPlaceholders.ALL_LEAVE_TYPES} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All</SelectItem>
-                    {leaveTypes.map((type) => (
-                      <SelectItem key={type.id} value={type.name}>
-                        {type.name} ({type.code})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* User Filter for Staff */}
-              {userRole === 'staff' && (
-                <div className="space-y-2">
-                  <Label>Search User</Label>
-                  <Combobox
-                    value={selectedUser}
-                    onValueChange={setSelectedUser}
-                    options={users.map((user) => ({
-                      label: `${user.full_name} [${user.email}]`,
-                      value: user.public_id,
-                      description: user.employee_id
-                        ? `Employee ID: ${user.employee_id}`
-                        : undefined,
-                    }))}
-                    placeholder={FormPlaceholders.SELECT_USER}
-                    emptyText="No users found"
-                    searchPlaceholder={FormPlaceholders.SEARCH_USERS}
-                    disabled={isLoadingUsers}
-                  />
-                </div>
+      {/* Only show content if admin OR teacher has review permissions */}
+      {(isAdmin || !teacherContext || teacherContext.can_review_requests) && (
+        <>
+          {/* Staff/Student Toggle */}
+          <div className="flex gap-2">
+            <Button
+              variant={userRole === 'staff' ? 'default' : 'outline'}
+              onClick={() => setUserRole('staff')}
+              className={cn(
+                'flex-1',
+                userRole === 'staff' && 'bg-blue-600 text-white shadow-md hover:bg-blue-700'
               )}
+              disabled={!isAdmin && teacherContext && !teacherContext.is_supervisor}
+            >
+              <Users className="mr-2 h-4 w-4" />
+              Staff
+            </Button>
+            <Button
+              variant={userRole === 'student' ? 'default' : 'outline'}
+              onClick={() => setUserRole('student')}
+              className={cn(
+                'flex-1',
+                userRole === 'student' && 'bg-green-600 text-white shadow-md hover:bg-green-700'
+              )}
+              disabled={!isAdmin && teacherContext && !teacherContext.is_class_teacher}
+            >
+              <User className="mr-2 h-4 w-4" />
+              Students
+            </Button>
+          </div>
 
-              {/* From Date */}
-              <div className="space-y-2">
-                <Label>From Date</Label>
-                <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-              </div>
+          {/* Class Selection for Students */}
+          {userRole === 'student' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Select Class</CardTitle>
+                <CardDescription>Choose a class to view student leave requests</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Combobox
+                  value={selectedClass}
+                  onValueChange={(value) => {
+                    setSelectedClass(value);
+                    setCurrentPage(1);
+                  }}
+                  options={classes.map((cls) => ({
+                    label: `${cls.class_master.name} (${cls.name})`,
+                    value: cls.public_id,
+                  }))}
+                  placeholder={FormPlaceholders.SELECT_CLASS}
+                  emptyText="No classes found"
+                  searchPlaceholder={FormPlaceholders.SEARCH_CLASSES}
+                  disabled={isLoadingClasses}
+                />
+              </CardContent>
+            </Card>
+          )}
 
-              {/* To Date */}
-              <div className="space-y-2">
-                <Label>To Date</Label>
-                <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
-              </div>
-            </div>
+          {/* Filters */}
+          {showFilters && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Filters</CardTitle>
+                  <Button variant="ghost" size="sm" onClick={handleResetFilters}>
+                    Reset
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {/* Review Status Filter */}
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={FormPlaceholders.SELECT_STATUS} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="approved">Approved</SelectItem>
+                        <SelectItem value="rejected">Rejected</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            {/* Apply Filters Button */}
-            <div className="flex justify-end">
-              <Button
-                onClick={handleApplyFilters}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                Apply Filters
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                  {/* Leave Type Filter */}
+                  <div className="space-y-2">
+                    <Label>Leave Type</Label>
+                    <Select value={selectedLeaveType} onValueChange={setSelectedLeaveType}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={FormPlaceholders.ALL_LEAVE_TYPES} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">All</SelectItem>
+                        {leaveTypes.map((type) => (
+                          <SelectItem key={type.id} value={type.name}>
+                            {type.name} ({type.code})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* User Filter for Staff */}
+                  {userRole === 'staff' && (
+                    <div className="space-y-2">
+                      <Label>Search User</Label>
+                      <Combobox
+                        value={selectedUser}
+                        onValueChange={setSelectedUser}
+                        options={users.map((user) => ({
+                          label: `${user.full_name} [${user.email}]`,
+                          value: user.public_id,
+                          description: user.employee_id
+                            ? `Employee ID: ${user.employee_id}`
+                            : undefined,
+                        }))}
+                        placeholder={FormPlaceholders.SELECT_USER}
+                        emptyText="No users found"
+                        searchPlaceholder={FormPlaceholders.SEARCH_USERS}
+                        disabled={isLoadingUsers}
+                      />
+                    </div>
+                  )}
+
+                  {/* From Date */}
+                  <div className="space-y-2">
+                    <Label>From Date</Label>
+                    <Input
+                      type="date"
+                      value={fromDate}
+                      onChange={(e) => setFromDate(e.target.value)}
+                    />
+                  </div>
+
+                  {/* To Date */}
+                  <div className="space-y-2">
+                    <Label>To Date</Label>
+                    <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+                  </div>
+                </div>
+
+                {/* Apply Filters Button */}
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleApplyFilters}
+                    className="bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    Apply Filters
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Leave Requests Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Leave Requests</CardTitle>
+              <CardDescription>
+                {userRole === 'staff' ? 'Staff' : 'Student'} leave requests awaiting your review
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DataTable
+                columns={columns}
+                data={requests}
+                isLoading={isLoadingRequests}
+                getRowKey={(row) => row.public_id}
+                pagination={pagination}
+                onPageChange={setCurrentPage}
+              />
+            </CardContent>
+          </Card>
+        </>
       )}
-
-      {/* Leave Requests Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Leave Requests</CardTitle>
-          <CardDescription>
-            {userRole === 'staff' ? 'Staff' : 'Student'} leave requests awaiting your review
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <DataTable
-            columns={columns}
-            data={requests}
-            isLoading={isLoadingRequests}
-            getRowKey={(row) => row.public_id}
-            pagination={pagination}
-            onPageChange={setCurrentPage}
-          />
-        </CardContent>
-      </Card>
 
       {/* Review Dialog */}
       <LeaveRequestReviewDialog

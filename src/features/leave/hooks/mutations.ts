@@ -1,8 +1,8 @@
 /**
  * Mutation Hooks for Leave Management
  */
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { UseMutationResult } from '@tanstack/react-query';
+import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
+import { QUERY_KEYS } from '@/constants/app-config';
 import type {
   ApiSingleResponse,
   CalculateWorkingDaysPayload,
@@ -34,8 +34,8 @@ export function useCreateLeaveRequest(): UseMutationResult<
   return useMutation({
     mutationFn: createLeaveRequest,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
-      queryClient.invalidateQueries({ queryKey: ['leave-balances'] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.balances() });
     },
   });
 }
@@ -53,9 +53,9 @@ export function useUpdateLeaveRequest(): UseMutationResult<
   return useMutation({
     mutationFn: ({ publicId, data }) => updateLeaveRequest(publicId, data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
-      queryClient.invalidateQueries({ queryKey: ['leave-request', variables.publicId] });
-      queryClient.invalidateQueries({ queryKey: ['leave-balances'] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.request(variables.publicId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.balances() });
     },
   });
 }
@@ -73,8 +73,8 @@ export function useCancelLeaveRequest(): UseMutationResult<
   return useMutation({
     mutationFn: ({ publicId, data }) => cancelLeaveRequest(publicId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
-      queryClient.invalidateQueries({ queryKey: ['leave-balances'] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.balances() });
     },
   });
 }
@@ -88,8 +88,8 @@ export function useDeleteLeaveRequest(): UseMutationResult<void, Error, string> 
   return useMutation({
     mutationFn: deleteLeaveRequest,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
-      queryClient.invalidateQueries({ queryKey: ['leave-balances'] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.balances() });
     },
   });
 }
@@ -107,8 +107,8 @@ export function useReactivateLeaveRequest(): UseMutationResult<
   return useMutation({
     mutationFn: reactivateLeaveRequest,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
-      queryClient.invalidateQueries({ queryKey: ['leave-balances'] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.balances() });
     },
   });
 }
@@ -139,11 +139,11 @@ export function useApproveLeaveRequest(): UseMutationResult<
   return useMutation({
     mutationFn: async ({ publicId, comments }) => {
       const api = (await import('@/lib/api')).default;
-      await api.post(`/leave/leave-request-reviews/${publicId}/approve/`, { comments });
+      await api.post(`/leave/employee/reviews/${publicId}/approve/`, { comments });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leave-request-reviews'] });
-      queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.reviews() });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.all });
     },
   });
 }
@@ -161,11 +161,11 @@ export function useRejectLeaveRequest(): UseMutationResult<
   return useMutation({
     mutationFn: async ({ publicId, comments }) => {
       const api = (await import('@/lib/api')).default;
-      await api.post(`/leave/leave-request-reviews/${publicId}/reject/`, { comments });
+      await api.post(`/leave/employee/reviews/${publicId}/reject/`, { comments });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leave-request-reviews'] });
-      queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.reviews() });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.all });
     },
   });
 }
@@ -179,11 +179,11 @@ export function useDeleteLeaveBalance(): UseMutationResult<void, Error, string> 
   return useMutation({
     mutationFn: async (balanceId: string) => {
       const api = (await import('@/lib/api')).default;
-      await api.delete(`/leave/leave-balances/${balanceId}/`);
+      await api.delete(`/leave/employee/balances/${balanceId}/`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leave-balances'] });
-      queryClient.invalidateQueries({ queryKey: ['user-leave-balances'] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.balances() });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.userBalances(undefined) });
     },
   });
 }
@@ -201,12 +201,12 @@ export function useCreateLeaveBalance(): UseMutationResult<
   return useMutation({
     mutationFn: async (payload) => {
       const api = (await import('@/lib/api')).default;
-      const response = await api.post('/leave/leave-balances/', payload);
+      const response = await api.post('/leave/employee/balances/', payload);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leave-balances'] });
-      queryClient.invalidateQueries({ queryKey: ['user-leave-balances'] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.balances() });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.userBalances(undefined) });
     },
   });
 }
@@ -224,15 +224,15 @@ export function useUpdateLeaveBalance(): UseMutationResult<
   return useMutation({
     mutationFn: async (payload) => {
       const api = (await import('@/lib/api')).default;
-      const response = await api.patch(`/leave/leave-balances/${payload.public_id}/`, {
+      const response = await api.patch(`/leave/employee/balances/${payload.public_id}/`, {
         total_allocated: payload.total_allocated,
         carried_forward: payload.carried_forward,
       });
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leave-balances'] });
-      queryClient.invalidateQueries({ queryKey: ['user-leave-balances'] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.balances() });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.leave.userBalances(undefined) });
     },
   });
 }

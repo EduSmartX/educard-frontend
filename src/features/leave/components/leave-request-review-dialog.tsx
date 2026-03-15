@@ -83,7 +83,9 @@ export function LeaveRequestReviewDialog({
     onSubmit(data.comments);
   };
 
-  if (!request) return null;
+  if (!request) {
+    return null;
+  }
 
   const isViewMode = !action;
 
@@ -109,14 +111,14 @@ export function LeaveRequestReviewDialog({
 
         <div className="space-y-4">
           {/* Employee Info */}
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-2">
+          <div className="space-y-2 rounded-lg border border-blue-200 bg-blue-50 p-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-blue-700">Employee</span>
               <span className="font-semibold text-blue-900">{request.user_name}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-blue-700">Role</span>
-              <Badge variant="outline" className="border-blue-300 text-blue-700 bg-white">
+              <Badge variant="outline" className="border-blue-300 bg-white text-blue-700">
                 {typeof request.organization_role === 'object' && request.organization_role
                   ? request.organization_role.name
                   : request.organization_role}
@@ -129,7 +131,7 @@ export function LeaveRequestReviewDialog({
           </div>
 
           {/* Leave Details */}
-          <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4 space-y-2">
+          <div className="space-y-2 rounded-lg border border-indigo-200 bg-indigo-50 p-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-indigo-700">Leave Type</span>
               <span className="font-semibold text-indigo-900">
@@ -157,7 +159,7 @@ export function LeaveRequestReviewDialog({
           {/* Reason */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Reason for Leave</label>
-            <div className="rounded-lg border border-purple-200 bg-purple-50 p-4 text-sm text-purple-900 whitespace-pre-wrap leading-relaxed">
+            <div className="rounded-lg border border-purple-200 bg-purple-50 p-4 text-sm leading-relaxed whitespace-pre-wrap text-purple-900">
               {request.reason}
             </div>
           </div>
@@ -184,7 +186,7 @@ export function LeaveRequestReviewDialog({
                           }
                           rows={4}
                           disabled={isPending}
-                          className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                          className="border-gray-300 bg-white focus:border-blue-500 focus:ring-blue-500"
                         />
                       </FormControl>
                       <FormMessage />
@@ -197,12 +199,7 @@ export function LeaveRequestReviewDialog({
         </div>
 
         <DialogFooter className="gap-2">
-          <Button
-            type="button"
-            variant="brandOutline"
-            onClick={onClose}
-            disabled={isPending}
-          >
+          <Button type="button" variant="brandOutline" onClick={onClose} disabled={isPending}>
             {isViewMode ? 'Close' : 'Cancel'}
           </Button>
           {!isViewMode && (

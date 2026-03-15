@@ -1,5 +1,6 @@
 /**
  * API Client for Leave Management
+ * Updated for role-based backend URL structure
  */
 import apiClient from '@/lib/api';
 import type {
@@ -18,7 +19,7 @@ import type {
 } from '../types';
 
 // ===========================
-// Leave Balance APIs
+// Leave Balance APIs (Employee/Teacher)
 // ===========================
 
 /**
@@ -27,7 +28,7 @@ import type {
 export async function fetchMyLeaveBalances(
   params?: LeaveBalanceQueryParams
 ): Promise<ApiListResponse<LeaveBalance>> {
-  const response = await apiClient.get('/leave/leave-balances/', { params });
+  const response = await apiClient.get('/leave/employee/balances/', { params });
   return response.data;
 }
 
@@ -37,7 +38,7 @@ export async function fetchMyLeaveBalances(
 export async function fetchMyLeaveBalancesSummary(): Promise<
   ApiSingleResponse<LeaveBalanceSummary[]>
 > {
-  const response = await apiClient.get('/leave/leave-balances/my-balance/');
+  const response = await apiClient.get('/leave/employee/balances/my-balance/');
   return response.data;
 }
 
@@ -48,7 +49,9 @@ export async function fetchUserLeaveBalances(
   userPublicId: string,
   params?: LeaveBalanceQueryParams
 ): Promise<ApiListResponse<LeaveBalance>> {
-  const response = await apiClient.get(`/leave/leave-balances/user/${userPublicId}/`, { params });
+  const response = await apiClient.get(`/leave/employee/balances/user/${userPublicId}/`, {
+    params,
+  });
   return response.data;
 }
 
@@ -58,7 +61,7 @@ export async function fetchUserLeaveBalances(
 export async function fetchUserLeaveBalancesSummary(
   userPublicId: string
 ): Promise<ApiSingleResponse<LeaveBalanceSummary[]>> {
-  const response = await apiClient.get(`/leave/leave-balances/user/${userPublicId}/`);
+  const response = await apiClient.get(`/leave/employee/balances/user/${userPublicId}/`);
   return response.data;
 }
 
@@ -68,12 +71,12 @@ export async function fetchUserLeaveBalancesSummary(
 export async function fetchLeaveBalance(
   publicId: string
 ): Promise<ApiSingleResponse<LeaveBalance>> {
-  const response = await apiClient.get(`/leave/leave-balances/${publicId}/`);
+  const response = await apiClient.get(`/leave/employee/balances/${publicId}/`);
   return response.data;
 }
 
 // ===========================
-// Leave Request APIs
+// Leave Request APIs (All School Users)
 // ===========================
 
 /**
@@ -82,7 +85,7 @@ export async function fetchLeaveBalance(
 export async function fetchMyLeaveRequests(
   params?: LeaveRequestQueryParams
 ): Promise<ApiListResponse<LeaveRequest>> {
-  const response = await apiClient.get('/leave/leave-requests/', { params });
+  const response = await apiClient.get('/leave/user/requests/', { params });
   return response.data;
 }
 
@@ -93,7 +96,7 @@ export async function fetchUserLeaveRequests(
   userPublicId: string,
   params?: LeaveRequestQueryParams
 ): Promise<ApiListResponse<LeaveRequest>> {
-  const response = await apiClient.get('/leave/leave-requests/', {
+  const response = await apiClient.get('/leave/user/requests/', {
     params: {
       ...params,
       user: userPublicId,
@@ -110,7 +113,7 @@ export async function fetchLeaveRequest(
   isDeleted = false
 ): Promise<ApiSingleResponse<LeaveRequest>> {
   const params = isDeleted ? { is_deleted: 'true' } : {};
-  const response = await apiClient.get(`/leave/leave-requests/${publicId}/`, { params });
+  const response = await apiClient.get(`/leave/user/requests/${publicId}/`, { params });
   return response.data;
 }
 
@@ -120,7 +123,7 @@ export async function fetchLeaveRequest(
 export async function createLeaveRequest(
   data: CreateLeaveRequestPayload
 ): Promise<ApiSingleResponse<LeaveRequest>> {
-  const response = await apiClient.post('/leave/leave-requests/', data);
+  const response = await apiClient.post('/leave/user/requests/', data);
   return response.data;
 }
 
@@ -131,7 +134,7 @@ export async function updateLeaveRequest(
   publicId: string,
   data: UpdateLeaveRequestPayload
 ): Promise<ApiSingleResponse<LeaveRequest>> {
-  const response = await apiClient.patch(`/leave/leave-requests/${publicId}/`, data);
+  const response = await apiClient.patch(`/leave/user/requests/${publicId}/`, data);
   return response.data;
 }
 
@@ -142,24 +145,7 @@ export async function cancelLeaveRequest(
   publicId: string,
   data?: CancelLeaveRequestPayload
 ): Promise<ApiSingleResponse<LeaveRequest>> {
-  const response = await apiClient.post(`/leave/leave-requests/${publicId}/cancel/`, data || {});
-  return response.data;
-}
-
-/**
- * Delete a leave request (soft delete)
- */
-export async function deleteLeaveRequest(publicId: string): Promise<void> {
-  await apiClient.delete(`/leave/leave-requests/${publicId}/`);
-}
-
-/**
- * Reactivate a deleted leave request
- */
-export async function reactivateLeaveRequest(
-  publicId: string
-): Promise<ApiSingleResponse<LeaveRequest>> {
-  const response = await apiClient.post(`/leave/leave-requests/${publicId}/reactivate/`);
+  const response = await apiClient.post(`/leave/user/requests/${publicId}/cancel/`, data || {});
   return response.data;
 }
 
@@ -169,6 +155,71 @@ export async function reactivateLeaveRequest(
 export async function calculateWorkingDays(
   data: CalculateWorkingDaysPayload
 ): Promise<ApiSingleResponse<WorkingDaysCalculation>> {
-  const response = await apiClient.post('/leave/leave-requests/calculate-working-days/', data);
+  const response = await apiClient.post('/leave/user/requests/calculate-working-days/', data);
   return response.data;
+}
+
+// ===========================
+// Leave Review APIs (Employee/Teacher - Approve/Reject)
+// ===========================
+
+/**
+ * Fetch leave requests for review (manageable users only)
+ */
+export async function fetchLeaveReviews(
+  params?: LeaveRequestQueryParams
+): Promise<ApiListResponse<LeaveRequest>> {
+  const response = await apiClient.get('/leave/employee/reviews/', { params });
+  return response.data;
+}
+
+/**
+ * Fetch single leave request for review
+ */
+export async function fetchLeaveReview(publicId: string): Promise<ApiSingleResponse<LeaveRequest>> {
+  const response = await apiClient.get(`/leave/employee/reviews/${publicId}/`);
+  return response.data;
+}
+
+/**
+ * Approve a leave request
+ */
+export async function approveLeaveRequest(
+  publicId: string,
+  data?: { review_comments?: string }
+): Promise<ApiSingleResponse<LeaveRequest>> {
+  const response = await apiClient.post(`/leave/employee/reviews/${publicId}/approve/`, data || {});
+  return response.data;
+}
+
+/**
+ * Reject a leave request
+ */
+export async function rejectLeaveRequest(
+  publicId: string,
+  data?: { review_comments?: string }
+): Promise<ApiSingleResponse<LeaveRequest>> {
+  const response = await apiClient.post(`/leave/employee/reviews/${publicId}/reject/`, data || {});
+  return response.data;
+}
+
+// ===========================
+// Deprecated/Removed APIs
+// ===========================
+
+/**
+ * @deprecated Delete operation not supported in backend
+ * Use cancelLeaveRequest instead
+ */
+export function deleteLeaveRequest(_publicId: string): Promise<void> {
+  return Promise.reject(new Error('Delete operation not supported. Use cancel instead.'));
+}
+
+/**
+ * @deprecated Reactivate operation not implemented in backend
+ */
+export function reactivateLeaveRequest(
+  _publicId: string
+): Promise<ApiSingleResponse<LeaveRequest>> {
+  return Promise.reject(new Error('Reactivate operation not implemented in backend.'));
 }

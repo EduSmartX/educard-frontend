@@ -7,3 +7,4 @@ export { useLeaveAllocations, useDeleteLeaveAllocation } from './use-leave-alloc
 export * from './use-leave-balances';
 export * from './use-leave-requests';
 export * from './mutations';
+export * from './use-teacher-management-context';
