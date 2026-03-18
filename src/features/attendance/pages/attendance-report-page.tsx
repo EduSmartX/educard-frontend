@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format, eachDayOfInterval, startOfMonth, endOfMonth } from 'date-fns';
 import { CalendarDays, Loader2 } from 'lucide-react';
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Combobox } from '@/components/ui/combobox';
+import { MonthYearPicker } from '@/components/ui/month-year-picker';
 import {
   Select,
   SelectContent,
@@ -16,7 +17,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useAuth } from '@/hooks/use-auth';
-import { getEmployeeAttendance, getMonthlyAttendanceSummary } from '@/features/attendance/api/attendance-api';
+import {
+  getEmployeeAttendance,
+  getMonthlyAttendanceSummary,
+} from '@/features/attendance/api/attendance-api';
 import apiClient from '@/lib/api';
 import { EmployeeInfoCard } from '@/features/attendance/components/employee-info-card';
 import { YearlyCalendarGrid } from '@/features/attendance/components/yearly-calendar-grid';
@@ -41,8 +45,18 @@ interface ManageableUser {
 }
 
 const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 function toDateKey(date: Date): string {
@@ -51,21 +65,30 @@ function toDateKey(date: Date): string {
 
 export function AttendanceReportPage() {
   const { user } = useAuth();
-  const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth();
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const [reportType, setReportType] = useState<ReportType>('monthly');
   const [viewType, setViewType] = useState<ViewType>('self');
   const [selectedUser, setSelectedUser] = useState<string>('');
-  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-  const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth);
   const [showCalendarView, setShowCalendarView] = useState(false);
+
+  // Extract year and month from selectedDate for backward compatibility
+  const selectedYear = selectedDate.getFullYear();
+  const selectedMonth = selectedDate.getMonth();
 
   // Fetch current academic year
   const { data: academicYear } = useQuery({
     queryKey: ['current-academic-year'],
     queryFn: getCurrentAcademicYear,
   });
+
+  // Update selected date when academic year is loaded
+  useEffect(() => {
+    if (academicYear?.start_date) {
+      const academicStartYear = new Date(academicYear.start_date).getFullYear();
+      setSelectedDate(new Date(academicStartYear, selectedMonth));
+    }
+  }, [academicYear, selectedMonth]);
 
   // Fetch manageable users for staff view
   const { data: manageableUsersData, isLoading: isLoadingUsers } = useQuery({
@@ -85,15 +108,15 @@ export function AttendanceReportPage() {
     if (!manageableUsersData?.data) {
       return [];
     }
-    
+
     if (Array.isArray(manageableUsersData.data.users)) {
       return manageableUsersData.data.users as ManageableUser[];
     }
-    
+
     if (Array.isArray(manageableUsersData.data)) {
       return manageableUsersData.data as ManageableUser[];
     }
-    
+
     return [];
   }, [manageableUsersData]);
 
@@ -117,10 +140,11 @@ export function AttendanceReportPage() {
   // 🚀 NEW: Fetch monthly attendance summary for yearly reports (backend-calculated)
   const { data: monthlySummaryData, isLoading: loadingMonthlySummary } = useQuery({
     queryKey: ['monthly-attendance-summary', targetUserId, selectedYear],
-    queryFn: () => getMonthlyAttendanceSummary({ 
-      user: targetUserId!,
-      year: selectedYear 
-    }),
+    queryFn: () =>
+      getMonthlyAttendanceSummary({
+        user: targetUserId!,
+        year: selectedYear,
+      }),
     enabled: !!targetUserId && reportType === 'yearly',
   });
 
@@ -156,10 +180,7 @@ export function AttendanceReportPage() {
     enabled: !!targetUserId && reportType === 'monthly',
   });
 
-  const isLoading =
-    loadingMonthlySummary ||
-    loadingMonthlyDetail ||
-    isLoadingUsers;
+  const isLoading = loadingMonthlySummary || loadingMonthlyDetail || isLoadingUsers;
 
   // ✅ Backend-calculated yearly data (no frontend calculation needed!)
   const yearlyData = useMemo(() => {
@@ -207,7 +228,7 @@ export function AttendanceReportPage() {
     // Build holiday set from holiday_descriptions
     const holSet = new Set<string>();
     if (monthlyDetailData.holiday_descriptions) {
-      Object.keys(monthlyDetailData.holiday_descriptions).forEach(dateKey => {
+      Object.keys(monthlyDetailData.holiday_descriptions).forEach((dateKey) => {
         holSet.add(dateKey);
       });
     }
@@ -239,31 +260,24 @@ export function AttendanceReportPage() {
     return manageableUsers.find((u) => u.public_id === selectedUser);
   }, [viewType, user, manageableUsers, selectedUser, monthlyDetailData]);
 
-  const years = useMemo(() => {
-    const yearsArray = [];
-    for (let i = currentYear - 5; i <= currentYear + 1; i++) {
-      yearsArray.push(i);
-    }
-    return yearsArray;
-  }, [currentYear]);
-
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto space-y-6 py-6">
       <PageHeader
         title="Attendance Report"
         description="View yearly and monthly attendance reports with comprehensive analytics"
       />
 
       {/* Filter Section */}
-      <Card className="shadow-sm border border-blue-200" style={{ backgroundColor: '#E3F2FD' }}>
+      <Card className="border border-blue-200 shadow-sm" style={{ backgroundColor: '#E3F2FD' }}>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             {/* Report Type */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Report Type
-              </label>
-              <Select value={reportType} onValueChange={(value) => setReportType(value as ReportType)}>
+              <label className="mb-2 block text-sm font-semibold text-gray-700">Report Type</label>
+              <Select
+                value={reportType}
+                onValueChange={(value) => setReportType(value as ReportType)}
+              >
                 <SelectTrigger className="bg-white">
                   <SelectValue />
                 </SelectTrigger>
@@ -276,9 +290,7 @@ export function AttendanceReportPage() {
 
             {/* View Type */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                View
-              </label>
+              <label className="mb-2 block text-sm font-semibold text-gray-700">View</label>
               <Select value={viewType} onValueChange={(value) => setViewType(value as ViewType)}>
                 <SelectTrigger className="bg-white">
                   <SelectValue />
@@ -293,7 +305,7 @@ export function AttendanceReportPage() {
             {/* Staff Selection */}
             {viewType === 'staff' && (
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-semibold text-gray-700">
                   Select Staff
                 </label>
                 <Combobox
@@ -312,59 +324,38 @@ export function AttendanceReportPage() {
               </div>
             )}
 
-            {/* Year Selection */}
+            {/* Month/Year Selection */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Year
+              <label className="mb-2 block text-sm font-semibold text-gray-700">
+                {reportType === 'monthly' ? 'Select Month & Year' : 'Select Year'}
               </label>
-              <Select value={String(selectedYear)} onValueChange={(value) => setSelectedYear(Number(value))}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map((year) => (
-                    <SelectItem key={year} value={String(year)}>
-                      {year}-{String(year + 1).slice(-2)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <MonthYearPicker
+                value={selectedDate}
+                onChange={(date) => date && setSelectedDate(date)}
+              />
             </div>
-
-            {/* Month Selection (only for monthly report) */}
-            {reportType === 'monthly' && (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Month
-                </label>
-                <Select value={String(selectedMonth)} onValueChange={(value) => setSelectedMonth(Number(value))}>
-                  <SelectTrigger className="bg-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MONTHS.map((month, index) => (
-                      <SelectItem key={index} value={String(index)}>
-                        {month}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
 
       {/* User Info Card with Monthly Report - Matching Timesheet Overview Design */}
       {selectedUserData && (
-        <Card className="shadow-sm border border-[#bfd591]" style={{ backgroundColor: '#C5D89D' }}>
-          <CardContent className="pt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="border border-[#bfd591] shadow-sm" style={{ backgroundColor: '#C5D89D' }}>
+          <CardContent className="grid grid-cols-1 gap-4 pt-6 lg:grid-cols-2">
             <EmployeeInfoCard
               user={selectedUserData}
-              organization={'organization' in selectedUserData ? selectedUserData.organization as { name?: string } : undefined}
-              organizationRole={('organization_role' in selectedUserData && selectedUserData.organization_role) ? 
-                (typeof selectedUserData.organization_role === 'string' ? selectedUserData.organization_role : (selectedUserData.organization_role as {name?: string})?.name) : 
-                null}
+              organization={
+                'organization' in selectedUserData
+                  ? (selectedUserData.organization as { name?: string })
+                  : undefined
+              }
+              organizationRole={
+                'organization_role' in selectedUserData && selectedUserData.organization_role
+                  ? typeof selectedUserData.organization_role === 'string'
+                    ? selectedUserData.organization_role
+                    : (selectedUserData.organization_role as { name?: string })?.name
+                  : null
+              }
               employeeId={monthlyDetailData?.employee_id || null}
               showProfileImage={true}
             />
@@ -373,7 +364,7 @@ export function AttendanceReportPage() {
               <Card className="border-0 bg-white shadow-sm">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-xl font-bold flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-xl font-bold">
                       <CalendarDays className="h-6 w-6 text-blue-600" />
                       Monthly Report
                     </CardTitle>
@@ -384,55 +375,142 @@ export function AttendanceReportPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <div className="text-sm text-gray-600 mb-1">Attendance Summary</div>
-                    <div className="text-base font-semibold mb-2">
-                      {monthlyDetailData.stats?.total_working_days > 0 
+                    <div className="mb-1 text-sm text-gray-600">Attendance Summary</div>
+                    <div className="mb-2 text-base font-semibold">
+                      {monthlyDetailData.stats?.total_working_days > 0
                         ? `${Math.round((monthlyDetailData?.stats?.total_present / monthlyDetailData?.stats?.total_working_days) * 100)}% present`
-                        : '0% present'
-                      }
+                        : '0% present'}
                     </div>
-                    <div className="flex h-2 rounded-full overflow-hidden bg-gray-200">
+                    <div className="flex h-2 overflow-hidden rounded-full bg-gray-200">
                       {monthlyDetailData.stats?.total_present > 0 && (
-                        <div 
-                          className="bg-green-500" 
-                          style={{ width: `${(monthlyDetailData?.stats?.total_present / monthlyDetailData?.stats?.total_working_days) * 100}%` }}
+                        <div
+                          className="bg-green-500"
+                          style={{
+                            width: `${(monthlyDetailData?.stats?.total_present / monthlyDetailData?.stats?.total_working_days) * 100}%`,
+                          }}
                         />
                       )}
                       {monthlyDetailData.stats?.total_absent > 0 && (
-                        <div 
-                          className="bg-red-500" 
-                          style={{ width: `${(monthlyDetailData?.stats?.total_absent / monthlyDetailData?.stats?.total_working_days) * 100}%` }}
+                        <div
+                          className="bg-red-500"
+                          style={{
+                            width: `${(monthlyDetailData?.stats?.total_absent / monthlyDetailData?.stats?.total_working_days) * 100}%`,
+                          }}
                         />
                       )}
                       {monthlyDetailData.stats?.total_leaves > 0 && (
-                        <div 
-                          className="bg-orange-500" 
-                          style={{ width: `${(monthlyDetailData?.stats?.total_leaves / monthlyDetailData?.stats?.total_working_days) * 100}%` }}
+                        <div
+                          className="bg-orange-500"
+                          style={{
+                            width: `${(monthlyDetailData?.stats?.total_leaves / monthlyDetailData?.stats?.total_working_days) * 100}%`,
+                          }}
                         />
                       )}
                       {monthlyDetailData.stats?.total_holidays > 0 && (
-                        <div 
-                          className="bg-purple-500" 
-                          style={{ width: `${(monthlyDetailData?.stats?.total_holidays / monthlyDetailData?.stats?.total_working_days) * 100}%` }}
+                        <div
+                          className="bg-purple-500"
+                          style={{
+                            width: `${(monthlyDetailData?.stats?.total_holidays / monthlyDetailData?.stats?.total_working_days) * 100}%`,
+                          }}
                         />
                       )}
                     </div>
-                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-600">
+                    <div className="mt-2 flex items-center gap-4 text-xs text-gray-600">
                       <span className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-sm bg-green-500"></span>
+                        <span className="h-3 w-3 rounded-sm bg-green-500"></span>
                         Present {monthlyDetailData.stats?.total_present || 0}
                       </span>
                       <span className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-sm bg-red-500"></span>
+                        <span className="h-3 w-3 rounded-sm bg-red-500"></span>
                         Absent {monthlyDetailData.stats?.total_absent || 0}
                       </span>
                       <span className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-sm bg-orange-500"></span>
+                        <span className="h-3 w-3 rounded-sm bg-orange-500"></span>
                         Leave {monthlyDetailData.stats?.total_leaves || 0}
                       </span>
                       <span className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-sm bg-purple-500"></span>
+                        <span className="h-3 w-3 rounded-sm bg-purple-500"></span>
                         Holiday {monthlyDetailData.stats?.total_holidays || 0}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {targetUserId && yearlyData && reportType === 'yearly' && (
+              <Card className="border-0 bg-white shadow-sm">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-xl font-bold">
+                      <CalendarDays className="h-6 w-6 text-blue-600" />
+                      Yearly Report
+                    </CardTitle>
+                    <Badge variant="outline" className="text-sm">
+                      {academicYear
+                        ? academicYear.name
+                        : `${selectedYear}-${String(selectedYear + 1).slice(-2)}`}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <div className="mb-1 text-sm text-gray-600">Attendance Summary</div>
+                    <div className="mb-2 text-base font-semibold">
+                      {yearlyData.totals?.total_working_days > 0
+                        ? `${Math.round((yearlyData.totals?.total_present / yearlyData.totals?.total_working_days) * 100)}% present`
+                        : '0% present'}
+                    </div>
+                    <div className="flex h-2 overflow-hidden rounded-full bg-gray-200">
+                      {yearlyData.totals?.total_present > 0 && (
+                        <div
+                          className="bg-green-500"
+                          style={{
+                            width: `${(yearlyData.totals?.total_present / yearlyData.totals?.total_working_days) * 100}%`,
+                          }}
+                        />
+                      )}
+                      {yearlyData.totals?.total_absent > 0 && (
+                        <div
+                          className="bg-red-500"
+                          style={{
+                            width: `${(yearlyData.totals?.total_absent / yearlyData.totals?.total_working_days) * 100}%`,
+                          }}
+                        />
+                      )}
+                      {yearlyData.totals?.total_leaves > 0 && (
+                        <div
+                          className="bg-orange-500"
+                          style={{
+                            width: `${(yearlyData.totals?.total_leaves / yearlyData.totals?.total_working_days) * 100}%`,
+                          }}
+                        />
+                      )}
+                      {yearlyData.totals?.total_holidays > 0 && (
+                        <div
+                          className="bg-purple-500"
+                          style={{
+                            width: `${(yearlyData.totals?.total_holidays / yearlyData.totals?.total_working_days) * 100}%`,
+                          }}
+                        />
+                      )}
+                    </div>
+                    <div className="mt-2 flex items-center gap-4 text-xs text-gray-600">
+                      <span className="flex items-center gap-1">
+                        <span className="h-3 w-3 rounded-sm bg-green-500"></span>
+                        Present {yearlyData.totals?.total_present || 0}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="h-3 w-3 rounded-sm bg-red-500"></span>
+                        Absent {yearlyData.totals?.total_absent || 0}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="h-3 w-3 rounded-sm bg-orange-500"></span>
+                        Leave {yearlyData.totals?.total_leaves || 0}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="h-3 w-3 rounded-sm bg-purple-500"></span>
+                        Holiday {yearlyData.totals?.total_holidays || 0}
                       </span>
                     </div>
                   </div>
@@ -449,7 +527,7 @@ export function AttendanceReportPage() {
           <Button
             onClick={() => setShowCalendarView(!showCalendarView)}
             variant={showCalendarView ? 'default' : 'outline'}
-            className={`min-w-[200px] ${showCalendarView ? 'bg-blue-600 hover:bg-blue-700 text-white' : ''}`}
+            className={`min-w-[200px] ${showCalendarView ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}`}
           >
             {showCalendarView ? 'Hide Calendar View' : 'View Calendar Grid'}
           </Button>
@@ -459,8 +537,8 @@ export function AttendanceReportPage() {
       {/* Loading State */}
       {loading && (
         <Card>
-          <CardContent className="py-12 flex items-center justify-center text-gray-500">
-            <Loader2 className="h-6 w-6 animate-spin mr-2" />
+          <CardContent className="flex items-center justify-center py-12 text-gray-500">
+            <Loader2 className="mr-2 h-6 w-6 animate-spin" />
             Loading attendance data...
           </CardContent>
         </Card>
@@ -473,7 +551,9 @@ export function AttendanceReportPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <CalendarDays className="h-5 w-5 text-blue-600" />
-                {academicYear ? `Academic Year Attendance Report - ${academicYear.name}` : `Yearly Attendance Report - ${selectedYear}`}
+                {academicYear
+                  ? `Academic Year Attendance Report - ${academicYear.name}`
+                  : `Yearly Attendance Report - ${selectedYear}`}
               </CardTitle>
               <Badge variant="outline" className="text-base">
                 {academicYear ? academicYear.name : selectedYear}
@@ -511,22 +591,20 @@ export function AttendanceReportPage() {
                       <td className="border border-gray-300 px-4 py-2 text-center text-gray-700">
                         {month.totalWorkingDays}
                       </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center text-green-700 font-semibold">
+                      <td className="border border-gray-300 px-4 py-2 text-center font-semibold text-green-700">
                         {month.present}
                       </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center text-red-700 font-semibold">
+                      <td className="border border-gray-300 px-4 py-2 text-center font-semibold text-red-700">
                         {month.absent}
                       </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center text-blue-700 font-semibold">
+                      <td className="border border-gray-300 px-4 py-2 text-center font-semibold text-blue-700">
                         {month.leaves}
                       </td>
                     </tr>
                   ))}
                   {/* Totals Row */}
                   <tr className="bg-green-100 font-bold">
-                    <td className="border border-gray-300 px-4 py-3 text-gray-800">
-                      TOTAL
-                    </td>
+                    <td className="border border-gray-300 px-4 py-3 text-gray-800">TOTAL</td>
                     <td className="border border-gray-300 px-4 py-3 text-center text-gray-800">
                       {yearlyData.totals.total_working_days}
                     </td>
@@ -558,7 +636,7 @@ export function AttendanceReportPage() {
 
       {/* Monthly Report - Calendar View */}
       {!loading && reportType === 'monthly' && monthlyDetailData && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           {/* Calendar Section - Takes 2/3 width */}
           <Card className="lg:col-span-2">
             <CardHeader className="pb-3">
@@ -582,9 +660,12 @@ export function AttendanceReportPage() {
                 return (
                   <>
                     {/* Week day headers */}
-                    <div className="grid grid-cols-7 gap-1 mb-2">
+                    <div className="mb-2 grid grid-cols-7 gap-1">
                       {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-                        <div key={i} className="text-center text-xs font-semibold text-gray-600 py-1">
+                        <div
+                          key={i}
+                          className="py-1 text-center text-xs font-semibold text-gray-600"
+                        >
                           {day}
                         </div>
                       ))}
@@ -594,7 +675,10 @@ export function AttendanceReportPage() {
                     <div className="grid grid-cols-7 gap-1">
                       {/* Leading empty cells for proper calendar alignment */}
                       {leadingEmptyDays.map((_, index) => (
-                        <div key={`empty-${index}`} className="aspect-square rounded border border-transparent" />
+                        <div
+                          key={`empty-${index}`}
+                          className="aspect-square rounded border border-transparent"
+                        />
                       ))}
 
                       {/* Actual days */}
@@ -605,31 +689,43 @@ export function AttendanceReportPage() {
                         const exception = exceptionalWorkByDate.get(dateKey);
                         const isHoliday = holidaySet.has(dateKey);
                         const isFuture = date > new Date();
-                        
+
                         // Determine day state and styling
                         let bgColor = 'bg-white border-gray-200';
                         let textColor = 'text-gray-900';
                         let icon = null;
                         let statusLabel = '';
-                        
+
                         // Check for force working day exception (overrides holiday/weekend)
                         if (exception?.override_type === 'FORCE_WORKING') {
                           statusLabel = 'Testing';
                           if (attendance?.morning_present && attendance?.afternoon_present) {
                             bgColor = 'bg-green-50 border-green-300';
                             textColor = 'text-green-900';
-                            icon = <div className="h-5 w-5 mx-auto rounded-full bg-green-500 flex items-center justify-center text-white text-[10px] font-bold">✓</div>;
+                            icon = (
+                              <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-[10px] font-bold text-white">
+                                ✓
+                              </div>
+                            );
                           } else if (!isFuture) {
                             bgColor = 'bg-red-50 border-red-300';
                             textColor = 'text-red-900';
-                            icon = <div className="h-5 w-5 mx-auto rounded-full bg-red-500 flex items-center justify-center text-white text-[10px] font-bold">✕</div>;
+                            icon = (
+                              <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                                ✕
+                              </div>
+                            );
                           }
                         }
                         // Check for force holiday exception
                         else if (exception?.override_type === 'FORCE_HOLIDAY' || isHoliday) {
                           bgColor = 'bg-purple-50 border-purple-300';
                           textColor = 'text-purple-900';
-                          icon = <div className="h-5 w-5 mx-auto rounded-full bg-purple-500 flex items-center justify-center text-white text-[10px] font-bold">H</div>;
+                          icon = (
+                            <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-purple-500 text-[10px] font-bold text-white">
+                              H
+                            </div>
+                          );
                           statusLabel = 'Weekend';
                         }
                         // Check if it's a weekend based on working day policy
@@ -647,11 +743,17 @@ export function AttendanceReportPage() {
                             const { saturday_off_pattern } = monthlyDetailData.working_day_policy;
                             if (saturday_off_pattern === 'ALL') {
                               isWeekend = true;
-                            } else if (saturday_off_pattern === 'SECOND_ONLY' || saturday_off_pattern === 'SECOND_AND_FOURTH') {
+                            } else if (
+                              saturday_off_pattern === 'SECOND_ONLY' ||
+                              saturday_off_pattern === 'SECOND_AND_FOURTH'
+                            ) {
                               const weekOfMonth = Math.ceil(date.getDate() / 7);
                               if (saturday_off_pattern === 'SECOND_ONLY' && weekOfMonth === 2) {
                                 isWeekend = true;
-                              } else if (saturday_off_pattern === 'SECOND_AND_FOURTH' && (weekOfMonth === 2 || weekOfMonth === 4)) {
+                              } else if (
+                                saturday_off_pattern === 'SECOND_AND_FOURTH' &&
+                                (weekOfMonth === 2 || weekOfMonth === 4)
+                              ) {
                                 isWeekend = true;
                               }
                             }
@@ -660,7 +762,11 @@ export function AttendanceReportPage() {
                           if (isWeekend) {
                             bgColor = 'bg-purple-50 border-purple-300';
                             textColor = 'text-purple-900';
-                            icon = <div className="h-5 w-5 mx-auto rounded-full bg-purple-500 flex items-center justify-center text-white text-[10px] font-bold">H</div>;
+                            icon = (
+                              <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-purple-500 text-[10px] font-bold text-white">
+                                H
+                              </div>
+                            );
                             statusLabel = 'Weekend';
                           }
                         }
@@ -669,25 +775,50 @@ export function AttendanceReportPage() {
                         if (!icon && leave?.status === 'approved') {
                           bgColor = 'bg-orange-50 border-orange-300';
                           textColor = 'text-orange-900';
-                          icon = <div className="h-5 w-5 mx-auto rounded-full bg-orange-500 flex items-center justify-center text-white text-[10px] font-bold">✕</div>;
+                          icon = (
+                            <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white">
+                              ✕
+                            </div>
+                          );
                         }
                         // Check for pending leave
                         else if (!icon && leave?.status === 'pending') {
                           bgColor = 'bg-orange-50 border-orange-300';
                           textColor = 'text-orange-900';
-                          icon = <div className="h-5 w-5 mx-auto rounded-full bg-orange-500 flex items-center justify-center text-white text-[10px] font-bold">✕</div>;
+                          icon = (
+                            <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white">
+                              ✕
+                            </div>
+                          );
                         }
                         // Check for present
-                        else if (!icon && attendance?.morning_present && attendance?.afternoon_present) {
+                        else if (
+                          !icon &&
+                          attendance?.morning_present &&
+                          attendance?.afternoon_present
+                        ) {
                           bgColor = 'bg-green-50 border-green-300';
                           textColor = 'text-green-900';
-                          icon = <div className="h-5 w-5 mx-auto rounded-full bg-green-500 flex items-center justify-center text-white text-[10px] font-bold">✓</div>;
+                          icon = (
+                            <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-[10px] font-bold text-white">
+                              ✓
+                            </div>
+                          );
                         }
                         // Check for absent (only on past dates, not weekends/holidays)
-                        else if (!icon && !isFuture && !isHoliday && bgColor === 'bg-white border-gray-200') {
+                        else if (
+                          !icon &&
+                          !isFuture &&
+                          !isHoliday &&
+                          bgColor === 'bg-white border-gray-200'
+                        ) {
                           bgColor = 'bg-red-50 border-red-300';
                           textColor = 'text-red-900';
-                          icon = <div className="h-5 w-5 mx-auto rounded-full bg-red-500 flex items-center justify-center text-white text-[10px] font-bold">✕</div>;
+                          icon = (
+                            <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                              ✕
+                            </div>
+                          );
                         }
                         // Future dates - light gray
                         else if (isFuture) {
@@ -698,9 +829,9 @@ export function AttendanceReportPage() {
                         return (
                           <div
                             key={dateKey}
-                            className={`aspect-square rounded border p-1 flex flex-col items-center justify-between transition ${bgColor}`}
+                            className={`flex aspect-square flex-col items-center justify-between rounded border p-1 transition ${bgColor}`}
                           >
-                            <div className="text-center w-full">
+                            <div className="w-full text-center">
                               <div className="text-[7px] font-medium text-gray-500">
                                 {format(date, 'EEE')}
                               </div>
@@ -708,10 +839,10 @@ export function AttendanceReportPage() {
                                 {format(date, 'd')}
                               </div>
                             </div>
-                            <div className="flex flex-col items-center justify-center w-full flex-1">
+                            <div className="flex w-full flex-1 flex-col items-center justify-center">
                               {icon}
                               {statusLabel && (
-                                <div className="text-[7px] text-purple-600 font-medium mt-0.5">
+                                <div className="mt-0.5 text-[7px] font-medium text-purple-600">
                                   {statusLabel}
                                 </div>
                               )}
@@ -732,45 +863,51 @@ export function AttendanceReportPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base font-semibold">Attendance Distribution</CardTitle>
                 <p className="text-xs text-gray-600">
-                  Overall: {monthlyDetailData?.stats?.total_working_days > 0 
-                    ? Math.round((monthlyDetailData?.stats?.total_present / monthlyDetailData?.stats?.total_working_days) * 100) 
-                    : 0}%
+                  Overall:{' '}
+                  {monthlyDetailData?.stats?.total_working_days > 0
+                    ? Math.round(
+                        (monthlyDetailData?.stats?.total_present /
+                          monthlyDetailData?.stats?.total_working_days) *
+                          100
+                      )
+                    : 0}
+                  %
                 </p>
               </CardHeader>
               <CardContent className="flex flex-col items-center">
                 {/* Simple Donut Chart using stroke-dasharray */}
-                <div className="relative w-48 h-48 mb-4">
-                  <svg viewBox="0 0 100 100" className="transform -rotate-90">
+                <div className="relative mb-4 h-48 w-48">
+                  <svg viewBox="0 0 100 100" className="-rotate-90 transform">
                     {(() => {
                       const present = monthlyDetailData?.stats?.total_present || 0;
                       const absent = monthlyDetailData?.stats?.total_absent || 0;
                       const leaves = monthlyDetailData?.stats?.total_leaves || 0;
                       const total = present + absent + leaves;
-                      
+
                       if (total === 0) {
                         return (
-                          <circle 
-                            cx="50" 
-                            cy="50" 
-                            r="40" 
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r="40"
                             fill="none"
-                            stroke="#e5e7eb" 
+                            stroke="#e5e7eb"
                             strokeWidth="20"
                           />
                         );
                       }
-                      
+
                       const circumference = 2 * Math.PI * 40; // radius = 40
                       const presentPercent = (present / total) * 100;
                       const absentPercent = (absent / total) * 100;
                       const leavePercent = (leaves / total) * 100;
-                      
+
                       const presentLength = (presentPercent / 100) * circumference;
                       const absentLength = (absentPercent / 100) * circumference;
                       const leaveLength = (leavePercent / 100) * circumference;
-                      
+
                       let offset = 0;
-                      
+
                       return (
                         <>
                           {/* Present segment */}
@@ -786,40 +923,42 @@ export function AttendanceReportPage() {
                               strokeDashoffset={-offset}
                             />
                           )}
-                          
+
                           {/* Absent segment */}
-                          {absentPercent > 0 && (() => {
-                            offset += presentLength;
-                            return (
-                              <circle
-                                cx="50"
-                                cy="50"
-                                r="40"
-                                fill="none"
-                                stroke="#ef4444"
-                                strokeWidth="20"
-                                strokeDasharray={`${absentLength} ${circumference - absentLength}`}
-                                strokeDashoffset={-offset}
-                              />
-                            );
-                          })()}
-                          
+                          {absentPercent > 0 &&
+                            (() => {
+                              offset += presentLength;
+                              return (
+                                <circle
+                                  cx="50"
+                                  cy="50"
+                                  r="40"
+                                  fill="none"
+                                  stroke="#ef4444"
+                                  strokeWidth="20"
+                                  strokeDasharray={`${absentLength} ${circumference - absentLength}`}
+                                  strokeDashoffset={-offset}
+                                />
+                              );
+                            })()}
+
                           {/* Leave segment */}
-                          {leavePercent > 0 && (() => {
-                            offset += absentLength;
-                            return (
-                              <circle
-                                cx="50"
-                                cy="50"
-                                r="40"
-                                fill="none"
-                                stroke="#f97316"
-                                strokeWidth="20"
-                                strokeDasharray={`${leaveLength} ${circumference - leaveLength}`}
-                                strokeDashoffset={-offset}
-                              />
-                            );
-                          })()}
+                          {leavePercent > 0 &&
+                            (() => {
+                              offset += absentLength;
+                              return (
+                                <circle
+                                  cx="50"
+                                  cy="50"
+                                  r="40"
+                                  fill="none"
+                                  stroke="#f97316"
+                                  strokeWidth="20"
+                                  strokeDasharray={`${leaveLength} ${circumference - leaveLength}`}
+                                  strokeDashoffset={-offset}
+                                />
+                              );
+                            })()}
                         </>
                       );
                     })()}
@@ -827,58 +966,71 @@ export function AttendanceReportPage() {
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
                       <div className="text-3xl font-bold text-gray-900">
-                        {monthlyDetailData?.stats?.total_working_days > 0 
+                        {monthlyDetailData?.stats?.total_working_days > 0
                           ? `${Math.round((monthlyDetailData?.stats?.total_present / monthlyDetailData?.stats?.total_working_days) * 100)}%`
-                          : '0%'
-                        }
+                          : '0%'}
                       </div>
-                      <div className="text-xs text-gray-600 mt-1">Present</div>
+                      <div className="mt-1 text-xs text-gray-600">Present</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Legend */}
-                <div className="space-y-2 w-full">
+                <div className="w-full space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      <div className="h-3 w-3 rounded-full bg-green-500"></div>
                       <span className="text-xs text-gray-700">Present</span>
                     </div>
-                    <span className="text-xs font-semibold text-gray-900">{monthlyDetailData?.stats?.total_present}</span>
+                    <span className="text-xs font-semibold text-gray-900">
+                      {monthlyDetailData?.stats?.total_present}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                      <div className="h-3 w-3 rounded-full bg-red-500"></div>
                       <span className="text-xs text-gray-700">Absent</span>
                     </div>
-                    <span className="text-xs font-semibold text-gray-900">{monthlyDetailData?.stats?.total_absent}</span>
+                    <span className="text-xs font-semibold text-gray-900">
+                      {monthlyDetailData?.stats?.total_absent}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                      <div className="h-3 w-3 rounded-full bg-orange-500"></div>
                       <span className="text-xs text-gray-700">Leave</span>
                     </div>
-                    <span className="text-xs font-semibold text-gray-900">{monthlyDetailData?.stats?.total_leaves}</span>
+                    <span className="text-xs font-semibold text-gray-900">
+                      {monthlyDetailData?.stats?.total_leaves}
+                    </span>
                   </div>
                 </div>
 
                 {/* Summary Cards */}
-                <div className="grid grid-cols-2 gap-2 w-full mt-4">
-                  <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-                    <div className="text-[10px] text-green-700 font-medium mb-1">Present</div>
-                    <div className="text-xl font-bold text-green-900">{monthlyDetailData?.stats?.total_present}</div>
+                <div className="mt-4 grid w-full grid-cols-2 gap-2">
+                  <div className="rounded-lg border border-green-200 bg-green-50 p-3">
+                    <div className="mb-1 text-[10px] font-medium text-green-700">Present</div>
+                    <div className="text-xl font-bold text-green-900">
+                      {monthlyDetailData?.stats?.total_present}
+                    </div>
                   </div>
-                  <div className="bg-red-50 rounded-lg p-3 border border-red-200">
-                    <div className="text-[10px] text-red-700 font-medium mb-1">Absent</div>
-                    <div className="text-xl font-bold text-red-900">{monthlyDetailData?.stats?.total_absent}</div>
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+                    <div className="mb-1 text-[10px] font-medium text-red-700">Absent</div>
+                    <div className="text-xl font-bold text-red-900">
+                      {monthlyDetailData?.stats?.total_absent}
+                    </div>
                   </div>
-                  <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
-                    <div className="text-[10px] text-orange-700 font-medium mb-1">Leaves</div>
-                    <div className="text-xl font-bold text-orange-900">{monthlyDetailData?.stats?.total_leaves}</div>
+                  <div className="rounded-lg border border-orange-200 bg-orange-50 p-3">
+                    <div className="mb-1 text-[10px] font-medium text-orange-700">Leaves</div>
+                    <div className="text-xl font-bold text-orange-900">
+                      {monthlyDetailData?.stats?.total_leaves}
+                    </div>
                   </div>
-                  <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
-                    <div className="text-[10px] text-purple-700 font-medium mb-1">Holidays</div>
-                    <div className="text-xl font-bold text-purple-900">{monthlyDetailData?.stats?.total_holidays}</div>
+                  <div className="rounded-lg border border-purple-200 bg-purple-50 p-3">
+                    <div className="mb-1 text-[10px] font-medium text-purple-700">Holidays</div>
+                    <div className="text-xl font-bold text-purple-900">
+                      {monthlyDetailData?.stats?.total_holidays}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -890,19 +1042,25 @@ export function AttendanceReportPage() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex items-center gap-2 text-xs">
-                  <div className="h-4 w-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px]">✓</div>
+                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-green-500 text-[10px] text-white">
+                    ✓
+                  </div>
                   <span className="text-gray-700">Present</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <div className="h-4 w-4 rounded-full bg-red-500 flex items-center justify-center text-white text-[10px]">✕</div>
+                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
+                    ✕
+                  </div>
                   <span className="text-gray-700">Absent</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <div className="h-4 w-4 rounded-full bg-orange-500 flex items-center justify-center text-white text-[10px]">✕</div>
+                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] text-white">
+                    ✕
+                  </div>
                   <span className="text-gray-700">Leave (Approved)</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <div className="w-4 h-4 rounded bg-purple-100 border border-purple-300"></div>
+                  <div className="h-4 w-4 rounded border border-purple-300 bg-purple-100"></div>
                   <span className="text-gray-700">Holiday</span>
                 </div>
               </CardContent>

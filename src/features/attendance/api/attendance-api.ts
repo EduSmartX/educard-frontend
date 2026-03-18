@@ -109,11 +109,14 @@ export const getEmployeeAttendance = async (params: {
     type: string;
     reason: string;
   }>;
-  holiday_descriptions: Record<string, {
-    type: string;
-    name: string;
-    description: string;
-  }>;
+  holiday_descriptions: Record<
+    string,
+    {
+      type: string;
+      name: string;
+      description: string;
+    }
+  >;
   pagination: {
     count: number;
     page_size: number;
@@ -187,10 +190,10 @@ export const fetchOrganizationHolidays = async (params: {
     description: string;
   }>;
 }> => {
-  const response = await apiClient.get('/attendance/admin/holiday-calendar/', {
+  const response = await apiClient.get('/attendance/holiday-calendar/', {
     params,
   });
-  
+
   const payload = response.data || {};
   const holidays = Array.isArray(payload.results)
     ? payload.results
@@ -215,7 +218,12 @@ export interface TimesheetSubmission {
     phone?: string;
     gender?: string;
     role?: string;
-    organization_role?: string | null;
+    organization_role?: {
+      id: number;
+      name: string;
+      code: string;
+    } | null;
+    employee_id?: string;
   };
   week_start_date: string;
   week_end_date: string;
@@ -232,7 +240,12 @@ export interface TimesheetSubmission {
     phone?: string;
     gender?: string;
     role?: string;
-    organization_role?: string | null;
+    organization_role?: {
+      id: number;
+      name: string;
+      code: string;
+    } | null;
+    employee_id?: string;
   } | null;
   reviewed_at: string | null;
   reviewed_by_info: {
@@ -245,7 +258,12 @@ export interface TimesheetSubmission {
     phone?: string;
     gender?: string;
     role?: string;
-    organization_role?: string | null;
+    organization_role?: {
+      id: number;
+      name: string;
+      code: string;
+    } | null;
+    employee_id?: string;
   } | null;
   review_comments: string | null;
   total_working_days: number;
@@ -272,15 +290,15 @@ export const checkTimesheetStatus = async (params: {
       params,
     });
     const data = response.data.data || response.data;
-    
+
     // Handle nested submission structure
     const submission = data.submission || data;
-    
+
     // If submission_status is null, return null submission
     if (!submission || !submission.submission_status) {
       return { submission: null };
     }
-    
+
     return { submission };
   } catch (error: unknown) {
     // Return null if not found (404) - though this shouldn't happen now
@@ -309,12 +327,25 @@ export const getTimesheetSubmissions = async (params?: {
   employee_public_id?: string;
   submission_status?: string;
   week_start_date?: string;
+  from_date?: string;
+  to_date?: string;
 }): Promise<{
   results: TimesheetSubmission[];
   count: number;
 }> => {
   const response = await apiClient.get('/attendance/timesheet-submission/', { params });
-  return response.data.data || response.data;
+  const responseData = response.data.data || response.data;
+
+  // If responseData is an array, it's the direct data array
+  if (Array.isArray(responseData)) {
+    return {
+      results: responseData,
+      count: response.data.pagination?.count || responseData.length,
+    };
+  }
+
+  // Otherwise it might already be in the { results, count } format
+  return responseData;
 };
 
 // Get detailed timesheet submission
@@ -403,7 +434,8 @@ export const fetchCalendarExceptions = async (params?: {
   });
   return {
     data: response.data.data || response.data.results || response.data,
-    count: response.data.count || (response.data.data || response.data.results || response.data).length,
+    count:
+      response.data.count || (response.data.data || response.data.results || response.data).length,
   };
 };
 

@@ -172,6 +172,15 @@ function App() {
               <Route path="teachers/:id" element={<TeacherFormPage />} />
               <Route path="classes-list" element={<EmployeeClassesPage />} />
 
+              {/* Employee Attendance Management */}
+              <Route path="attendance/mark" element={<MarkAttendancePage />} />
+              <Route path="attendance/summary" element={<AttendanceSummaryPage />} />
+              <Route path="attendance/report" element={<AttendanceReportPage />} />
+              <Route path="attendance/monthly" element={<MonthlyAttendanceReportPage />} />
+              <Route path="attendance/timesheet" element={<EmployeeTimesheetPage />} />
+              <Route path="attendance/submit" element={<EmployeeTimesheetSubmitPage />} />
+              <Route path="attendance/approvals" element={<TimesheetApprovalsPage />} />
+
               {/* Employee Leave Management */}
               <Route path="leave/dashboard" element={<LeaveDashboardPage />} />
               <Route path="leave/reviews" element={<LeaveRequestReviewsPage />} />

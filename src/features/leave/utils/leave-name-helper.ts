@@ -40,12 +40,10 @@ function hasLeaveAllocation(obj: LeaveObject): obj is LeaveBalance | LeaveWithNa
  * - Otherwise: "Master Leave Name"
  */
 export function getLeaveTypeName(leave: LeaveObject): string {
-  // Handle simple summary object with just leave_type_name
   if (isLeaveBalanceSummary(leave)) {
     return leave.leave_type_name || 'Unknown';
   }
 
-  // Handle objects with leave_allocation structure
   if (hasLeaveAllocation(leave)) {
     const masterName = leave.leave_allocation?.leave_type_name || 'Unknown';
     const customName = leave.leave_name?.trim();

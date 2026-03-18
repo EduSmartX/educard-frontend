@@ -10,13 +10,14 @@ import {
   CalendarCheck,
   BookOpen,
   ClipboardCheck,
-  FileText,
   Settings,
   Briefcase,
   AlertTriangle,
   UserCog,
   School,
   GraduationCap,
+  BarChart3,
+  CheckSquare,
 } from 'lucide-react';
 import type { SidebarSection } from '@/components/layout/dashboard-sidebar';
 import { ROUTES } from '@/constants/app-config';
@@ -77,16 +78,28 @@ export const employeeSidebarConfig: SidebarSection[] = [
         path: ROUTES.EMPLOYEE.ATTENDANCE.MARK,
       },
       {
+        id: 'attendance-summary',
+        label: 'View Summary',
+        icon: BarChart3,
+        path: ROUTES.EMPLOYEE.ATTENDANCE.SUMMARY,
+      },
+      {
+        id: 'attendance-reports',
+        label: 'Attendance Report',
+        icon: CalendarDays,
+        path: ROUTES.EMPLOYEE.ATTENDANCE.REPORT,
+      },
+      {
         id: 'attendance-timesheet',
         label: 'My Timesheet',
         icon: CalendarCheck,
         path: ROUTES.EMPLOYEE.ATTENDANCE.TIMESHEET,
       },
       {
-        id: 'submit-timesheet',
-        label: 'Submit Timesheet',
-        icon: FileText,
-        path: ROUTES.EMPLOYEE.ATTENDANCE.SUBMIT,
+        id: 'timesheet-approvals',
+        label: 'Timesheet Approvals',
+        icon: CheckSquare,
+        path: ROUTES.EMPLOYEE.ATTENDANCE.APPROVALS,
       },
     ],
   },

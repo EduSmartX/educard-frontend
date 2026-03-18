@@ -31,16 +31,21 @@ export function getTimesheetTableColumns({
     columns.push({
       header: 'Employee',
       accessor: (row) => (
-        <div className="text-sm">
-          <div className="font-medium">{row.employee_info.first_name} {row.employee_info.last_name}</div>
-          <div className="text-gray-500 text-xs">{row.employee_info.email}</div>
+        <div className="flex flex-col">
+          <div className="text-base font-semibold text-gray-900">{row.employee_info.full_name}</div>
+          <div className="text-xs text-gray-600">{row.employee_info.username}</div>
+          {row.employee_info.organization_role && (
+            <div className="mt-0.5 text-xs font-medium text-blue-600">
+              {row.employee_info.organization_role.name}
+            </div>
+          )}
         </div>
       ),
       sortable: true,
-      sortKey: 'employee_info.first_name',
-      width: 250,
+      sortKey: 'employee_info.full_name',
+      width: 220,
       minWidth: 200,
-      maxWidth: 350,
+      maxWidth: 280,
     });
   }
 
@@ -48,38 +53,48 @@ export function getTimesheetTableColumns({
   columns.push({
     header: 'Week Period',
     accessor: (row) => (
-      <div className="text-sm font-medium">
-        {format(parseISO(row.week_start_date), 'MMM dd')} - {format(parseISO(row.week_end_date), 'MMM dd, yyyy')}
+      <div className="flex flex-col">
+        <div className="text-sm font-semibold text-gray-900">
+          {format(parseISO(row.week_start_date), 'MMM dd')} -{' '}
+          {format(parseISO(row.week_end_date), 'MMM dd, yyyy')}
+        </div>
+        <div className="mt-0.5 text-xs text-gray-500">
+          (
+          {Math.ceil(
+            (parseISO(row.week_end_date).getTime() - parseISO(row.week_start_date).getTime()) /
+              (1000 * 60 * 60 * 24) +
+              1
+          )}{' '}
+          days)
+        </div>
       </div>
     ),
     sortable: true,
     sortKey: 'week_start_date',
-    width: 200,
-    minWidth: 180,
-    maxWidth: 250,
+    width: 220,
+    minWidth: 200,
+    maxWidth: 280,
   });
 
   // Working Days
   columns.push({
     header: 'Working Days',
     accessor: (row) => (
-      <span className="font-semibold">{row.total_working_days}</span>
+      <span className="text-base font-bold text-gray-900">{row.total_working_days}</span>
     ),
     headerClassName: 'text-center',
     className: 'text-center',
     sortable: true,
     sortKey: 'total_working_days',
-    width: 120,
-    minWidth: 100,
-    maxWidth: 150,
+    width: 130,
+    minWidth: 110,
+    maxWidth: 160,
   });
 
   // Present
   columns.push({
     header: 'Present',
-    accessor: (row) => (
-      <AttendanceCountBadge count={row.total_present_days} type="present" />
-    ),
+    accessor: (row) => <AttendanceCountBadge count={row.total_present_days} type="present" />,
     headerClassName: 'text-center',
     className: 'text-center',
     sortable: true,
@@ -92,9 +107,7 @@ export function getTimesheetTableColumns({
   // Absent
   columns.push({
     header: 'Absent',
-    accessor: (row) => (
-      <AttendanceCountBadge count={row.total_absent_days} type="absent" />
-    ),
+    accessor: (row) => <AttendanceCountBadge count={row.total_absent_days} type="absent" />,
     headerClassName: 'text-center',
     className: 'text-center',
     sortable: true,
@@ -107,9 +120,7 @@ export function getTimesheetTableColumns({
   // Leave
   columns.push({
     header: 'Leave',
-    accessor: (row) => (
-      <AttendanceCountBadge count={row.total_leave_days} type="leave" />
-    ),
+    accessor: (row) => <AttendanceCountBadge count={row.total_leave_days} type="leave" />,
     headerClassName: 'text-center',
     className: 'text-center',
     sortable: true,
@@ -122,37 +133,55 @@ export function getTimesheetTableColumns({
   // Attendance %
   columns.push({
     header: 'Attendance %',
-    accessor: (row) => (
-      <span className="font-semibold text-purple-600">{row.attendance_percentage}%</span>
-    ),
+    accessor: (row) => {
+      const percentage =
+        typeof row.attendance_percentage === 'string'
+          ? parseFloat(row.attendance_percentage)
+          : row.attendance_percentage;
+      const colorClass =
+        percentage >= 75 ? 'text-green-600' : percentage >= 50 ? 'text-yellow-600' : 'text-red-600';
+      return (
+        <div className="flex flex-col items-center">
+          <span className={`text-lg font-bold ${colorClass}`}>{row.attendance_percentage}%</span>
+        </div>
+      );
+    },
     headerClassName: 'text-center',
     className: 'text-center',
     sortable: true,
     sortKey: 'attendance_percentage',
-    width: 130,
-    minWidth: 110,
-    maxWidth: 150,
+    width: 140,
+    minWidth: 120,
+    maxWidth: 170,
   });
 
   // Submitted On
   columns.push({
     header: 'Submitted On',
-    accessor: (row) => (
-      row.submitted_at ? format(parseISO(row.submitted_at), 'MMM dd, yyyy') : '-'
-    ),
+    accessor: (row) =>
+      row.submitted_at ? (
+        <div className="flex flex-col">
+          <span className="text-sm font-medium text-gray-900">
+            {format(parseISO(row.submitted_at), 'MMM dd, yyyy')}
+          </span>
+          <span className="text-xs text-gray-500">
+            {format(parseISO(row.submitted_at), 'h:mm a')}
+          </span>
+        </div>
+      ) : (
+        '-'
+      ),
     sortable: true,
     sortKey: 'submitted_at',
-    width: 140,
-    minWidth: 120,
-    maxWidth: 180,
+    width: 150,
+    minWidth: 130,
+    maxWidth: 190,
   });
 
   // Status
   columns.push({
     header: 'Status',
-    accessor: (row) => (
-      <TimesheetStatusBadge status={row.submission_status} />
-    ),
+    accessor: (row) => <TimesheetStatusBadge status={row.submission_status} />,
     headerClassName: 'text-center',
     className: 'text-center',
     sortable: true,
@@ -176,7 +205,7 @@ export function getTimesheetTableColumns({
                 onClick={() => onViewDetails(row)}
                 className="h-8 w-8"
               >
-                <Eye className="w-4 h-4" />
+                <Eye className="h-4 w-4" />
                 <span className="sr-only">View Details</span>
               </Button>
             </TooltipTrigger>
@@ -184,7 +213,7 @@ export function getTimesheetTableColumns({
               <p>View Details</p>
             </TooltipContent>
           </Tooltip>
-          
+
           {/* Show Approve/Reject buttons for Admin when status allows review */}
           {isAdmin && canReviewTimesheet(row.submission_status) && onReview && (
             <>
@@ -192,11 +221,11 @@ export function getTimesheetTableColumns({
                 <TooltipTrigger asChild>
                   <Button
                     size="icon"
-                    className="h-8 w-8 bg-green-600 hover:bg-green-700 text-white"
+                    className="h-8 w-8 bg-green-600 text-white hover:bg-green-700"
                     onClick={() => onReview(row, TimesheetReviewAction.APPROVED)}
                     disabled={isReviewPending}
                   >
-                    <CheckCircle2 className="w-4 h-4" />
+                    <CheckCircle2 className="h-4 w-4" />
                     <span className="sr-only">Approve</span>
                   </Button>
                 </TooltipTrigger>
@@ -204,7 +233,7 @@ export function getTimesheetTableColumns({
                   <p>Approve</p>
                 </TooltipContent>
               </Tooltip>
-              
+
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -214,7 +243,7 @@ export function getTimesheetTableColumns({
                     onClick={() => onReview(row, TimesheetReviewAction.REJECTED)}
                     disabled={isReviewPending}
                   >
-                    <XCircle className="w-4 h-4" />
+                    <XCircle className="h-4 w-4" />
                     <span className="sr-only">Reject</span>
                   </Button>
                 </TooltipTrigger>

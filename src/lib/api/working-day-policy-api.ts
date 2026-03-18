@@ -42,7 +42,7 @@ export interface SingleWorkingDayPolicyResponse {
  * Fetch all working day policies
  */
 export async function getWorkingDayPolicies(): Promise<WorkingDayPolicy[]> {
-  const response = await api.get<WorkingDayPolicyResponse>('/attendance/admin/working-day-policy/');
+  const response = await api.get<WorkingDayPolicyResponse>('/attendance/working-day-policy/');
   return response.data.data;
 }
 
@@ -51,9 +51,7 @@ export async function getWorkingDayPolicies(): Promise<WorkingDayPolicy[]> {
  */
 export async function getCurrentWorkingDayPolicy(): Promise<WorkingDayPolicy | null> {
   try {
-    const response = await api.get<WorkingDayPolicyResponse>(
-      '/attendance/admin/working-day-policy/'
-    );
+    const response = await api.get<WorkingDayPolicyResponse>('/attendance/working-day-policy/');
 
     if (response.data.success && response.data.data.length > 0) {
       // Return the first one (they're ordered by -effective_from in backend)

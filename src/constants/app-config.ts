@@ -285,8 +285,11 @@ export const ROUTES = {
     CLASSES: '/employee/classes-list',
     ATTENDANCE: {
       MARK: '/employee/attendance/mark',
+      SUMMARY: '/employee/attendance/summary',
+      REPORT: '/employee/attendance/report',
       TIMESHEET: '/employee/attendance/timesheet',
       SUBMIT: '/employee/attendance/submit',
+      APPROVALS: '/employee/attendance/approvals',
     },
     LEAVE: {
       DASHBOARD: '/employee/leave/dashboard',

@@ -19,6 +19,7 @@ import {
   Sliders,
   AlertTriangle,
   Briefcase,
+  CheckSquare,
 } from 'lucide-react';
 import type { SidebarSection } from '@/components/layout/dashboard-sidebar';
 import { ROUTES } from '@/constants/app-config';
@@ -92,7 +93,7 @@ export const adminSidebarConfig: SidebarSection[] = [
       },
       {
         id: 'attendance-reports',
-        label: 'Monthly Report',
+        label: 'Attendance Report',
         icon: CalendarDays,
         path: '/attendance/monthly',
       },
@@ -101,6 +102,12 @@ export const adminSidebarConfig: SidebarSection[] = [
         label: 'Timesheet',
         icon: CalendarCheck,
         path: ROUTES.ATTENDANCE.TIMESHEET,
+      },
+      {
+        id: 'attendance-timesheet-approvals',
+        label: 'Timesheet Approvals',
+        icon: CheckSquare,
+        path: ROUTES.ATTENDANCE.TIMESHEET_APPROVALS,
       },
     ],
   },

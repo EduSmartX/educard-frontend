@@ -1,20 +1,20 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { format, parseISO } from 'date-fns';
-import { FileText, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
+import { FileText, CheckCircle2, XCircle, Clock, Users, Eye, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { PageHeader } from '@/components/common';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DataTable, type Column } from '@/components/ui/data-table';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
+import { MonthYearPicker } from '@/components/ui/month-year-picker';
 import { Combobox } from '@/components/ui/combobox';
-import { DataTable } from '@/components/ui/data-table';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -26,464 +26,626 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 
-// Feature imports
-import { 
-  getTimesheetSubmissions,
-  getEmployeeAttendance, 
-  type TimesheetSubmission 
-} from '@/features/attendance/api/attendance-api';
-import { 
-  AttendanceStatusBadge, 
-  TimesheetStatusBadge,
-  getTimesheetTableColumns,
-} from '@/features/attendance/components';
 import {
-  isAdminUser,
-  canReviewTimesheet,
-  isLeaveDay,
-  isHolidayDay,
-  isNonWorkingDay,
-  isFullDayPresent,
-  isHalfDay,
-  isAbsent,
-  getAttendanceRemarks,
-  getEmployeeFullName,
-} from '@/features/attendance/utils';
-import { useReviewTimesheet } from '@/features/attendance/hooks';
-import { useAuth } from '@/hooks/use-auth';
-
-// Constants
-import { TimesheetReviewAction, type TimesheetReviewActionValue, TimesheetStatus } from '@/constants/attendance';
-import { ErrorMessages } from '@/constants/error-messages';
-
-// API imports
-import apiClient from '@/lib/api';
-
-type DialogType = 'review' | 'detail' | null;
+  getTimesheetSubmissions,
+  getEmployeeAttendance,
+  type TimesheetSubmission,
+} from '@/features/attendance/api/attendance-api';
+import { TimesheetStatusBadge, AttendanceCountBadge } from '@/features/attendance/components';
+import { apiClient } from '@/lib/api-client';
 
 interface ManageableUser {
   public_id: string;
-  first_name: string;
-  last_name: string;
+  full_name: string;
   email: string;
   role: string;
-  full_name: string;
+  organization_role?: { name: string; code: string };
 }
 
 export default function TimesheetApprovalsPage() {
-  const [activeTab, setActiveTab] = useState<'staff' | 'self'>('staff');
-  const [selectedUser, setSelectedUser] = useState<string>('');
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [selectedEmployee, setSelectedEmployee] = useState<string>('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('SUBMITTED');
   const [selectedSubmission, setSelectedSubmission] = useState<TimesheetSubmission | null>(null);
-  const [reviewAction, setReviewAction] = useState<TimesheetReviewActionValue | null>(null);
-  const [reviewComments, setReviewComments] = useState('');
-  const [dialogType, setDialogType] = useState<DialogType>(null);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
 
-  // Get current user from auth context
-  const { user: currentUser } = useAuth();
+  // Calculate month range
+  const monthStart = useMemo(() => startOfMonth(selectedMonth), [selectedMonth]);
+  const monthEnd = useMemo(() => endOfMonth(selectedMonth), [selectedMonth]);
+  const fromDate = useMemo(() => format(monthStart, 'yyyy-MM-dd'), [monthStart]);
+  const toDate = useMemo(() => format(monthEnd, 'yyyy-MM-dd'), [monthEnd]);
 
-  const isAdmin = isAdminUser(currentUser?.role);
+  // Fetch manageable users
+  const { data: usersData } = useQuery({
+    queryKey: ['manageable-users', 'staff'],
+    queryFn: async () => {
+      const response = await apiClient.get('/users/profile/manageable-users/', {
+        params: { is_staff: true },
+      });
+      return response.data;
+    },
+  });
+
+  const manageableUsers = useMemo(() => {
+    const users = usersData?.data?.users || usersData?.data || [];
+    return users as ManageableUser[];
+  }, [usersData]);
+
+  // Build filters for API
+  const filters = useMemo(() => {
+    const params: Record<string, string> = {
+      view_type: 'staff',
+      from_date: fromDate,
+      to_date: toDate,
+    };
+
+    if (selectedStatus && selectedStatus !== 'ALL') {
+      params.submission_status = selectedStatus;
+    }
+
+    if (selectedEmployee) {
+      params.employee = selectedEmployee;
+    }
+
+    return params;
+  }, [fromDate, toDate, selectedStatus, selectedEmployee]);
+
+  // Fetch timesheet submissions
+  const { data: submissionsData, isLoading } = useQuery({
+    queryKey: ['timesheet-submissions', filters],
+    queryFn: () => getTimesheetSubmissions(filters),
+  });
 
   // Fetch day-wise attendance for detailed view
   const { data: attendanceData, isLoading: isLoadingAttendance } = useQuery({
-    queryKey: ['employee-attendance', selectedSubmission?.employee_info?.public_id, selectedSubmission?.week_start_date, selectedSubmission?.week_end_date],
+    queryKey: [
+      'employee-attendance',
+      selectedSubmission?.employee_info?.public_id,
+      selectedSubmission?.week_start_date,
+      selectedSubmission?.week_end_date,
+    ],
     queryFn: () => {
       if (!selectedSubmission) {
         return null;
       }
-      
+
       return getEmployeeAttendance({
         from_date: selectedSubmission.week_start_date,
         to_date: selectedSubmission.week_end_date,
         user_public_id: selectedSubmission.employee_info.public_id,
       });
     },
-    enabled: dialogType === 'detail' && !!selectedSubmission,
+    enabled: isDetailDialogOpen && !!selectedSubmission,
   });
 
-  // Fetch manageable users (staff members) - only when viewing staff timesheets
-  const { data: manageableUsersData, isLoading: isLoadingUsers } = useQuery({
-    queryKey: ['manageable-users', 'staff-only'],
-    queryFn: async () => {
-      const response = await apiClient.get('/users/profile/manageable-users/', {
-        params: {
-          is_staff: true,
-        },
-      });
-      return response.data;
-    },
-    enabled: activeTab === 'staff',
-  });
+  // Group and sort data by employee, then by date
+  const groupedData = useMemo(() => {
+    const submissions = submissionsData?.results || [];
 
-  const manageableUsers = useMemo(() => {
-    if (!manageableUsersData?.data) {
-      return [];
-    }
-    
-    if (Array.isArray(manageableUsersData.data.users)) {
-      return manageableUsersData.data.users as ManageableUser[];
-    }
-    
-    if (Array.isArray(manageableUsersData.data)) {
-      return manageableUsersData.data as ManageableUser[];
-    }
-    
-    return [];
-  }, [manageableUsersData]);
+    // Sort by employee name (primary) then by week_start_date (secondary)
+    return [...submissions].sort((a, b) => {
+      // Primary sort: Employee name
+      const nameA = a.employee_info?.full_name || '';
+      const nameB = b.employee_info?.full_name || '';
+      const nameCompare = nameA.localeCompare(nameB);
 
-  // Fetch timesheet submissions
-  const { data: submissionsData, isLoading: isLoadingSubmissions } = useQuery({
-    queryKey: ['timesheet-submissions', activeTab, selectedUser, TimesheetStatus.SUBMITTED],
-    queryFn: () => {
-      const params: {
-        view_type?: 'self' | 'staff';
-        submission_status: string;
-        employee_public_id?: string;
-      } = {
-        view_type: activeTab,
-        submission_status: TimesheetStatus.SUBMITTED,
-      };
-      
-      // Only add employee_public_id if viewing staff and user is selected
-      if (activeTab === 'staff' && selectedUser) {
-        params.employee_public_id = selectedUser;
+      if (nameCompare !== 0) {
+        return nameCompare;
       }
-      
-      return getTimesheetSubmissions(params);
-    },
-    enabled: true,
-  });
 
-  const submissions = useMemo(() => {
-    let data: TimesheetSubmission[] = [];
-    
-    if (submissionsData) {
-      if (Array.isArray(submissionsData)) {
-        data = submissionsData;
-      }
-      // @ts-expect-error - API returns data array but typed as results
-      else if (Array.isArray(submissionsData.data)) {
-        // @ts-expect-error - API returns data array but typed as results
-        data = submissionsData.data;
-      }
-      else if (Array.isArray(submissionsData.results)) {
-        data = submissionsData.results;
-      }
-    }
-    
-    // Sort by week_start_date (oldest first: Feb 01 before Mar 01)
-    return data.sort((a, b) => {
-      const dateA = new Date(a.week_start_date).getTime();
-      const dateB = new Date(b.week_start_date).getTime();
-      return dateA - dateB;
+      // Secondary sort: Week start date (descending - newest first)
+      const dateA = new Date(a.week_start_date);
+      const dateB = new Date(b.week_start_date);
+      return dateB.getTime() - dateA.getTime();
     });
   }, [submissionsData]);
 
-  const closeDialog = () => {
-    setDialogType(null);
-    setSelectedSubmission(null);
-    setReviewAction(null);
-    setReviewComments('');
-  };
+  // Calculate metrics
+  const metrics = useMemo(() => {
+    const submissions = submissionsData?.results || [];
+    const pending = submissions.filter(
+      (s: TimesheetSubmission) => s.submission_status === 'SUBMITTED'
+    ).length;
+    const approved = submissions.filter(
+      (s: TimesheetSubmission) => s.submission_status === 'APPROVED'
+    ).length;
+    const rejected = submissions.filter(
+      (s: TimesheetSubmission) => s.submission_status === 'REJECTED'
+    ).length;
+    const uniqueEmployees = new Set(
+      submissions.map((s: TimesheetSubmission) => s.employee_info?.public_id)
+    ).size;
 
-  // Review mutation - extracted to custom hook
-  const reviewMutation = useReviewTimesheet(closeDialog);
+    return { pending, approved, rejected, uniqueEmployees, total: submissions.length };
+  }, [submissionsData]);
 
-  const openDetailDialog = (submission: TimesheetSubmission) => {
-    setSelectedSubmission(submission);
-    setDialogType('detail');
-  };
-
-  const openReviewDialog = (submission: TimesheetSubmission, action: TimesheetReviewActionValue) => {
-    setSelectedSubmission(submission);
-    setReviewAction(action);
-    setReviewComments('');
-    setDialogType('review');
-  };
-
-  const handleReview = () => {
-    if (!selectedSubmission || !reviewAction) {
-      return;
-    }
-
-    // Validate comments for REJECTED
-    if (reviewAction === TimesheetReviewAction.REJECTED && !reviewComments.trim()) {
-      toast.error(ErrorMessages.ATTENDANCE.REJECTION_COMMENT_REQUIRED);
-      return;
-    }
-
-    reviewMutation.mutate({
-      publicId: selectedSubmission.public_id,
-      data: {
-        submission_status: reviewAction,
-        review_comments: reviewComments.trim() || undefined,
+  // Define table columns
+  const columns: Column<TimesheetSubmission>[] = useMemo(
+    () => [
+      {
+        header: 'Employee',
+        accessor: (row) => (
+          <div className="flex flex-col">
+            <div className="text-base font-semibold text-gray-900">
+              {row.employee_info?.full_name || 'N/A'}
+            </div>
+            <div className="text-xs text-gray-600">
+              {row.employee_info?.username || row.employee_info?.email}
+            </div>
+            {row.employee_info?.organization_role &&
+              typeof row.employee_info.organization_role === 'object' && (
+                <div className="mt-0.5 text-xs font-medium text-blue-600">
+                  {row.employee_info.organization_role.name}
+                </div>
+              )}
+          </div>
+        ),
+        sortable: true,
+        sortKey: 'employee_info.full_name',
+        width: 220,
       },
-    });
-  };
+      {
+        header: 'Week Period',
+        accessor: (row) => (
+          <div className="flex flex-col">
+            <div className="text-sm font-semibold text-gray-900">
+              {format(new Date(row.week_start_date), 'MMM dd')} -{' '}
+              {format(new Date(row.week_end_date), 'MMM dd, yyyy')}
+            </div>
+            <div className="mt-0.5 text-xs text-gray-500">
+              (
+              {Math.ceil(
+                (new Date(row.week_end_date).getTime() - new Date(row.week_start_date).getTime()) /
+                  (1000 * 60 * 60 * 24) +
+                  1
+              )}{' '}
+              days)
+            </div>
+          </div>
+        ),
+        sortable: true,
+        sortKey: 'week_start_date',
+        width: 220,
+      },
+      {
+        header: 'Working Days',
+        accessor: (row) => (
+          <span className="text-base font-bold text-gray-900">{row.total_working_days}</span>
+        ),
+        headerClassName: 'text-center',
+        className: 'text-center',
+        sortable: true,
+        sortKey: 'total_working_days',
+        width: 130,
+      },
+      {
+        header: 'Present',
+        accessor: (row) => <AttendanceCountBadge count={row.total_present_days} type="present" />,
+        headerClassName: 'text-center',
+        className: 'text-center',
+        sortable: true,
+        sortKey: 'total_present_days',
+        width: 100,
+      },
+      {
+        header: 'Absent',
+        accessor: (row) => <AttendanceCountBadge count={row.total_absent_days} type="absent" />,
+        headerClassName: 'text-center',
+        className: 'text-center',
+        sortable: true,
+        sortKey: 'total_absent_days',
+        width: 100,
+      },
+      {
+        header: 'Leave',
+        accessor: (row) => <AttendanceCountBadge count={row.total_leave_days} type="leave" />,
+        headerClassName: 'text-center',
+        className: 'text-center',
+        sortable: true,
+        sortKey: 'total_leave_days',
+        width: 100,
+      },
+      {
+        header: 'Attendance %',
+        accessor: (row) => {
+          const percentage =
+            typeof row.attendance_percentage === 'string'
+              ? parseFloat(row.attendance_percentage)
+              : row.attendance_percentage;
+          const colorClass =
+            percentage >= 75
+              ? 'text-green-600'
+              : percentage >= 50
+                ? 'text-yellow-600'
+                : 'text-red-600';
+          return (
+            <span className={`text-lg font-bold ${colorClass}`}>{row.attendance_percentage}%</span>
+          );
+        },
+        headerClassName: 'text-center',
+        className: 'text-center',
+        sortable: true,
+        sortKey: 'attendance_percentage',
+        width: 140,
+      },
+      {
+        header: 'Submitted On',
+        accessor: (row) =>
+          row.submitted_at ? (
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-gray-900">
+                {format(new Date(row.submitted_at), 'MMM dd, yyyy')}
+              </span>
+              <span className="text-xs text-gray-500">
+                {format(new Date(row.submitted_at), 'h:mm a')}
+              </span>
+            </div>
+          ) : (
+            '-'
+          ),
+        sortable: true,
+        sortKey: 'submitted_at',
+        width: 150,
+      },
+      {
+        header: 'Status',
+        accessor: (row) => <TimesheetStatusBadge status={row.submission_status} />,
+        headerClassName: 'text-center',
+        className: 'text-center',
+        sortable: true,
+        sortKey: 'submission_status',
+        width: 140,
+      },
+      {
+        header: 'Actions',
+        accessor: (row) => (
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 border-blue-200 bg-blue-50 px-3 text-blue-700 shadow-sm transition-all duration-200 hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800 hover:shadow"
+              onClick={() => {
+                setSelectedSubmission(row);
+                setIsDetailDialogOpen(true);
+              }}
+            >
+              <Eye className="mr-1 h-4 w-4" />
+              <span className="text-xs font-medium">View</span>
+            </Button>
+            {row.submission_status === 'SUBMITTED' && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 border-green-200 bg-green-50 px-3 text-green-700 shadow-sm transition-all duration-200 hover:border-green-300 hover:bg-green-100 hover:text-green-800 hover:shadow"
+                  onClick={() => {
+                    // TODO: Approve
+                    toast.info('Approve - Coming soon');
+                  }}
+                >
+                  <CheckCircle2 className="mr-1 h-4 w-4" />
+                  <span className="text-xs font-medium">Approve</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 border-red-200 bg-red-50 px-3 text-red-700 shadow-sm transition-all duration-200 hover:border-red-300 hover:bg-red-100 hover:text-red-800 hover:shadow"
+                  onClick={() => {
+                    // TODO: Reject
+                    toast.info('Reject - Coming soon');
+                  }}
+                >
+                  <XCircle className="mr-1 h-4 w-4" />
+                  <span className="text-xs font-medium">Reject</span>
+                </Button>
+              </>
+            )}
+          </div>
+        ),
+        headerClassName: 'text-center',
+        className: 'text-center',
+        width: 320,
+      },
+    ],
+    []
+  );
+
+  // Employee options for filter
+  const employeeOptions = useMemo(
+    () =>
+      manageableUsers.map((user) => ({
+        value: user.public_id,
+        label: user.full_name,
+      })),
+    [manageableUsers]
+  );
+
+  // Status options for filter
+  const statusOptions = [
+    { value: 'ALL', label: 'All Status' },
+    { value: 'SUBMITTED', label: 'Pending' },
+    { value: 'APPROVED', label: 'Approved' },
+    { value: 'REJECTED', label: 'Rejected' },
+  ];
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Timesheet Approvals"
-        description="Review and approve employee timesheet submissions"
+        description="Review and approve staff timesheet submissions"
         icon={FileText}
       />
 
-      {/* Tabs for Staff and Self */}
-      <Tabs value={activeTab} onValueChange={(value) => {
-        setActiveTab(value as 'staff' | 'self');
-        setSelectedUser('');
-      }}>
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="staff">Staff Timesheets</TabsTrigger>
-          <TabsTrigger value="self">My Timesheets</TabsTrigger>
-        </TabsList>
+      {/* Metrics Dashboard */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100 shadow-sm transition-shadow hover:shadow-md">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-base font-semibold text-orange-900">
+              Pending Approvals
+            </CardTitle>
+            <Clock className="h-5 w-5 text-orange-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-bold text-orange-700">{metrics.pending}</div>
+            <p className="mt-2 text-sm font-medium text-orange-700">
+              {metrics.uniqueEmployees} employee{metrics.uniqueEmployees !== 1 ? 's' : ''}
+            </p>
+          </CardContent>
+        </Card>
 
-        <TabsContent value="staff" className="space-y-4">
-          {/* Employee Filter */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Filter Options</CardTitle>
-              <CardDescription>Select an employee to view their submissions or leave empty to view all</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="max-w-md">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Select Employee (Optional)
-                </label>
-                <Combobox
-                  options={manageableUsers.map((staff) => ({
-                    value: staff.public_id,
-                    label: staff.full_name || `${staff.first_name} ${staff.last_name}`,
-                  }))}
-                  value={selectedUser}
-                  onValueChange={setSelectedUser}
-                  placeholder="All employees"
-                  searchPlaceholder="Search employees..."
-                  emptyText="No employees found"
-                  disabled={isLoadingUsers}
-                  className="bg-white"
-                />
-              </div>
-            </CardContent>
-          </Card>
+        <Card className="border-green-200 bg-gradient-to-br from-green-50 to-green-100 shadow-sm transition-shadow hover:shadow-md">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-base font-semibold text-green-900">Approved</CardTitle>
+            <CheckCircle2 className="h-5 w-5 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-bold text-green-700">{metrics.approved}</div>
+            <p className="mt-2 text-sm font-medium text-green-700">Total approved timesheets</p>
+          </CardContent>
+        </Card>
 
-          {/* Staff Submissions Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Pending Staff Timesheets</CardTitle>
-              <CardDescription>
-                {submissions.length > 0 
-                  ? `${submissions.length} pending timesheet${submissions.length > 1 ? 's' : ''} requiring your approval`
-                  : 'No pending timesheets found'
-                }
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <DataTable
-                columns={getTimesheetTableColumns({
-                  isAdmin,
-                  isReviewPending: reviewMutation.isPending,
-                  onViewDetails: openDetailDialog,
-                  onReview: openReviewDialog,
-                  showEmployeeColumn: true, // Show employee column in Staff tab
-                })}
-                data={submissions}
-                isLoading={isLoadingSubmissions}
-                emptyMessage="No pending timesheet submissions"
-                getRowKey={(row) => row.public_id}
-                maxHeight="600px"
-                minWidth="1400px"
+        <Card className="border-red-200 bg-gradient-to-br from-red-50 to-red-100 shadow-sm transition-shadow hover:shadow-md">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-base font-semibold text-red-900">Rejected</CardTitle>
+            <XCircle className="h-5 w-5 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-bold text-red-700">{metrics.rejected}</div>
+            <p className="mt-2 text-sm font-medium text-red-700">Total rejected timesheets</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 shadow-sm transition-shadow hover:shadow-md">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-base font-semibold text-blue-900">Staff Members</CardTitle>
+            <Users className="h-5 w-5 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-bold text-blue-700">{manageableUsers.length}</div>
+            <p className="mt-2 text-sm font-medium text-blue-700">Total manageable staff</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">Filters</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            {/* Month Picker */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Select Month</label>
+              <MonthYearPicker
+                value={selectedMonth}
+                onChange={(date) => date && setSelectedMonth(date)}
               />
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
 
-        <TabsContent value="self" className="space-y-4">
-          {/* Admin indicator */}
-          {isAdmin && (
-            <Card className="border-blue-200 bg-blue-50">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2">
-                  <Badge className="bg-blue-600 hover:bg-blue-700">Admin Mode</Badge>
-                  <span className="text-sm text-blue-800">
-                    You can approve or reject your own timesheet submissions
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-          
-          {/* Self Submissions Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>My Timesheet Submissions</CardTitle>
-              <CardDescription>
-                {submissions.length > 0 
-                  ? `${submissions.length} submission${submissions.length > 1 ? 's' : ''} found`
-                  : 'No submissions found'
-                }
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <DataTable
-                columns={getTimesheetTableColumns({
-                  isAdmin,
-                  isReviewPending: reviewMutation.isPending,
-                  onViewDetails: openDetailDialog,
-                  onReview: openReviewDialog,
-                  showEmployeeColumn: false, // Don't show employee column in Self tab
-                })}
-                data={submissions}
-                isLoading={isLoadingSubmissions}
-                emptyMessage="No timesheet submissions found"
-                getRowKey={(row) => row.public_id}
-                maxHeight="600px"
-                minWidth="1200px"
+            {/* Employee Filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Filter by Employee</label>
+              <Combobox
+                options={[{ value: '', label: 'All Employees' }, ...employeeOptions]}
+                value={selectedEmployee}
+                onValueChange={setSelectedEmployee}
+                placeholder="Select employee..."
               />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </div>
+
+            {/* Status Filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Filter by Status</label>
+              <Combobox
+                options={statusOptions}
+                value={selectedStatus}
+                onValueChange={setSelectedStatus}
+                placeholder="Select status..."
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Data Table */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg font-semibold">
+              Timesheet Submissions ({groupedData.length})
+            </CardTitle>
+            <Badge variant="outline" className="text-sm">
+              {format(selectedMonth, 'MMMM yyyy')}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <DataTable
+            columns={columns}
+            data={groupedData}
+            getRowKey={(row) => row.public_id}
+            isLoading={isLoading}
+            emptyMessage="No timesheet submissions found for the selected period."
+          />
+        </CardContent>
+      </Card>
 
       {/* Detail View Dialog */}
-      <Dialog open={dialogType === 'detail'} onOpenChange={(open) => !open && closeDialog()}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-white">
+      <Dialog
+        open={isDetailDialogOpen}
+        onOpenChange={(open) => !open && setIsDetailDialogOpen(false)}
+      >
+        <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto bg-white">
           <DialogHeader>
             <DialogTitle>Timesheet Details</DialogTitle>
-            <DialogDescription>
-              Detailed weekly attendance report
-            </DialogDescription>
+            <DialogDescription>Detailed weekly attendance report</DialogDescription>
           </DialogHeader>
 
           {selectedSubmission && (
             <div className="space-y-6">
               {/* Header Info */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-2 gap-4 rounded-lg bg-gray-50 p-4">
                 <div>
                   <p className="text-sm text-gray-600">Employee</p>
-                  <p className="font-semibold">{getEmployeeFullName(selectedSubmission.employee_info)}</p>
+                  <p className="font-semibold">{selectedSubmission.employee_info.full_name}</p>
                   <p className="text-sm text-gray-500">{selectedSubmission.employee_info.email}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Week Period</p>
                   <p className="font-semibold">
-                    {format(parseISO(selectedSubmission.week_start_date), 'MMM dd')} - {format(parseISO(selectedSubmission.week_end_date), 'MMM dd, yyyy')}
+                    {format(parseISO(selectedSubmission.week_start_date), 'MMM dd')} -{' '}
+                    {format(parseISO(selectedSubmission.week_end_date), 'MMM dd, yyyy')}
                   </p>
+                  <div className="mt-2">
+                    <TimesheetStatusBadge status={selectedSubmission.submission_status} />
+                  </div>
                 </div>
               </div>
 
               {/* Summary Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
                   <p className="text-xs font-medium text-gray-600">Working Days</p>
-                  <p className="text-2xl font-bold text-blue-600">{selectedSubmission.total_working_days}</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {selectedSubmission.total_working_days}
+                  </p>
                 </div>
-                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                <div className="rounded-lg border border-green-200 bg-green-50 p-4">
                   <p className="text-xs font-medium text-gray-600">Present</p>
-                  <p className="text-2xl font-bold text-green-600">{selectedSubmission.total_present_days}</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {selectedSubmission.total_present_days}
+                  </p>
                 </div>
-                <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+                <div className="rounded-lg border border-red-200 bg-red-50 p-4">
                   <p className="text-xs font-medium text-gray-600">Absent</p>
-                  <p className="text-2xl font-bold text-red-600">{selectedSubmission.total_absent_days}</p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {selectedSubmission.total_absent_days}
+                  </p>
                 </div>
-                <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
                   <p className="text-xs font-medium text-gray-600">Leave</p>
-                  <p className="text-2xl font-bold text-yellow-600">{selectedSubmission.total_leave_days}</p>
+                  <p className="text-2xl font-bold text-yellow-600">
+                    {selectedSubmission.total_leave_days}
+                  </p>
                 </div>
-                <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <div className="rounded-lg border border-purple-200 bg-purple-50 p-4">
                   <p className="text-xs font-medium text-gray-600">Attendance %</p>
-                  <p className="text-2xl font-bold text-purple-600">{selectedSubmission.attendance_percentage}%</p>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {selectedSubmission.attendance_percentage}%
+                  </p>
                 </div>
               </div>
 
-              {/* Day-wise Attendance */}
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-gray-900">Day-wise Attendance</h3>
-                {isLoadingAttendance ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                  </div>
-                ) : attendanceData?.records && attendanceData.records.length > 0 ? (
-                  <div className="rounded-md border">
+              {/* Day-wise Details */}
+              {isLoadingAttendance ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                </div>
+              ) : attendanceData && Array.isArray(attendanceData) && attendanceData.length > 0 ? (
+                <div>
+                  <h4 className="mb-3 text-sm font-semibold">Daily Attendance</h4>
+                  <div className="overflow-hidden rounded-lg border">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Day</TableHead>
-                          <TableHead className="text-center">Morning</TableHead>
-                          <TableHead className="text-center">Afternoon</TableHead>
-                          <TableHead className="text-center">Status</TableHead>
+                          <TableHead className="w-32">Date</TableHead>
+                          <TableHead className="w-28">Day</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="w-24 text-center">Morning</TableHead>
+                          <TableHead className="w-24 text-center">Afternoon</TableHead>
                           <TableHead>Remarks</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {attendanceData.records.map((record) => {
-                          const date = parseISO(record.date);
-                          // Use utility functions for attendance checks
-                          const recordIsLeave = isLeaveDay(record);
-                          const recordIsHoliday = isHolidayDay(record);
-                          const recordIsNonWorkingDay = isNonWorkingDay(record);
-                          const recordIsPresent = isFullDayPresent(record);
-                          const recordIsHalfDay = isHalfDay(record);
-                          const recordIsAbsent = isAbsent(record);
+                        {attendanceData.map((day: Record<string, unknown>) => {
+                          const date = parseISO(day.date as string);
+                          const dayOfWeek = date.getDay();
+                          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                          const isHoliday = !!day.holiday;
+                          const isLeave = day.is_leave as boolean;
+                          const morningPresent = day.morning_present as boolean;
+                          const afternoonPresent = day.afternoon_present as boolean;
+
+                          let statusText = '';
+                          let statusColor = '';
+
+                          if (isHoliday) {
+                            statusText = 'Holiday';
+                            statusColor = 'text-purple-600 bg-purple-50';
+                          } else if (isLeave) {
+                            statusText = 'Leave';
+                            statusColor = 'text-yellow-600 bg-yellow-50';
+                          } else if (isWeekend) {
+                            statusText = 'Weekend';
+                            statusColor = 'text-gray-600 bg-gray-50';
+                          } else if (morningPresent && afternoonPresent) {
+                            statusText = 'Present';
+                            statusColor = 'text-green-600 bg-green-50';
+                          } else if (morningPresent || afternoonPresent) {
+                            statusText = 'Half Day';
+                            statusColor = 'text-blue-600 bg-blue-50';
+                          } else {
+                            statusText = 'Absent';
+                            statusColor = 'text-red-600 bg-red-50';
+                          }
 
                           return (
-                            <TableRow key={record.date} className={recordIsHoliday || recordIsNonWorkingDay ? 'bg-gray-50' : ''}>
+                            <TableRow
+                              key={day.date as string}
+                              className={isWeekend ? 'bg-gray-50' : ''}
+                            >
                               <TableCell className="font-medium">
                                 {format(date, 'MMM dd, yyyy')}
                               </TableCell>
-                              <TableCell>
+                              <TableCell className="text-sm text-gray-600">
                                 {format(date, 'EEEE')}
                               </TableCell>
-                              <TableCell className="text-center">
-                                {recordIsHoliday || recordIsNonWorkingDay ? (
-                                  <span className="text-gray-400">-</span>
-                                ) : recordIsLeave ? (
-                                  <AttendanceStatusBadge status="leave" />
-                                ) : record.morning_present ? (
-                                  <AttendanceStatusBadge status="present" />
-                                ) : (
-                                  <AttendanceStatusBadge status="absent" />
-                                )}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                {recordIsHoliday || recordIsNonWorkingDay ? (
-                                  <span className="text-gray-400">-</span>
-                                ) : recordIsLeave ? (
-                                  <AttendanceStatusBadge status="leave" />
-                                ) : record.afternoon_present ? (
-                                  <AttendanceStatusBadge status="present" />
-                                ) : (
-                                  <AttendanceStatusBadge status="absent" />
-                                )}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                {recordIsHoliday ? (
-                                  <AttendanceStatusBadge status="holiday" />
-                                ) : recordIsNonWorkingDay ? (
-                                  <Badge variant="outline" className="bg-gray-100 text-gray-600">Off Day</Badge>
-                                ) : recordIsLeave ? (
-                                  <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-300">
-                                    {record.leave_type_name ? `Leave (${record.leave_type_name})` : 'On Leave'}
-                                  </Badge>
-                                ) : recordIsPresent ? (
-                                  <AttendanceStatusBadge status="present" label="Full Day" />
-                                ) : recordIsHalfDay ? (
-                                  <AttendanceStatusBadge status="half_day" />
-                                ) : recordIsAbsent ? (
-                                  <AttendanceStatusBadge status="absent" />
-                                ) : (
-                                  <span className="text-gray-400">-</span>
-                                )}
-                              </TableCell>
                               <TableCell>
-                                <span className="text-sm text-gray-600">
-                                  {getAttendanceRemarks(record)}
-                                </span>
+                                <Badge variant="outline" className={statusColor}>
+                                  {statusText}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {morningPresent ? (
+                                  <CheckCircle2 className="mx-auto h-5 w-5 text-green-600" />
+                                ) : (
+                                  <XCircle className="mx-auto h-5 w-5 text-red-300" />
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {afternoonPresent ? (
+                                  <CheckCircle2 className="mx-auto h-5 w-5 text-green-600" />
+                                ) : (
+                                  <XCircle className="mx-auto h-5 w-5 text-red-300" />
+                                )}
+                              </TableCell>
+                              <TableCell className="text-sm text-gray-600">
+                                {(day.holiday_name as string) ||
+                                  (isWeekend ? 'Weekend' : '') ||
+                                  (day.leave_type_display as string) ||
+                                  '-'}
                               </TableCell>
                             </TableRow>
                           );
@@ -491,159 +653,39 @@ export default function TimesheetApprovalsPage() {
                       </TableBody>
                     </Table>
                   </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    No attendance records found for this week
-                  </div>
-                )}
-              </div>
-
-              {/* Half Days Info */}
-              {selectedSubmission.total_half_days > 0 && (
-                <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
-                  <p className="text-sm text-amber-800">
-                    <strong>Note:</strong> This timesheet includes {selectedSubmission.total_half_days} half day{selectedSubmission.total_half_days > 1 ? 's' : ''}
-                  </p>
                 </div>
+              ) : (
+                <div className="py-8 text-center text-gray-500">No attendance data available</div>
               )}
 
-              {/* Review Comments if any */}
-              {selectedSubmission.review_comments && (
-                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <p className="text-sm font-semibold text-gray-700 mb-1">Review Comments:</p>
-                  <p className="text-sm text-gray-600">{selectedSubmission.review_comments}</p>
+              {/* Review Info (if reviewed) */}
+              {selectedSubmission.reviewed_at && (
+                <div className="rounded-lg border bg-gray-50 p-4">
+                  <h4 className="mb-2 text-sm font-semibold">Review Information</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600">Reviewed By</p>
+                      <p className="font-medium">
+                        {selectedSubmission.reviewed_by_info?.full_name || 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Reviewed At</p>
+                      <p className="font-medium">
+                        {format(parseISO(selectedSubmission.reviewed_at), 'MMM dd, yyyy hh:mm a')}
+                      </p>
+                    </div>
+                    {selectedSubmission.review_comments && (
+                      <div className="col-span-2">
+                        <p className="text-gray-600">Comments</p>
+                        <p className="font-medium">{selectedSubmission.review_comments}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
-
-              {/* Status Info */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="text-sm text-gray-600">Status</p>
-                  <div className="mt-1"><TimesheetStatusBadge status={selectedSubmission.submission_status} /></div>
-                </div>
-                {selectedSubmission.reviewed_at && selectedSubmission.reviewed_by_info && (
-                  <div className="text-right">
-                    <p className="text-sm text-gray-600">Reviewed By</p>
-                    <p className="font-semibold">{getEmployeeFullName(selectedSubmission.reviewed_by_info)}</p>
-                    <p className="text-xs text-gray-500">{format(parseISO(selectedSubmission.reviewed_at), 'MMM dd, yyyy')}</p>
-                  </div>
-                )}
-              </div>
             </div>
           )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={closeDialog}>
-              Close
-            </Button>
-            {/* Show approve/reject buttons for staff tab OR for admin in self tab */}
-            {((activeTab === 'staff') || (activeTab === 'self' && isAdmin)) && selectedSubmission && canReviewTimesheet(selectedSubmission.submission_status) && (
-              <>
-                <Button
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                  onClick={() => {
-                    closeDialog();
-                    if (selectedSubmission) {
-                      openReviewDialog(selectedSubmission, TimesheetReviewAction.APPROVED);
-                    }
-                  }}
-                >
-                  <CheckCircle2 className="w-4 h-4 mr-2" />
-                  Approve
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    closeDialog();
-                    if (selectedSubmission) {
-                      openReviewDialog(selectedSubmission, TimesheetReviewAction.REJECTED);
-                    }
-                  }}
-                >
-                  <XCircle className="w-4 h-4 mr-2" />
-                  Reject
-                </Button>
-              </>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Review Dialog */}
-      <Dialog open={dialogType === 'review'} onOpenChange={(open) => !open && closeDialog()}>
-        <DialogContent className="max-w-2xl bg-white">
-          <DialogHeader>
-            <DialogTitle>
-              {reviewAction === 'APPROVED' ? 'Approve Timesheet' : 'Reject Timesheet'}
-            </DialogTitle>
-            <DialogDescription>
-              {reviewAction === 'APPROVED' 
-                ? 'Add optional comments and approve this timesheet' 
-                : 'Provide reason for rejection so the employee can resubmit'}
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedSubmission && (
-            <div className="space-y-4">
-              <div className="p-4 bg-gray-50 rounded-lg space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Employee:</span>
-                  <span className="font-semibold">{getEmployeeFullName(selectedSubmission.employee_info)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Week:</span>
-                  <span className="font-semibold">
-                    {format(parseISO(selectedSubmission.week_start_date), 'MMM dd')} - {format(parseISO(selectedSubmission.week_end_date), 'MMM dd, yyyy')}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Attendance:</span>
-                  <span className="font-semibold">{selectedSubmission.attendance_percentage}%</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="comments">
-                  Comments {reviewAction === 'REJECTED' && <span className="text-red-500">*</span>}
-                  {reviewAction === 'APPROVED' && <span className="text-gray-500">(Optional)</span>}
-                </Label>
-                <Textarea
-                  id="comments"
-                  placeholder={
-                    reviewAction === 'REJECTED' 
-                      ? 'Provide detailed reason for rejection so employee can correct and resubmit...' 
-                      : 'Add any approval notes...'
-                  }
-                  value={reviewComments}
-                  onChange={(e) => setReviewComments(e.target.value)}
-                  rows={4}
-                />
-                {reviewAction === 'REJECTED' && (
-                  <p className="text-xs text-gray-500">
-                    The employee will be able to see these comments and resubmit the timesheet after making corrections.
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={closeDialog} disabled={reviewMutation.isPending}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleReview}
-              disabled={reviewMutation.isPending}
-              className={
-                reviewAction === 'APPROVED'
-                  ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-red-600 hover:bg-red-700'
-              }
-            >
-              {reviewMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {reviewAction === 'APPROVED' ? 'Approve Timesheet' : 'Reject Timesheet'}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
