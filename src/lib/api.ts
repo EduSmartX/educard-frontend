@@ -3,7 +3,8 @@ import { toast } from 'sonner';
 import { ErrorMessages } from '@/constants';
 
 // API Base URL from environment
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || 'https://educard-backend-zgz9.onrender.com/api';
 
 // Define proper types for API error responses
 interface ApiErrorResponse {
@@ -95,9 +96,7 @@ function handleApiError(error: AxiosError): void {
       Array.isArray(data.errors);
 
     // Skip toast for login errors (will be handled by login form)
-    const isLoginError = 
-      error.config?.url?.includes('/auth/login') && 
-      status === 401;
+    const isLoginError = error.config?.url?.includes('/auth/login') && status === 401;
 
     if (isOtpError || isLoginError) {
       // Don't show toast - errors will be displayed on the form
@@ -121,7 +120,7 @@ function handleApiError(error: AxiosError): void {
         }
         break;
 
-      case 401:        
+      case 401:
         break;
 
       case 403:

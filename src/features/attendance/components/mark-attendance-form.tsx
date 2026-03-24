@@ -151,7 +151,9 @@ export function MarkAttendanceForm() {
   ) => {
     setStudents((prev) =>
       prev.map((student) => {
-        if (student.public_id !== studentPublicId) return student;
+        if (student.public_id !== studentPublicId) {
+          return student;
+        }
 
         if (field === 'remarks') {
           return { ...student, remarks: value as string, attendance_remarks: value as string };
@@ -221,14 +223,14 @@ export function MarkAttendanceForm() {
           {/* Class, Date, and Period Card with background color */}
           <Card className="shadow-sm" style={{ backgroundColor: '#C5D89D' }}>
             <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 {/* Class Selection */}
                 <FormField
                   control={form.control}
                   name="class_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-semibold text-base">
+                      <FormLabel className="text-base font-semibold">
                         {AttendanceUiText.CLASS_LABEL}
                       </FormLabel>
                       <Select
@@ -260,7 +262,7 @@ export function MarkAttendanceForm() {
                   name="date"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-semibold text-base">
+                      <FormLabel className="text-base font-semibold">
                         {AttendanceUiText.DATE_LABEL}
                       </FormLabel>
                       <FormControl>
@@ -283,37 +285,37 @@ export function MarkAttendanceForm() {
                   name="period"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-semibold text-base">
+                      <FormLabel className="text-base font-semibold">
                         {AttendanceUiText.PERIOD_LABEL}
                       </FormLabel>
                       <FormControl>
-                        <div className="bg-white rounded-md border border-gray-300 px-4 h-11 flex items-center">
+                        <div className="flex h-11 items-center rounded-md border border-gray-300 bg-white px-4">
                           <RadioGroup
                             onValueChange={field.onChange}
                             value={field.value}
                             className="flex gap-4"
                           >
-                            <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormItem className="flex items-center space-y-0 space-x-2">
                               <FormControl>
                                 <RadioGroupItem value="morning" />
                               </FormControl>
-                              <FormLabel className="font-normal cursor-pointer">
+                              <FormLabel className="cursor-pointer font-normal">
                                 {AttendanceUiText.PERIOD_MORNING}
                               </FormLabel>
                             </FormItem>
-                            <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormItem className="flex items-center space-y-0 space-x-2">
                               <FormControl>
                                 <RadioGroupItem value="afternoon" />
                               </FormControl>
-                              <FormLabel className="font-normal cursor-pointer">
+                              <FormLabel className="cursor-pointer font-normal">
                                 {AttendanceUiText.PERIOD_AFTERNOON}
                               </FormLabel>
                             </FormItem>
-                            <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormItem className="flex items-center space-y-0 space-x-2">
                               <FormControl>
                                 <RadioGroupItem value="full_day" />
                               </FormControl>
-                              <FormLabel className="font-normal cursor-pointer">
+                              <FormLabel className="cursor-pointer font-normal">
                                 {AttendanceUiText.PERIOD_FULL_DAY}
                               </FormLabel>
                             </FormItem>
@@ -331,7 +333,7 @@ export function MarkAttendanceForm() {
           {dateValidation && !dateValidation.is_working_day && (
             <Card className="border-red-200 bg-red-50">
               <CardContent className="py-8">
-                <div className="mx-auto max-w-2xl text-center space-y-3">
+                <div className="mx-auto max-w-2xl space-y-3 text-center">
                   <h3 className="text-lg font-semibold text-red-900">
                     Cannot Submit Attendance On -{' '}
                     {dateValidation.reason || AttendanceUiText.NOT_WORKING_DAY}
@@ -348,8 +350,10 @@ export function MarkAttendanceForm() {
           {/* Loading State */}
           {loadingData && classId && isWorkingDay && (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-muted-foreground">{AttendanceUiText.LOADING_ATTENDANCE}</span>
+              <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+              <span className="text-muted-foreground ml-2">
+                {AttendanceUiText.LOADING_ATTENDANCE}
+              </span>
             </div>
           )}
 
@@ -357,7 +361,7 @@ export function MarkAttendanceForm() {
           {hasNoStudentsForSelection && (
             <Card className="border-amber-200 bg-amber-50">
               <CardContent className="py-8">
-                <div className="mx-auto max-w-2xl text-center space-y-3">
+                <div className="mx-auto max-w-2xl space-y-3 text-center">
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
                     <AlertCircle className="h-6 w-6 text-amber-600" />
                   </div>
@@ -398,14 +402,14 @@ export function MarkAttendanceForm() {
 
               {/* Bulk Actions */}
               {!isViewMode && (
-                <div className="flex justify-between items-center">
+                <div className="flex items-center justify-between">
                   <div className="flex gap-2">
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       onClick={handleMarkAllPresent}
-                      className="bg-green-50 hover:bg-green-100 text-green-700 border-green-300"
+                      className="border-green-300 bg-green-50 text-green-700 hover:bg-green-100"
                     >
                       <CheckCircle2 className="mr-2 h-4 w-4" />
                       {AttendanceUiText.MARK_ALL_PRESENT}
@@ -415,20 +419,24 @@ export function MarkAttendanceForm() {
                       variant="outline"
                       size="sm"
                       onClick={handleMarkAllAbsent}
-                      className="bg-red-50 hover:bg-red-100 text-red-700 border-red-300"
+                      className="border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
                     >
                       <XCircle className="mr-2 h-4 w-4" />
                       {AttendanceUiText.MARK_ALL_ABSENT}
                     </Button>
                   </div>
-                  <div className="text-sm font-medium text-gray-700 flex items-center gap-4">
+                  <div className="flex items-center gap-4 text-sm font-medium text-gray-700">
                     <span className="flex items-center gap-1">
                       <Users className="h-4 w-4 text-blue-600" />
-                      {AttendanceUiText.TOTAL_STUDENTS}: {students.length}
+                      <span className="hidden md:inline">
+                        {AttendanceUiText.TOTAL_STUDENTS}:
+                      </span>{' '}
+                      {students.length}
                     </span>
                     <span className="flex items-center gap-1">
                       <UserX className="h-4 w-4 text-orange-600" />
-                      {AttendanceUiText.ON_LEAVE}: {students.filter((s) => s.leave_status).length}
+                      <span className="hidden md:inline">{AttendanceUiText.ON_LEAVE}:</span>{' '}
+                      {students.filter((s) => s.leave_status).length}
                     </span>
                   </div>
                 </div>
@@ -461,7 +469,7 @@ export function MarkAttendanceForm() {
               <Button
                 type="submit"
                 disabled={isSubmitting || !isWorkingDay}
-                className="px-6 bg-blue-600 hover:bg-blue-700"
+                className="bg-blue-600 px-6 hover:bg-blue-700"
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isSubmitting ? CommonUiText.SUBMITTING : AttendanceUiText.SUBMIT_ATTENDANCE}
