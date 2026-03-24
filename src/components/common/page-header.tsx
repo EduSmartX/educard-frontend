@@ -102,7 +102,14 @@ interface PageHeaderAction {
   label: string;
   onClick: () => void;
   icon?: LucideIcon;
-  variant?: 'default' | 'outline' | 'secondary' | 'ghost' | 'destructive';
+  variant?:
+    | 'default'
+    | 'outline'
+    | 'secondary'
+    | 'ghost'
+    | 'destructive'
+    | 'brand'
+    | 'brandOutline';
   className?: string;
   disabled?: boolean;
 }

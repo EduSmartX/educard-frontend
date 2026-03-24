@@ -7,13 +7,17 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ROUTES } from '@/constants/app-config';
+import { ErrorMessages, SuccessMessages } from '@/constants';
 import { useStudents } from '../hooks/use-students';
+import { useManagedClasses } from '../hooks/use-managed-classes';
 import { useDeleteStudent, useReactivateStudent } from '../hooks/mutations';
 import { StudentsList } from './students-list';
 import StudentFormPage from '../pages/student-form-page';
 import type { StudentListItem } from '../types';
 import { DeleteConfirmationDialog, ReactivateConfirmationDialog } from '@/components/common';
 import { useDeletedView } from '@/hooks/use-deleted-view';
+import { useAuth } from '@/hooks/use-auth';
+import { USER_ROLES } from '@/constants/user-constants';
 
 type PageMode = 'list' | 'create' | 'edit' | 'view';
 
@@ -21,6 +25,7 @@ export function StudentsManagement() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -31,11 +36,19 @@ export function StudentsManagement() {
   // Dialog states
   const [studentToDelete, setStudentToDelete] = useState<StudentListItem | null>(null);
   const [studentToReactivate, setStudentToReactivate] = useState<StudentListItem | null>(null);
+  const [reactivateError, setReactivateError] = useState<string | null>(null);
 
   // Deleted view management
   const { showDeleted, toggleDeletedView } = useDeletedView({
     onPageChange: setCurrentPage,
   });
+
+  // Fetch managed classes for class teacher permissions
+  const { data: managedClasses = [] } = useManagedClasses();
+  
+  // Determine if user can create students
+  const isClassTeacher = user?.role === USER_ROLES.TEACHER && managedClasses.length > 0;
+  const canCreateStudents = user?.role === USER_ROLES.ADMIN || isClassTeacher;
 
   // Sync filters with URL query params
   useEffect(() => {
@@ -108,6 +121,7 @@ export function StudentsManagement() {
 
   const handleDelete = (student: StudentListItem) => {
     if (showDeleted) {
+      setReactivateError(null);
       setStudentToReactivate(student);
     } else {
       setStudentToDelete(student);
@@ -123,11 +137,11 @@ export function StudentsManagement() {
         },
         {
           onSuccess: () => {
-            toast.success('Student deleted successfully');
+            toast.success(SuccessMessages.STUDENT.DELETE_SUCCESS);
             setStudentToDelete(null);
           },
           onError: (error: Error) => {
-            toast.error(`Failed to delete student: ${error.message}`);
+            toast.error(error.message || ErrorMessages.STUDENT.DELETE_FAILED);
           },
         }
       );
@@ -136,6 +150,7 @@ export function StudentsManagement() {
 
   const handleConfirmReactivate = () => {
     if (studentToReactivate) {
+      setReactivateError(null);
       reactivateMutation.mutate(
         {
           classId: studentToReactivate.class_id,
@@ -143,11 +158,13 @@ export function StudentsManagement() {
         },
         {
           onSuccess: () => {
-            toast.success('Student reactivated successfully');
+            toast.success(SuccessMessages.STUDENT.REACTIVATE_SUCCESS);
             setStudentToReactivate(null);
+            setReactivateError(null);
           },
           onError: (error: Error) => {
-            toast.error(`Failed to reactivate student: ${error.message}`);
+            const errorMessage = error.message || ErrorMessages.STUDENT.REACTIVATE_FAILED;
+            setReactivateError(errorMessage);
           },
         }
       );
@@ -203,6 +220,8 @@ export function StudentsManagement() {
         onPageSizeChange={handlePageSizeChange}
         onSearch={handleSearch}
         onFilterChange={handleFilterChange}
+        canCreateStudents={canCreateStudents}
+        isClassTeacher={isClassTeacher}
       />
 
       {!showDeleted && (
@@ -220,11 +239,17 @@ export function StudentsManagement() {
       {showDeleted && (
         <ReactivateConfirmationDialog
           open={!!studentToReactivate}
-          onOpenChange={(open) => !open && setStudentToReactivate(null)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setStudentToReactivate(null);
+              setReactivateError(null);
+            }
+          }}
           onConfirm={handleConfirmReactivate}
           title="Reactivate Student"
           itemName={studentToReactivate?.full_name}
           isReactivating={reactivateMutation.isPending}
+          error={reactivateError}
         />
       )}
     </>

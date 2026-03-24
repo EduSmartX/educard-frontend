@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { ErrorMessages, SuccessMessages } from '@/constants';
 
 // Generic error type for bulk uploads
 export interface BulkUploadError {
@@ -75,6 +76,9 @@ interface BulkUploadDialogProps {
 
   // Optional callback after successful upload
   onUploadSuccess?: (result: BulkUploadResult) => void;
+  
+  // Optional custom alert/info message to display
+  customInfoMessage?: string;
 }
 
 export function BulkUploadDialog({
@@ -93,6 +97,7 @@ export function BulkUploadDialog({
   onMinimalFieldsChange,
   minimalFieldsLabel = 'Minimal Fields Only',
   onUploadSuccess,
+  customInfoMessage,
 }: BulkUploadDialogProps) {
   const [open, setOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -124,7 +129,7 @@ export function BulkUploadDialog({
       link.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(link);
-      toast.success('Template downloaded successfully');
+      toast.success(SuccessMessages.FILES.TEMPLATE_DOWNLOADED);
     } catch (error) {
       const err = error as Error;
       toast.error(err?.message || 'Failed to download template');
@@ -223,7 +228,7 @@ export function BulkUploadDialog({
   // Upload handler
   const handleUpload = async () => {
     if (!selectedFile) {
-      toast.error('Please select a file to upload');
+      toast.error(ErrorMessages.FILE_NOT_SELECTED);
       return;
     }
 
@@ -384,6 +389,16 @@ export function BulkUploadDialog({
         {/* Content area */}
         <div className="overflow-y-auto max-h-[calc(90vh-280px)] px-6 py-6">
           <div className="space-y-4">
+            {/* Custom Info Message */}
+            {customInfoMessage && (
+              <Alert className="border-blue-200 bg-blue-50">
+                <AlertCircle className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800 text-sm">
+                  {customInfoMessage}
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Minimal Fields Toggle */}
             {showMinimalFieldsCheckbox && (
               <div className="flex items-center justify-between rounded-lg border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 p-4 shadow-sm">
@@ -553,16 +568,16 @@ export function BulkUploadDialog({
         {/* Footer with gradient */}
         <DialogFooter className="border-t bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 gap-3">
           <Button
-            variant="outline"
+            variant="brandOutline"
             onClick={handleClose}
-            className="border-gray-300 hover:bg-white"
           >
             Close
           </Button>
           <Button
+            variant="brand"
             onClick={handleUpload}
             disabled={!selectedFile || isUploading}
-            className="gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl transition-all duration-200 min-w-[120px]"
+            className="gap-2 shadow-lg hover:shadow-xl transition-all duration-200 min-w-[120px]"
           >
             {isUploading ? (
               <>

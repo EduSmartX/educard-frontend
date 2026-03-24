@@ -23,6 +23,7 @@ export interface CommonRowData {
   created_at: string;
   updated_by_name?: string | null;
   updated_at: string;
+  can_manage?: boolean; // NEW: Permission flag for edit/delete actions
 }
 
 /**
@@ -86,16 +87,20 @@ interface ActionButtonConfig {
 /**
  * Creates the "Actions" column with View, Edit, and Delete buttons (Button variant)
  */
-function createButtonActions<T>(
+function createButtonActions<T extends CommonRowData>(
   row: T,
   callbacks: ActionCallbacks<T>,
   options?: ActionsColumnOptions
 ) {
   const { onView, onEdit, onDelete, onCustomAction } = callbacks;
   const { showLabels = false, customActions = [] } = options || {};
+  
+  // Check if user can manage this row (edit/delete)
+  const canManage = row.can_manage ?? true; // Default to true for admins
 
   const actionButtons: ActionButtonConfig[] = [];
 
+  // View is always available
   if (onView) {
     actionButtons.push({
       icon: Eye,
@@ -105,7 +110,8 @@ function createButtonActions<T>(
     });
   }
 
-  if (onEdit) {
+  // Edit only if user can manage
+  if (onEdit && canManage) {
     actionButtons.push({
       icon: Edit,
       label: 'Edit',
@@ -114,7 +120,8 @@ function createButtonActions<T>(
     });
   }
 
-  if (onDelete) {
+  // Delete only if user can manage
+  if (onDelete && canManage) {
     actionButtons.push({
       icon: Trash2,
       label: 'Delete',
@@ -177,13 +184,16 @@ function createButtonActions<T>(
 /**
  * Creates the "Actions" column with dropdown menu
  */
-function createDropdownActions<T>(
+function createDropdownActions<T extends CommonRowData>(
   row: T,
   callbacks: ActionCallbacks<T>,
   options?: ActionsColumnOptions
 ) {
   const { onView, onEdit, onDelete, onCustomAction } = callbacks;
   const { customActions = [] } = options || {};
+  
+  // Check if user can manage this row (edit/delete)
+  const canManage = row.can_manage ?? true; // Default to true for admins
 
   return (
     <DropdownMenu>
@@ -205,7 +215,7 @@ function createDropdownActions<T>(
             View
           </DropdownMenuItem>
         )}
-        {onEdit && (
+        {onEdit && canManage && (
           <DropdownMenuItem
             onClick={(e) => {
               e.stopPropagation();
@@ -233,7 +243,7 @@ function createDropdownActions<T>(
             </DropdownMenuItem>
           );
         })}
-        {onDelete && (
+        {onDelete && canManage && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -257,7 +267,7 @@ function createDropdownActions<T>(
  * Creates the "Actions" column with View, Edit, and Delete buttons
  * Supports both button and dropdown variants
  */
-export function createActionsColumn<T>(
+export function createActionsColumn<T extends CommonRowData>(
   callbacks: ActionCallbacks<T>,
   options?: ActionsColumnOptions
 ): Column<T> {

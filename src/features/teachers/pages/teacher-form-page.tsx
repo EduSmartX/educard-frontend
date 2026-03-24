@@ -13,6 +13,7 @@ import {
   ReactivateConfirmationDialog,
 } from '@/components/common';
 import { ROUTES } from '@/constants/app-config';
+import { ErrorMessages, SuccessMessages, ToastTitles } from '@/constants';
 import { useTeacher } from '../hooks/use-teachers';
 import { useDeleteTeacher, useReactivateTeacher } from '../hooks/mutations';
 import { TeacherForm } from '../components/teacher-form';
@@ -27,10 +28,14 @@ export default function TeacherFormPage() {
   const [showReactivateDialog, setShowReactivateDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
+  const [reactivateError, setReactivateError] = useState<string | null>(null);
 
   // Check if viewing deleted teacher (from query param)
   const searchParams = new URLSearchParams(location.search);
   const isViewingDeleted = searchParams.get('deleted') === 'true';
+
+  // Check if accessing from employee section
+  const isEmployeeView = location.pathname.startsWith('/employee/');
 
   // Determine mode based on URL path
   const getMode = (): 'create' | 'edit' | 'view' => {
@@ -46,8 +51,8 @@ export default function TeacherFormPage() {
 
   useEffect(() => {
     if (error && mode !== 'create' && !isDeleting && !isReactivating) {
-      const errorMessage = getErrorMessage(error, 'Failed to load teacher data');
-      toast.error('Error Loading Teacher', {
+      const errorMessage = getErrorMessage(error, ErrorMessages.TEACHER.FETCH_FAILED);
+      toast.error(ToastTitles.ERROR, {
         description: errorMessage,
         duration: 5000,
       });
@@ -55,15 +60,15 @@ export default function TeacherFormPage() {
   }, [error, mode, isDeleting, isReactivating]);
 
   const handleBackToList = () => {
-    navigate(ROUTES.TEACHERS);
+    navigate(isEmployeeView ? ROUTES.EMPLOYEE.TEACHERS : ROUTES.TEACHERS);
   };
 
   const handleFormSuccess = () => {
-    navigate(ROUTES.TEACHERS);
+    navigate(isEmployeeView ? ROUTES.EMPLOYEE.TEACHERS : ROUTES.TEACHERS);
   };
 
   const handleSwitchToEdit = () => {
-    if (id) {
+    if (id && !isEmployeeView) {
       navigate(ROUTES.TEACHERS_EDIT.replace(':id', id));
     }
   };
@@ -71,23 +76,23 @@ export default function TeacherFormPage() {
   // Delete mutation
   const deleteMutation = useDeleteTeacher({
     onSuccess: () => {
-      toast.success('Teacher deleted successfully');
+      toast.success(SuccessMessages.TEACHER.DELETE_SUCCESS);
       // Navigate immediately to avoid refetching deleted resource
       navigate(ROUTES.TEACHERS, { replace: true });
     },
     onError: (error: Error) => {
-      toast.error(`Failed to delete teacher: ${error.message}`);
+      toast.error(error.message || ErrorMessages.TEACHER.DELETE_FAILED);
     },
   });
 
   // Reactivate mutation
   const reactivateMutation = useReactivateTeacher({
     onSuccess: () => {
-      toast.success('Teacher reactivated successfully');
+      toast.success(SuccessMessages.TEACHER.REACTIVATE_SUCCESS);
       navigate(ROUTES.TEACHERS, { replace: true });
     },
     onError: (error: Error) => {
-      toast.error(`Failed to reactivate teacher: ${error.message}`);
+      toast.error(error.message || ErrorMessages.TEACHER.REACTIVATE_FAILED);
     },
   });
 
@@ -98,20 +103,29 @@ export default function TeacherFormPage() {
 
   // Open reactivate confirmation dialog
   const handleReactivateClick = () => {
+    setReactivateError(null);
     setShowReactivateDialog(true);
   };
 
   // Confirm and execute reactivate
   const handleReactivateConfirm = () => {
     if (id) {
-      // Set reactivating flag to prevent error toast
       setIsReactivating(true);
-      // Close dialog and navigate immediately to avoid refetching deleted resource
-      setShowReactivateDialog(false);
-      // Navigate away first
-      navigate(ROUTES.TEACHERS, { replace: true });
-      // Then execute reactivate mutation
-      reactivateMutation.mutate(id);
+      setReactivateError(null);
+      
+      reactivateMutation.mutate(id, {
+        onSuccess: () => {
+          toast.success(SuccessMessages.TEACHER.REACTIVATE_SUCCESS);
+          setIsReactivating(false);
+          setShowReactivateDialog(false);
+          navigate(ROUTES.TEACHERS, { replace: true });
+        },
+        onError: (error: Error) => {
+          const errorMessage = error.message || ErrorMessages.TEACHER.REACTIVATE_FAILED;
+          setReactivateError(errorMessage);
+          setIsReactivating(false);
+        },
+      });
     }
   };
 
@@ -161,7 +175,7 @@ export default function TeacherFormPage() {
 
   // Show error state
   if (error && mode !== 'create') {
-    const errorMessage = getErrorMessage(error, 'Failed to load teacher data');
+    const errorMessage = getErrorMessage(error, ErrorMessages.TEACHER.FETCH_FAILED);
 
     return (
       <div className="space-y-6">
@@ -242,18 +256,17 @@ export default function TeacherFormPage() {
             icon: X,
             className: 'border-2 border-gray-400 text-gray-700 hover:bg-gray-100',
           },
-          {
-            label: 'Delete',
-            onClick: handleDeleteClick,
-            variant: 'destructive' as const,
-            icon: Trash2,
-          },
-          {
-            label: 'Edit',
-            onClick: handleSwitchToEdit,
-            variant: 'default' as const,
-            icon: Edit,
-          },
+          // Hide Edit button for employee view
+          ...(!isEmployeeView
+            ? [
+                {
+                  label: 'Edit',
+                  onClick: handleSwitchToEdit,
+                  variant: 'default' as const,
+                  icon: Edit,
+                },
+              ]
+            : []),
         ],
       };
     }
@@ -324,6 +337,8 @@ export default function TeacherFormPage() {
             : undefined
         }
         description="Are you sure you want to reactivate this teacher? They will be restored to active status."
+        isReactivating={isReactivating}
+        error={reactivateError}
       />
     </div>
   );

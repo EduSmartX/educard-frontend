@@ -9,11 +9,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CardContent } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
 import { AddressForm } from '@/components/forms/address-form';
 import { useUpdateOrganizationAddress } from '../hooks/mutations';
 import type { Organization } from '../api/organization-api';
+import { STANDARD_FORM_VALIDATION_CONFIG } from '@/lib/utils/form-validation';
 
 const organizationAddressSchema = z.object({
   street_address: z.string().min(1, 'Street address is required'),
@@ -36,6 +37,7 @@ export function OrganizationAddressForm({ organization, isLoading }: Organizatio
 
   const form = useForm<OrganizationAddressFormData>({
     resolver: zodResolver(organizationAddressSchema),
+    ...STANDARD_FORM_VALIDATION_CONFIG,
     defaultValues: {
       street_address: '',
       address_line_2: '',
@@ -72,8 +74,12 @@ export function OrganizationAddressForm({ organization, isLoading }: Organizatio
   }
 
   return (
-    <CardContent className="pt-6">
-      <Form {...form}>
+    <>
+      <CardHeader>
+        <CardTitle className="text-base font-medium">Organization Address</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <AddressForm
             form={form}
@@ -94,7 +100,7 @@ export function OrganizationAddressForm({ organization, isLoading }: Organizatio
           <div className="flex justify-end gap-3">
             <Button
               type="button"
-              variant="outline"
+              variant="brandOutline"
               onClick={() => form.reset()}
               disabled={updateMutation.isPending || !form.formState.isDirty}
             >
@@ -102,8 +108,9 @@ export function OrganizationAddressForm({ organization, isLoading }: Organizatio
             </Button>
             <Button
               type="submit"
+              variant="brand"
               disabled={updateMutation.isPending || !form.formState.isDirty}
-              className="bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg shadow-blue-500/50 disabled:opacity-50 disabled:shadow-none"
+              className="shadow-lg disabled:shadow-none"
             >
               {updateMutation.isPending ? (
                 <>
@@ -121,5 +128,6 @@ export function OrganizationAddressForm({ organization, isLoading }: Organizatio
         </form>
       </Form>
     </CardContent>
+    </>
   );
 }

@@ -55,7 +55,7 @@ export function SupervisorField<T extends FieldValues>({
           <FormLabel>{label}</FormLabel>
           <Select
             onValueChange={field.onChange}
-            value={field.value as string}
+            value={(field.value as string) || ''}
             disabled={disabled || isLoading}
           >
             <FormControl>

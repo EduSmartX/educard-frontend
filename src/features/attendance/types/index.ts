@@ -181,3 +181,93 @@ export interface AttendanceFormData {
   period: AttendancePeriod;
   students: StudentAttendanceRow[];
 }
+
+export interface EmployeeAttendanceRecord {
+  public_id: string;
+  date: string;
+  morning_present: boolean;
+  afternoon_present: boolean;
+  approval_status: string;
+  remarks?: string;
+  is_leave?: boolean;
+  leave_public_id?: string | null;
+  leave_type_name?: string | null;
+  leave_status?: string | null;
+  is_exception?: boolean;
+  exception_type?: string | null;
+  exception_reason?: string | null;
+  locked_reason?: 'holiday' | 'leave' | 'non_working_day' | null;
+  is_holiday?: boolean;
+  holiday_description?: string | null;
+}
+
+export interface EmployeeAttendanceBulkPayload {
+  attendance_records: Array<{
+    date: string;
+    morning_present: boolean;
+    afternoon_present: boolean;
+    remarks?: string;
+  }>;
+}
+
+export interface EmployeeSubmissionConfig {
+  default_present: boolean;
+  timesheet_deadline_day: number;
+}
+
+// Calendar Exception Types
+export interface CalendarException {
+  public_id: string;
+  date: string;
+  override_type: 'FORCE_WORKING' | 'FORCE_HOLIDAY';
+  reason: string;
+  is_applicable_to_all_classes: boolean;
+  is_applicable_to_all_teachers: boolean; // ✨ NEW FIELD
+  classes?: Array<{
+    public_id: string;
+    display_name: string;
+  }>;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  updated_by: string;
+}
+
+// For calendar grid response (simplified version)
+export interface CalendarExceptionSummary {
+  date: string;
+  type: 'FORCE_WORKING' | 'FORCE_HOLIDAY';
+  reason: string;
+}
+
+export interface WorkingDayPolicy {
+  sunday_off: boolean;
+  saturday_off_pattern: 'ALL' | 'SECOND_ONLY' | 'SECOND_AND_FOURTH' | 'NONE';
+}
+
+export interface CalendarGridData {
+  date: string;
+  day: number;
+  month: number;
+  month_name: string;
+  status: 'P' | 'HP' | 'A' | 'L' | 'H' | 'W' | null;
+}
+
+export interface CalendarGridResponse {
+  calendar_data: CalendarGridData[];
+  year: number;
+  user_public_id: string;
+  employee_id: string | null;
+  academic_year?: {
+    name: string;
+    start_date: string;
+    end_date: string;
+  } | null;
+  holidays?: Array<{
+    start_date: string;
+    end_date: string;
+    name: string;
+  }>;
+  working_day_policy?: WorkingDayPolicy | null;
+  calendar_exceptions?: CalendarExceptionSummary[];
+}

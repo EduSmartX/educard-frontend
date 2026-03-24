@@ -10,10 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { OrganizationPreference } from '@/lib/api/preferences-api';
+import { FormPlaceholders } from '@/constants';
 import {
   validateTimeFormat,
   validateDeadlineDay,
@@ -76,6 +78,66 @@ export function PreferenceField({
     preference.field_type === 'multi-choice' ? parseMultiChoiceValue(value) : [];
 
   switch (preference.field_type) {
+    case 'time': {
+      // Parse the current time value (HH:MM format)
+      const [currentHour, currentMinute] = (value as string)?.split(':') || ['12', '00'];
+
+      const handleTimeChange = (hour: string, minute: string) => {
+        const formattedTime = `${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
+        const error = validateTimeFormat(formattedTime);
+        setValidationError(error);
+        onChange(formattedTime, !!error);
+      };
+
+      // Generate hours (00-23) with labels
+      const hourOptions = Array.from({ length: 24 }, (_, i) => {
+        const hour = i.toString().padStart(2, '0');
+        return { value: hour, label: hour };
+      });
+
+      // Generate minutes (00-59) with labels
+      const minuteOptions = Array.from({ length: 60 }, (_, i) => {
+        const minute = i.toString().padStart(2, '0');
+        return { value: minute, label: minute };
+      });
+
+      return (
+        <div className="flex flex-col sm:flex-row sm:items-start border-b border-dotted border-gray-200 px-4 py-4 last:border-b-0 gap-3 sm:gap-0">
+          <div className="sm:w-[600px] sm:pr-8 sm:flex-shrink-0">
+            <FieldLabel htmlFor={preference.key} />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 w-full sm:max-w-md">
+              <Combobox
+                options={hourOptions}
+                value={currentHour}
+                onValueChange={(hour) => handleTimeChange(hour, currentMinute)}
+                placeholder="HH"
+                searchPlaceholder="Search hours..."
+                emptyText="No hour found"
+                className="h-11 bg-white border-gray-300 text-gray-900 w-24"
+                disabled={disabled}
+              />
+              <span className="text-xl font-semibold text-gray-500">:</span>
+              <Combobox
+                options={minuteOptions}
+                value={currentMinute}
+                onValueChange={(minute) => handleTimeChange(currentHour, minute)}
+                placeholder="MM"
+                searchPlaceholder="Search minutes..."
+                emptyText="No minute found"
+                className="h-11 bg-white border-gray-300 text-gray-900 w-24"
+                disabled={disabled}
+              />
+            </div>
+            {validationError && (
+              <p className="text-sm font-medium text-red-500 mt-1">{validationError}</p>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     case 'string': {
       // Check if this is the time field for student absence notification
       const isTimeField =
@@ -218,7 +280,7 @@ export function PreferenceField({
                 id={preference.key}
                 className="h-11 bg-white border-gray-300 text-gray-900 w-full sm:max-w-md"
               >
-                <SelectValue placeholder="Select an option" />
+                <SelectValue placeholder={FormPlaceholders.SELECT_OPTION} />
               </SelectTrigger>
               <SelectContent>
                 {preference.applicable_values?.map((option: string) => (
@@ -253,7 +315,7 @@ export function PreferenceField({
                   id={preference.key}
                   className="h-11 bg-white border-gray-300 text-gray-900 w-full sm:max-w-md"
                 >
-                  <SelectValue placeholder="Select options" />
+                  <SelectValue placeholder={FormPlaceholders.SELECT_OPTIONS} />
                 </SelectTrigger>
                 <SelectContent>
                   {preference.applicable_values

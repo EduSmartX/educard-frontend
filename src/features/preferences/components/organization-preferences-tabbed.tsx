@@ -11,6 +11,7 @@ import { useOrganizationPreferences } from '../hooks/use-preferences';
 import { AcademicYearSettingsForm } from './academic-year-settings-form';
 import { PreferenceField } from './preference-field';
 import { WorkingDayPolicyForm } from './working-day-policy-form';
+import { CommonUiText, ErrorMessages, SuccessMessages, ToastTitles } from '@/constants';
 
 // Category icons mapping
 const categoryIcons: Record<string, string> = {
@@ -64,14 +65,14 @@ function PreferencesByCategory({ preferences }: PreferencesByCategoryProps) {
         delete newState[variables.publicId];
         return newState;
       });
-      toast.success('Settings Updated', {
-        description: 'Your preference has been saved successfully.',
+      toast.success(ToastTitles.SUCCESS, {
+        description: SuccessMessages.PREFERENCES.UPDATED,
       });
     },
     onError: (error: Error, variables) => {
       setSavingStates((prev) => ({ ...prev, [variables.publicId]: false }));
-      toast.error('Update Failed', {
-        description: error?.message || 'Failed to update preference',
+      toast.error(ToastTitles.ERROR, {
+        description: error?.message || ErrorMessages.UPDATE_FAILED,
       });
     },
   });
@@ -84,7 +85,7 @@ function PreferencesByCategory({ preferences }: PreferencesByCategoryProps) {
     const prefsToUpdate = categoryPrefs.filter((pref) => pref.public_id in changedValues);
 
     if (prefsToUpdate.length === 0) {
-      toast.info('No Changes', {
+      toast.info(CommonUiText.NO_CHANGES, {
         description: 'No changes to save in this category.',
       });
       return;
@@ -130,6 +131,7 @@ function PreferencesByCategory({ preferences }: PreferencesByCategoryProps) {
         const textPrefs = categoryPrefs.filter(
           (p) => p.field_type === 'string' || p.field_type === 'number'
         );
+        const timePrefs = categoryPrefs.filter((p) => p.field_type === 'time');
         const choicePrefs = categoryPrefs.filter((p) => p.field_type === 'choice');
         const multiChoicePrefs = categoryPrefs.filter((p) => p.field_type === 'multi-choice');
 
@@ -182,6 +184,17 @@ function PreferencesByCategory({ preferences }: PreferencesByCategoryProps) {
                   />
                 ))}
 
+                {/* Time Picker Fields */}
+                {timePrefs.map((preference) => (
+                  <PreferenceField
+                    key={preference.public_id}
+                    preference={preference}
+                    value={changedValues[preference.public_id] ?? preference.value}
+                    onChange={(value) => handlePreferenceChange(preference.public_id, value)}
+                    disabled={savingStates[preference.public_id]}
+                  />
+                ))}
+
                 {/* Choice/Dropdown Fields */}
                 {choicePrefs.map((preference) => (
                   <PreferenceField
@@ -208,7 +221,7 @@ function PreferencesByCategory({ preferences }: PreferencesByCategoryProps) {
               {hasChanges && (
                 <div className="flex items-center justify-end gap-3 border-t pt-4">
                   <Button
-                    variant="outline"
+                    variant="brandOutline"
                     onClick={() => {
                       const resetState = categoryPrefs.reduce(
                         (acc, pref) => {
@@ -220,15 +233,16 @@ function PreferencesByCategory({ preferences }: PreferencesByCategoryProps) {
                         { ...changedValues }
                       );
                       setChangedValues(resetState);
-                      toast.info('Changes Discarded', {
+                      toast.info(CommonUiText.CHANGES_DISCARDED, {
                         description: 'All unsaved changes have been discarded.',
                       });
                     }}
                     disabled={isSaving}
                   >
-                    Discard Changes
+                    {CommonUiText.DISCARD_CHANGES}
                   </Button>
                   <Button
+                    variant="brand"
                     onClick={() => handleSaveCategory(categoryPrefs)}
                     disabled={isSaving}
                     className="min-w-[140px]"
@@ -236,10 +250,10 @@ function PreferencesByCategory({ preferences }: PreferencesByCategoryProps) {
                     {isSaving ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
+                        {CommonUiText.SAVING}
                       </>
                     ) : (
-                      'Save Changes'
+                      CommonUiText.SAVE_CHANGES
                     )}
                   </Button>
                 </div>
@@ -281,7 +295,7 @@ export function OrganizationPreferencesTabbed() {
           </AlertDescription>
           <Button onClick={() => refetch()} variant="outline" size="sm" className="mt-4">
             <RefreshCw className="mr-2 h-4 w-4" />
-            Retry
+            {CommonUiText.RETRY}
           </Button>
         </Alert>
       </div>

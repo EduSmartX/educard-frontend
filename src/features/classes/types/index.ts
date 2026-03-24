@@ -75,6 +75,8 @@ export interface FetchClassesParams {
   standard?: number;
   academic_year?: string;
   is_deleted?: boolean;
+  for_student_form?: boolean;
+  for_subject_form?: boolean;
 }
 
 /**

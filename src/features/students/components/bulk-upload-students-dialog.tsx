@@ -6,6 +6,9 @@
 import { useState } from 'react';
 import api from '@/lib/api';
 import { BulkUploadDialog } from '@/components/common/bulk-upload-dialog';
+import { useAuth } from '@/hooks/use-auth';
+import { USER_ROLES } from '@/constants/user-constants';
+import { InfoMessages } from '@/constants/error-messages';
 
 const STUDENTS_API = '/students/';
 
@@ -37,6 +40,8 @@ async function uploadStudentsFile(file: File, minimalFields: boolean = false) {
 
 export function BulkUploadStudentsDialog() {
   const [isMinimalFields, setIsMinimalFields] = useState(false);
+  const { user } = useAuth();
+  const isTeacher = user?.role === USER_ROLES.TEACHER;
 
   return (
     <BulkUploadDialog
@@ -56,6 +61,7 @@ export function BulkUploadStudentsDialog() {
       isMinimalFields={isMinimalFields}
       onMinimalFieldsChange={setIsMinimalFields}
       minimalFieldsLabel="Only Required Fields (Student ID, Name, Gender, Class)"
+      customInfoMessage={isTeacher ? InfoMessages.CLASS_TEACHER.BULK_UPLOAD_STUDENTS : undefined}
     />
   );
 }

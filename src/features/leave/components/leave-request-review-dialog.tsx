@@ -31,7 +31,7 @@ import { formatDate } from '@/lib/utils/date-utils';
 interface LeaveRequestReview {
   public_id: string;
   user_name: string;
-  organization_role: string;
+  organization_role: string | { code: string; name: string };
   email: string;
   leave_name: string;
   leave_type_code: string;
@@ -83,7 +83,9 @@ export function LeaveRequestReviewDialog({
     onSubmit(data.comments);
   };
 
-  if (!request) return null;
+  if (!request) {
+    return null;
+  }
 
   const isViewMode = !action;
 
@@ -109,15 +111,17 @@ export function LeaveRequestReviewDialog({
 
         <div className="space-y-4">
           {/* Employee Info */}
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-2">
+          <div className="space-y-2 rounded-lg border border-blue-200 bg-blue-50 p-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-blue-700">Employee</span>
               <span className="font-semibold text-blue-900">{request.user_name}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-blue-700">Role</span>
-              <Badge variant="outline" className="border-blue-300 text-blue-700 bg-white">
-                {request.organization_role}
+              <Badge variant="outline" className="border-blue-300 bg-white text-blue-700">
+                {typeof request.organization_role === 'object' && request.organization_role
+                  ? request.organization_role.name
+                  : request.organization_role}
               </Badge>
             </div>
             <div className="flex items-center justify-between">
@@ -127,7 +131,7 @@ export function LeaveRequestReviewDialog({
           </div>
 
           {/* Leave Details */}
-          <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4 space-y-2">
+          <div className="space-y-2 rounded-lg border border-indigo-200 bg-indigo-50 p-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-indigo-700">Leave Type</span>
               <span className="font-semibold text-indigo-900">
@@ -155,7 +159,7 @@ export function LeaveRequestReviewDialog({
           {/* Reason */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Reason for Leave</label>
-            <div className="rounded-lg border border-purple-200 bg-purple-50 p-4 text-sm text-purple-900 whitespace-pre-wrap leading-relaxed">
+            <div className="rounded-lg border border-purple-200 bg-purple-50 p-4 text-sm leading-relaxed whitespace-pre-wrap text-purple-900">
               {request.reason}
             </div>
           </div>
@@ -182,7 +186,7 @@ export function LeaveRequestReviewDialog({
                           }
                           rows={4}
                           disabled={isPending}
-                          className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                          className="border-gray-300 bg-white focus:border-blue-500 focus:ring-blue-500"
                         />
                       </FormControl>
                       <FormMessage />
@@ -195,25 +199,16 @@ export function LeaveRequestReviewDialog({
         </div>
 
         <DialogFooter className="gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={isPending}
-            className="hover:bg-gray-100"
-          >
+          <Button type="button" variant="brandOutline" onClick={onClose} disabled={isPending}>
             {isViewMode ? 'Close' : 'Cancel'}
           </Button>
           {!isViewMode && (
             <Button
               type="button"
+              variant={action === 'approve' ? 'brand' : 'destructive'}
               onClick={form.handleSubmit(handleSubmit)}
               disabled={isPending}
-              className={
-                action === 'approve'
-                  ? 'bg-green-600 hover:bg-green-700 text-white shadow-md'
-                  : 'bg-red-600 hover:bg-red-700 text-white shadow-md'
-              }
+              className="shadow-md"
             >
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {action === 'approve' && <Check className="mr-2 h-4 w-4" />}

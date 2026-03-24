@@ -17,6 +17,7 @@ interface DatePickerProps {
   minDate?: Date;
   maxDate?: Date;
   className?: string;
+  containerClassName?: string;
 }
 
 export function DatePicker({
@@ -27,6 +28,7 @@ export function DatePicker({
   minDate,
   maxDate,
   className,
+  containerClassName,
 }: DatePickerProps) {
   const CustomInput = React.forwardRef<HTMLButtonElement, { value?: string; onClick?: () => void }>(
     ({ value, onClick }, ref) => (
@@ -54,7 +56,12 @@ export function DatePicker({
   CustomInput.displayName = 'CustomInput';
 
   return (
-    <div className="w-full">
+    <div
+      className={cn(
+        'w-full [&_.react-datepicker-wrapper]:w-full [&_.react-datepicker__input-container]:w-full',
+        containerClassName
+      )}
+    >
       <ReactDatePicker
         selected={value}
         onChange={onChange}

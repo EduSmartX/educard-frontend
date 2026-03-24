@@ -14,12 +14,14 @@ interface CreateColumnsParams {
   onView: (allocation: LeaveAllocation) => void;
   onEdit: (allocation: LeaveAllocation) => void;
   onDelete: (allocation: LeaveAllocation) => void;
+  readOnly?: boolean;
 }
 
 export function createLeaveAllocationColumns({
   onView,
   onEdit,
   onDelete,
+  readOnly = false,
 }: CreateColumnsParams): Column<LeaveAllocation>[] {
   return [
     {
@@ -63,19 +65,19 @@ export function createLeaveAllocationColumns({
         const roles = row.roles ? row.roles.split(',').map((r: string) => r.trim()) : [];
 
         if (roles.length === 0) {
-          return <span className="text-sm text-muted-foreground">N/A</span>;
+          return <span className="text-muted-foreground text-sm">N/A</span>;
         }
 
         const visibleRoles = roles.slice(0, 2);
         const hiddenRoles = roles.slice(2);
 
         return (
-          <div className="flex flex-wrap gap-1.5 items-center">
+          <div className="flex flex-wrap items-center gap-1.5">
             {visibleRoles.map((role: string, idx: number) => (
               <Badge
                 key={idx}
                 variant="secondary"
-                className="text-xs font-medium bg-purple-100 text-purple-700 hover:bg-purple-200"
+                className="bg-purple-100 text-xs font-medium text-purple-700 hover:bg-purple-200"
               >
                 {role}
               </Badge>
@@ -85,7 +87,7 @@ export function createLeaveAllocationColumns({
                 <PopoverTrigger asChild>
                   <Badge
                     variant="outline"
-                    className="text-xs font-medium cursor-pointer hover:bg-gray-100 gap-1 border-purple-300 text-purple-700 hover:bg-purple-50"
+                    className="cursor-pointer gap-1 border-purple-300 text-xs font-medium text-purple-700 hover:bg-gray-100 hover:bg-purple-50"
                   >
                     +{hiddenRoles.length} more
                     <ChevronDown className="h-3 w-3" />
@@ -93,7 +95,7 @@ export function createLeaveAllocationColumns({
                 </PopoverTrigger>
                 <PopoverContent className="w-auto max-w-md p-4" align="start" sideOffset={8}>
                   <div className="space-y-2">
-                    <p className="text-sm font-semibold text-gray-900 border-b pb-2">
+                    <p className="border-b pb-2 text-sm font-semibold text-gray-900">
                       All Applicable Roles ({roles.length})
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -101,7 +103,7 @@ export function createLeaveAllocationColumns({
                         <Badge
                           key={idx}
                           variant="secondary"
-                          className="text-xs font-medium bg-purple-100 text-purple-700 px-2.5 py-1"
+                          className="bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700"
                         >
                           {role}
                         </Badge>
@@ -120,7 +122,9 @@ export function createLeaveAllocationColumns({
       accessor: (row) => {
         // Format date range from effective_from and effective_to
         const formatDate = (dateStr: string | null) => {
-          if (!dateStr) return null;
+          if (!dateStr) {
+            return null;
+          }
           try {
             const date = new Date(dateStr);
             return date.toLocaleDateString('en-US', {
@@ -137,7 +141,7 @@ export function createLeaveAllocationColumns({
         const toDate = formatDate(row.effective_to);
 
         if (!fromDate && !toDate) {
-          return <span className="text-sm text-muted-foreground">N/A</span>;
+          return <span className="text-muted-foreground text-sm">N/A</span>;
         }
 
         const displayText =
@@ -148,7 +152,7 @@ export function createLeaveAllocationColumns({
           <div className="text-sm">
             <div
               className={`inline-flex items-center gap-1 px-2.5 py-1 ${
-                hasRange ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50 border border-gray-200'
+                hasRange ? 'border border-blue-200 bg-blue-50' : 'border border-gray-200 bg-gray-50'
               } rounded-md`}
             >
               <span className={`font-medium ${hasRange ? 'text-blue-900' : 'text-gray-900'}`}>
@@ -159,15 +163,17 @@ export function createLeaveAllocationColumns({
         );
       },
     },
-    // Common columns: Created, Updated, Actions
+    // Common columns: Created, Updated, Actions (or just Created/Updated for read-only)
     ...createCommonColumns<LeaveAllocation>(
-      { onView, onEdit, onDelete },
-      {
-        actionsOptions: {
-          variant: 'buttons',
-          align: 'right',
-        },
-      }
+      readOnly ? { onView } : { onView, onEdit, onDelete },
+      readOnly
+        ? {}
+        : {
+            actionsOptions: {
+              variant: 'buttons',
+              align: 'right',
+            },
+          }
     ),
   ];
 }

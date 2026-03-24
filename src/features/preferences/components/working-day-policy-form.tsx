@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Form,
   FormControl,
@@ -16,7 +17,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -36,6 +36,7 @@ import {
   updateWorkingDayPolicy,
   type CreateWorkingDayPolicyPayload,
 } from '@/lib/api/working-day-policy-api';
+import { CommonUiText, ErrorMessages, FormPlaceholders, SuccessMessages, ToastTitles } from '@/constants';
 import {
   workingDayPolicySchema,
   type WorkingDayPolicyFormValues,
@@ -99,13 +100,13 @@ export function WorkingDayPolicyForm() {
       form.reset(form.getValues()); // Reset form dirty state
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-      toast.success('Policy Updated!', {
-        description: 'Working day policy has been updated successfully.',
+      toast.success(ToastTitles.SUCCESS, {
+        description: SuccessMessages.PREFERENCES.WORKING_DAY_POLICY_UPDATED,
       });
     },
     onError: (error: Error) => {
-      toast.error('Update Failed', {
-        description: error?.message || 'Failed to update working day policy',
+      toast.error(ToastTitles.ERROR, {
+        description: error?.message || ErrorMessages.UPDATE_FAILED,
       });
     },
   });
@@ -190,7 +191,7 @@ export function WorkingDayPolicyForm() {
                     <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger className="h-11">
-                          <SelectValue placeholder="Select Saturday pattern" />
+                          <SelectValue placeholder={FormPlaceholders.SELECT_SATURDAY_PATTERN} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -218,19 +219,16 @@ export function WorkingDayPolicyForm() {
                   control={form.control}
                   name="effective_from"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="flex flex-col">
                       <FormLabel>
                         Effective From <span className="text-red-500">*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          type="date"
-                          value={field.value ? field.value.toISOString().split('T')[0] : ''}
-                          onChange={(e) =>
-                            field.onChange(e.target.value ? new Date(e.target.value) : new Date())
-                          }
+                        <DatePicker
+                          value={field.value || null}
+                          onChange={(date) => field.onChange(date || new Date())}
+                          placeholder={FormPlaceholders.SELECT_START_DATE}
                           className="h-11"
-                          required
                         />
                       </FormControl>
                       <FormMessage />
@@ -242,19 +240,17 @@ export function WorkingDayPolicyForm() {
                   control={form.control}
                   name="effective_to"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="flex flex-col">
                       <FormLabel>
                         Effective To <span className="text-sm text-gray-500">(Optional)</span>
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          type="date"
-                          value={field.value ? field.value.toISOString().split('T')[0] : ''}
-                          onChange={(e) =>
-                            field.onChange(e.target.value ? new Date(e.target.value) : null)
-                          }
+                        <DatePicker
+                          value={field.value || null}
+                          onChange={(date) => field.onChange(date)}
+                          placeholder={FormPlaceholders.SELECT_END_DATE}
+                          minDate={form.watch('effective_from') || undefined}
                           className="h-11"
-                          min={form.watch('effective_from')?.toISOString().split('T')[0]}
                         />
                       </FormControl>
                       <FormMessage />
@@ -276,18 +272,19 @@ export function WorkingDayPolicyForm() {
             <div className="flex justify-end pt-2">
               <Button
                 type="submit"
+                variant="brand"
                 disabled={!form.formState.isDirty || saveMutation.isPending}
-                className="gap-2 bg-blue-600 hover:bg-blue-700"
+                className="gap-2"
               >
                 {saveMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Saving...
+                    {CommonUiText.SAVING}
                   </>
                 ) : (
                   <>
                     <Save className="h-4 w-4" />
-                    Save Changes
+                    {CommonUiText.SAVE_CHANGES}
                   </>
                 )}
               </Button>

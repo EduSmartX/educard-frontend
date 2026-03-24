@@ -6,7 +6,7 @@ export interface OrganizationPreference {
   display_name: string;
   key: string;
   category: string;
-  field_type: 'string' | 'number' | 'choice' | 'multi-choice' | 'radio';
+  field_type: 'string' | 'number' | 'choice' | 'multi-choice' | 'radio' | 'time';
   default_value: string;
   applicable_values: string[] | null;
   description: string;

@@ -8,6 +8,7 @@ import {
   type GroupedPreference,
   type OrganizationPreference,
 } from '@/lib/api/preferences-api';
+import { ErrorMessages, SuccessMessages, ToastTitles } from '@/constants';
 
 /**
  * Hook to fetch all organization preferences
@@ -102,8 +103,8 @@ export function useUpdatePreference() {
 
     onSuccess: (data) => {
       const response = data as { message?: string };
-      toast.success('Success', {
-        description: response.message || 'Preference updated successfully',
+      toast.success(ToastTitles.SUCCESS, {
+        description: response.message || SuccessMessages.PREFERENCES.UPDATED,
       });
     },
 
@@ -119,8 +120,9 @@ export function useUpdatePreference() {
         );
       }
 
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update preference';
-      toast.error('Error', {
+      const errorMessage =
+        error instanceof Error ? error.message : ErrorMessages.UPDATE_FAILED;
+      toast.error(ToastTitles.ERROR, {
         description: errorMessage,
       });
     },
@@ -147,14 +149,15 @@ export function useBulkUpdatePreferences() {
 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization-preferences'] });
-      toast.success('Success', {
-        description: 'Preferences updated successfully',
+      toast.success(ToastTitles.SUCCESS, {
+        description: SuccessMessages.PREFERENCES.UPDATED,
       });
     },
 
     onError: (error) => {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update preferences';
-      toast.error('Error', {
+      const errorMessage =
+        error instanceof Error ? error.message : ErrorMessages.UPDATE_FAILED;
+      toast.error(ToastTitles.ERROR, {
         description: errorMessage,
       });
     },

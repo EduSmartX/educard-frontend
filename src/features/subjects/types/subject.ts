@@ -33,6 +33,7 @@ export interface Subject {
   created_by_name: string | null;
   updated_by_public_id: string | null;
   updated_by_name: string | null;
+  can_manage?: boolean; // For class teachers - indicates if they can edit/delete this subject
 }
 
 export interface SubjectListParams {

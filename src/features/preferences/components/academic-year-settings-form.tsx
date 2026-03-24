@@ -23,6 +23,7 @@ import {
   updateAcademicYear,
   type UpdateAcademicYearPayload,
 } from '@/lib/api/academic-year-api';
+import { CommonUiText, ErrorMessages, FormPlaceholders, SuccessMessages, ToastTitles } from '@/constants';
 
 const academicYearSchema = z
   .object({
@@ -95,13 +96,13 @@ export function AcademicYearSettingsForm() {
       form.reset(form.getValues()); // Reset form dirty state
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-      toast.success('Academic Year Updated!', {
-        description: 'Academic year settings have been updated successfully.',
+      toast.success(ToastTitles.SUCCESS, {
+        description: SuccessMessages.PREFERENCES.ACADEMIC_YEAR_UPDATED,
       });
     },
     onError: (error: Error) => {
-      toast.error('Update Failed', {
-        description: error?.message || 'Failed to update academic year',
+      toast.error(ToastTitles.ERROR, {
+        description: error?.message || ErrorMessages.UPDATE_FAILED,
       });
     },
   });
@@ -168,7 +169,7 @@ export function AcademicYearSettingsForm() {
                 <FormItem>
                   <FormLabel>Academic Year Name</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="e.g., 2025-26" className="h-11" />
+                    <Input {...field} placeholder={FormPlaceholders.ACADEMIC_YEAR_EXAMPLE} className="h-11" />
                   </FormControl>
                   <FormDescription className="text-sm text-gray-600">
                     Enter the name or label for the academic year (e.g., 2025-26)
@@ -192,7 +193,7 @@ export function AcademicYearSettingsForm() {
                       <DatePicker
                         value={field.value}
                         onChange={field.onChange}
-                        placeholder="Select start date"
+                        placeholder={FormPlaceholders.SELECT_START_DATE}
                       />
                     </FormControl>
                     <FormDescription className="text-sm text-gray-600">
@@ -215,7 +216,7 @@ export function AcademicYearSettingsForm() {
                       <DatePicker
                         value={field.value}
                         onChange={field.onChange}
-                        placeholder="Select end date"
+                        placeholder={FormPlaceholders.SELECT_END_DATE}
                         minDate={form.watch('start_date')}
                       />
                     </FormControl>
@@ -241,18 +242,19 @@ export function AcademicYearSettingsForm() {
             <div className="flex justify-end pt-2">
               <Button
                 type="submit"
+                variant="brand"
                 disabled={!form.formState.isDirty || updateMutation.isPending}
-                className="gap-2 h-11 px-6 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700"
+                className="gap-2 h-11 px-6"
               >
                 {updateMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Saving...
+                    {CommonUiText.SAVING}
                   </>
                 ) : (
                   <>
                     <Save className="h-4 w-4" />
-                    Save Changes
+                    {CommonUiText.SAVE_CHANGES}
                   </>
                 )}
               </Button>

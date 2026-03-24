@@ -5,8 +5,8 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getErrorMessage, getFieldErrors } from '@/lib/utils/error-handler';
-import { ErrorMessages, SuccessMessages, QueryKeys } from '@/constants';
+import { getErrorMessage, getFieldErrors, isDeletedDuplicateError } from '@/lib/utils/error-handler';
+import { ErrorMessages, QueryKeys, SuccessMessages, ToastTitles } from '@/constants';
 import type { CreateTeacherPayload, UpdateTeacherPayload } from '../types';
 import {
   createTeacher,
@@ -70,9 +70,7 @@ export function useCreateTeacher(options?: MutationOptions) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QueryKeys.TEACHERS.ALL });
 
-      toast.success('Teacher Created', {
-        description: SuccessMessages.TEACHER.CREATE_SUCCESS,
-      });
+      toast.success(SuccessMessages.TEACHER.CREATE_SUCCESS);
 
       options?.onSuccess?.();
     },
@@ -80,13 +78,16 @@ export function useCreateTeacher(options?: MutationOptions) {
       const errorMessage = getErrorMessage(error, ErrorMessages.TEACHER.CREATE_FAILED);
       const fieldErrors = getFieldErrors(error) as TeacherFieldErrors | undefined;
 
-      // Only show toast if no custom error handler is provided
-      // If custom handler exists, let it decide whether to show toast or dialog
-      if (!options?.onError) {
-        toast.error('Error Creating Teacher', {
-          description: errorMessage,
-          duration: 5000,
-        });
+      // Don't show toast for deleted duplicate errors - the dialog will handle it
+      if (!isDeletedDuplicateError(error)) {
+        // Only show toast if no custom error handler is provided
+        // If custom handler exists, let it decide whether to show toast or dialog
+        if (!options?.onError) {
+          toast.error(ToastTitles.ERROR, {
+            description: errorMessage,
+            duration: 5000,
+          });
+        }
       }
 
       options?.onError?.(error, fieldErrors);
@@ -103,18 +104,20 @@ export function useReactivateTeacher(options?: MutationOptions) {
   return useMutation({
     mutationFn: (publicId: string) => reactivateTeacher(publicId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QueryKeys.TEACHERS.ALL });
-
-      toast.success('Teacher Reactivated', {
-        description: SuccessMessages.TEACHER.REACTIVATE_SUCCESS,
+      // Invalidate all teacher queries to refresh both active and deleted lists
+      queryClient.invalidateQueries({
+        queryKey: QueryKeys.TEACHERS.ALL,
+        refetchType: 'all',
       });
+
+      toast.success(SuccessMessages.TEACHER.REACTIVATE_SUCCESS);
 
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, ErrorMessages.TEACHER.UPDATE_FAILED);
+      const errorMessage = getErrorMessage(error, ErrorMessages.TEACHER.REACTIVATE_FAILED);
 
-      toast.error('Error Reactivating Teacher', {
+      toast.error(ToastTitles.ERROR, {
         description: errorMessage,
         duration: 5000,
       });
@@ -136,9 +139,7 @@ export function useUpdateTeacher(options?: MutationOptions) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QueryKeys.TEACHERS.ALL });
 
-      toast.success('Teacher Updated', {
-        description: SuccessMessages.TEACHER.UPDATE_SUCCESS,
-      });
+      toast.success(SuccessMessages.TEACHER.UPDATE_SUCCESS);
 
       options?.onSuccess?.();
     },
@@ -146,10 +147,12 @@ export function useUpdateTeacher(options?: MutationOptions) {
       const errorMessage = getErrorMessage(error, ErrorMessages.TEACHER.UPDATE_FAILED);
       const fieldErrors = getFieldErrors(error) as TeacherFieldErrors | undefined;
 
-      toast.error('Error Updating Teacher', {
-        description: errorMessage,
-        duration: 5000,
-      });
+      if (!isDeletedDuplicateError(error)) {
+        toast.error(ToastTitles.ERROR, {
+          description: errorMessage,
+          duration: 5000,
+        });
+      }
 
       options?.onError?.(error, fieldErrors);
     },
@@ -165,18 +168,20 @@ export function useDeleteTeacher(options?: MutationOptions) {
   return useMutation({
     mutationFn: (publicId: string) => deleteTeacher(publicId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QueryKeys.TEACHERS.ALL });
-
-      toast.success('Teacher Deleted', {
-        description: SuccessMessages.TEACHER.DELETE_SUCCESS,
+      // Invalidate all teachers queries (with any params) to refresh the list
+      queryClient.invalidateQueries({
+        queryKey: QueryKeys.TEACHERS.ALL,
+        refetchType: 'all',
       });
+
+      toast.success(SuccessMessages.TEACHER.DELETE_SUCCESS);
 
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
       const errorMessage = getErrorMessage(error, ErrorMessages.TEACHER.DELETE_FAILED);
 
-      toast.error('Error Deleting Teacher', {
+      toast.error(ToastTitles.ERROR, {
         description: errorMessage,
         duration: 5000,
       });
@@ -198,14 +203,12 @@ export function useBulkUploadTeachers(options?: MutationOptions) {
       queryClient.invalidateQueries({ queryKey: QueryKeys.TEACHERS.ALL });
 
       if (response.failed_count > 0) {
-        toast.warning('Upload Completed with Errors', {
+        toast.warning(ErrorMessages.TEACHER.BULK_UPLOAD_FAILED, {
           description: `${response.created_count} teachers created, ${response.failed_count} failed.`,
           duration: 6000,
         });
       } else {
-        toast.success('Bulk Upload Successful', {
-          description: SuccessMessages.TEACHER.BULK_UPLOAD_SUCCESS,
-        });
+        toast.success(SuccessMessages.TEACHER.BULK_UPLOAD_SUCCESS);
       }
 
       options?.onSuccess?.();
@@ -213,7 +216,7 @@ export function useBulkUploadTeachers(options?: MutationOptions) {
     onError: (error: Error) => {
       const errorMessage = getErrorMessage(error, ErrorMessages.TEACHER.BULK_UPLOAD_FAILED);
 
-      toast.error('Bulk Upload Failed', {
+      toast.error(ToastTitles.ERROR, {
         description: errorMessage,
         duration: 5000,
       });

@@ -30,21 +30,47 @@ import {
   getDeletedRecordId,
 } from '@/lib/utils/error-handler';
 import type { TeacherDetail } from '../types';
-import { transformFormToPayload, transformTeacherToForm } from '../utils/form-utils';
+import { transformFormToCreatePayload, transformFormToUpdatePayload, transformTeacherToForm } from '../utils/form-utils';
 import { SubjectsMultiSelectField } from '@/components/form/subjects-multi-select-field';
 import { FormActions } from '@/components/form/form-actions';
+import { STANDARD_FORM_VALIDATION_CONFIG } from '@/lib/utils/form-validation';
 import { FormMetadata } from '@/components/form/form-metadata';
-import { DeleteConfirmationDialog, DeletedDuplicateDialog } from '@/components/common';
+import { DeletedDuplicateDialog } from '@/components/common';
 import { useDeletedDuplicateHandler } from '@/hooks/use-deleted-duplicate-handler';
 import type { CreateTeacherPayload } from '../types';
+import { ErrorMessages, FormPlaceholders, SuccessMessages, ToastTitles } from '@/constants';
 
 /**
  * Scroll to the first field with an error
  * Helps users quickly identify validation issues
+ * @param setIsAddressExpanded - Function to expand address section if error is in an address field
+ * @param formErrors - Form errors object to check which fields have errors
  */
-function scrollToFirstError() {
+function scrollToFirstError(
+  setIsAddressExpanded?: (value: boolean) => void,
+  formErrors?: Record<string, any>
+) {
   // Small delay to ensure DOM is updated with error messages
   setTimeout(() => {
+    // Address field names that require expanding the address section
+    const addressFields = [
+      'street_address',
+      'address_line_2',
+      'city',
+      'state',
+      'postal_code',
+      'country',
+      'address_type',
+    ];
+
+    // Check if any address field has an error and expand the section
+    if (setIsAddressExpanded && formErrors) {
+      const hasAddressError = addressFields.some((field) => formErrors[field]);
+      if (hasAddressError) {
+        setIsAddressExpanded(true);
+      }
+    }
+
     // Find the first element with an error message
     const firstError = document.querySelector('[data-error="true"], [aria-invalid="true"]');
 
@@ -70,7 +96,6 @@ interface TeacherFormProps {
   isLoading?: boolean;
   onSuccess: () => void;
   onCancel: () => void;
-  onDelete?: () => void;
 }
 
 export function TeacherForm({
@@ -80,11 +105,9 @@ export function TeacherForm({
   isLoading: isLoadingData,
   onSuccess,
   onCancel,
-  onDelete,
 }: TeacherFormProps) {
   const [useQuickAdd, setUseQuickAdd] = useState(false);
   const [isAddressExpanded, setIsAddressExpanded] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Duplicate handler for deleted duplicate detection
   const duplicateHandler = useDeletedDuplicateHandler<{
@@ -94,6 +117,7 @@ export function TeacherForm({
 
   const form = useForm<TeacherFormValues>({
     resolver: zodResolver(useQuickAdd ? minimalTeacherSchema : teacherFormSchema),
+    ...STANDARD_FORM_VALIDATION_CONFIG,
     defaultValues: {
       employee_id: '',
       email: '',
@@ -101,15 +125,15 @@ export function TeacherForm({
       last_name: '',
       phone: '',
       gender: undefined,
-      organization_role: undefined,
+      organization_role: '',
       blood_group: undefined,
       designation: '',
       highest_qualification: '',
       specialization: '',
       experience_years: undefined,
-      supervisor_email: undefined,
-      date_of_birth: undefined,
-      joining_date: undefined,
+      supervisor_email: '',
+      date_of_birth: '',
+      joining_date: '',
       subjects: [],
       address_type: ADDRESS_TYPE.USER_CURRENT,
       street_address: '',
@@ -132,7 +156,7 @@ export function TeacherForm({
 
   const createMutation = useCreateTeacher({
     onSuccess: () => {
-      toast.success('Teacher created successfully!');
+      toast.success(SuccessMessages.TEACHER.CREATE_SUCCESS);
       duplicateHandler.closeDialog();
       onSuccess();
     },
@@ -142,10 +166,8 @@ export function TeacherForm({
         const message = getDeletedDuplicateMessage(error);
         const deletedRecordId = getDeletedRecordId(error);
 
-        // Store the current payload and deleted record ID for potential reactivation or force create
-        const payload = transformFormToPayload(form.getValues());
+        const payload = transformFormToCreatePayload(form.getValues());
         duplicateHandler.openDialog(message, { payload, deletedRecordId });
-        // Don't show any toast - the dialog is enough
         return;
       }
 
@@ -158,7 +180,7 @@ export function TeacherForm({
         'user.gender': 'gender',
         'user.date_of_birth': 'date_of_birth',
         'user.blood_group': 'blood_group',
-        'user.organization_role_code': 'organization_role',
+        'user.organization_role': 'organization_role',
         'user.supervisor_email': 'supervisor_email',
         'user.address.street_address': 'street_address',
         'user.address.address_line_2': 'address_line_2',
@@ -173,17 +195,17 @@ export function TeacherForm({
 
       // Scroll to first error field if there are field errors
       if (result.hasFieldErrors) {
-        scrollToFirstError();
+        scrollToFirstError(setIsAddressExpanded, form.formState.errors);
       }
 
       if (!result.hasFieldErrors) {
-        toast.error('Failed to create teacher. Please try again.');
+        toast.error(ErrorMessages.TEACHER.CREATE_FAILED);
       } else if (
         result.toastMessage &&
         result.toastMessage !== 'Please check the form fields for errors'
       ) {
         // Show toast only for non-field errors, not for general validation summary
-        toast.error('Validation Error', {
+        toast.error(ToastTitles.VALIDATION_ERROR, {
           description: result.toastMessage,
         });
       }
@@ -192,7 +214,7 @@ export function TeacherForm({
 
   const updateMutation = useUpdateTeacher({
     onSuccess: () => {
-      toast.success('Teacher updated successfully!');
+      toast.success(SuccessMessages.TEACHER.UPDATE_SUCCESS);
       onSuccess();
     },
     onError: (error) => {
@@ -205,7 +227,7 @@ export function TeacherForm({
         'user.gender': 'gender',
         'user.date_of_birth': 'date_of_birth',
         'user.blood_group': 'blood_group',
-        'user.organization_role_code': 'organization_role',
+        'user.organization_role': 'organization_role',
         'user.supervisor_email': 'supervisor_email',
         'user.address.street_address': 'street_address',
         'user.address.address_line_2': 'address_line_2',
@@ -220,17 +242,17 @@ export function TeacherForm({
 
       // Scroll to first error field if there are field errors
       if (result.hasFieldErrors) {
-        scrollToFirstError();
+        scrollToFirstError(setIsAddressExpanded, form.formState.errors);
       }
 
       if (!result.hasFieldErrors) {
-        toast.error('Failed to update teacher. Please try again.');
+        toast.error(ErrorMessages.TEACHER.UPDATE_FAILED);
       } else if (
         result.toastMessage &&
         result.toastMessage !== 'Please check the form fields for errors'
       ) {
         // Show toast only for non-field errors, not for general validation summary
-        toast.error('Validation Error', {
+        toast.error(ToastTitles.VALIDATION_ERROR, {
           description: result.toastMessage,
         });
       }
@@ -239,15 +261,15 @@ export function TeacherForm({
 
   const reactivateMutation = useReactivateTeacher({
     onSuccess: () => {
-      toast.success('Teacher Reactivated', {
+      toast.success(SuccessMessages.TEACHER.REACTIVATE_SUCCESS, {
         description: 'The deleted teacher has been reactivated successfully. You can now edit it.',
       });
       duplicateHandler.closeDialog();
       onSuccess(); // Refresh the list or close the form
     },
     onError: () => {
-      toast.error('Failed to Reactivate', {
-        description: 'Could not reactivate the teacher. Please try again.',
+      toast.error(ToastTitles.ERROR, {
+        description: ErrorMessages.TEACHER.REACTIVATE_FAILED,
       });
     },
   });
@@ -256,7 +278,7 @@ export function TeacherForm({
     const deletedRecordId = duplicateHandler.pendingData?.deletedRecordId;
 
     if (!deletedRecordId) {
-      toast.error('Cannot find the deleted teacher record to reactivate.');
+      toast.error(ErrorMessages.TEACHER.NOT_FOUND);
       return;
     }
 
@@ -274,24 +296,17 @@ export function TeacherForm({
   };
 
   const onSubmit = (data: TeacherFormValues) => {
-    const payload = transformFormToPayload(data);
-
     if (mode === 'create') {
+      const payload = transformFormToCreatePayload(data);
       createMutation.mutate({ payload });
     } else if (mode === 'edit' && teacherId) {
-      updateMutation.mutate({ publicId: teacherId, payload: payload });
+      const payload = transformFormToUpdatePayload(data);
+      updateMutation.mutate({ publicId: teacherId, payload });
     }
   };
 
-  const handleDelete = () => {
-    setShowDeleteDialog(true);
-  };
-
-  const confirmDelete = () => {
-    setShowDeleteDialog(false);
-    if (onDelete) {
-      onDelete();
-    }
+  const onInvalid = () => {
+    scrollToFirstError(setIsAddressExpanded, form.formState.errors);
   };
 
   const isViewMode = mode === 'view';
@@ -301,7 +316,7 @@ export function TeacherForm({
   return (
     <>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-6">
           {/* Quick Add Toggle - Only for create mode */}
           {mode === 'create' && (
             <Card className="bg-blue-50 border-blue-200">
@@ -331,7 +346,7 @@ export function TeacherForm({
                 control={form.control}
                 name="employee_id"
                 label="Employee ID"
-                placeholder="Enter employee ID"
+                placeholder={FormPlaceholders.ENTER_EMPLOYEE_ID}
                 disabled={isViewMode}
                 required
                 validationType="employeeId"
@@ -341,7 +356,7 @@ export function TeacherForm({
                 name="email"
                 label="Email"
                 type="email"
-                placeholder="Enter email"
+                placeholder={FormPlaceholders.ENTER_EMAIL}
                 disabled={isViewMode}
                 required
                 validationType="email"
@@ -350,7 +365,7 @@ export function TeacherForm({
                 control={form.control}
                 name="first_name"
                 label="First Name"
-                placeholder="Enter first name"
+                placeholder={FormPlaceholders.ENTER_FIRST_NAME}
                 disabled={isViewMode}
                 required
                 validationType="name"
@@ -360,7 +375,7 @@ export function TeacherForm({
                 control={form.control}
                 name="last_name"
                 label="Last Name"
-                placeholder="Enter last name"
+                placeholder={FormPlaceholders.ENTER_LAST_NAME}
                 disabled={isViewMode}
                 required
                 validationType="name"
@@ -379,7 +394,7 @@ export function TeacherForm({
                     control={form.control}
                     name="phone"
                     label="Phone"
-                    placeholder="Enter phone number"
+                    placeholder={FormPlaceholders.ENTER_PHONE_NUMBER}
                     disabled={isViewMode}
                     required
                     validationType="phone"
@@ -411,7 +426,7 @@ export function TeacherForm({
                   control={form.control}
                   name="designation"
                   label="Designation"
-                  placeholder="e.g., Senior Teacher"
+                  placeholder={FormPlaceholders.DESIGNATION_EXAMPLE}
                   disabled={isViewMode}
                   validationType="text"
                   validationOptions={{ fieldName: 'Designation', maxLength: 100 }}
@@ -420,7 +435,7 @@ export function TeacherForm({
                   control={form.control}
                   name="highest_qualification"
                   label="Qualification"
-                  placeholder="e.g., M.Ed, B.Sc"
+                  placeholder={FormPlaceholders.QUALIFICATION_EXAMPLE}
                   disabled={isViewMode}
                   validationType="text"
                   validationOptions={{ fieldName: 'Qualification', maxLength: 200 }}
@@ -429,7 +444,7 @@ export function TeacherForm({
                   control={form.control}
                   name="specialization"
                   label="Specialization"
-                  placeholder="e.g., Mathematics, Science"
+                  placeholder={FormPlaceholders.SPECIALIZATION_EXAMPLE}
                   disabled={isViewMode}
                   validationType="text"
                   validationOptions={{ fieldName: 'Specialization', maxLength: 200 }}
@@ -439,7 +454,7 @@ export function TeacherForm({
                   name="experience_years"
                   label="Experience (Years)"
                   type="number"
-                  placeholder="Enter years of experience"
+                  placeholder={FormPlaceholders.ENTER_YEARS_OF_EXPERIENCE}
                   disabled={isViewMode}
                   validationType="numeric"
                   validationOptions={{
@@ -465,12 +480,6 @@ export function TeacherForm({
                   label="Date of Joining"
                   disabled={isViewMode}
                 />
-                <DateInputField
-                  control={form.control}
-                  name="admission_date"
-                  label="Admission Date"
-                  disabled={isViewMode}
-                />
               </CardContent>
             </Card>
           )}
@@ -486,7 +495,7 @@ export function TeacherForm({
                   control={form.control}
                   name="emergency_contact_name"
                   label="Emergency Contact Name"
-                  placeholder="Enter contact name"
+                  placeholder={FormPlaceholders.ENTER_CONTACT_NAME}
                   disabled={isViewMode}
                   validationType="name"
                   validationOptions={{ fieldName: 'Contact name' }}
@@ -495,7 +504,7 @@ export function TeacherForm({
                   control={form.control}
                   name="emergency_contact_number"
                   label="Emergency Contact Phone"
-                  placeholder="Enter contact phone"
+                  placeholder={FormPlaceholders.ENTER_CONTACT_PHONE}
                   disabled={isViewMode}
                   validationType="phone"
                 />
@@ -505,13 +514,15 @@ export function TeacherForm({
 
           {/* Address */}
           {!useQuickAdd && (
-            <Card>
+            <Card className="mt-6">
               <CardHeader
                 className="cursor-pointer"
                 onClick={() => setIsAddressExpanded(!isAddressExpanded)}
               >
                 <CardTitle className="flex items-center justify-between">
-                  <span>Address (Optional)</span>
+                  <span>
+                    Address <span className="text-sm text-muted-foreground font-normal">(Optional)</span>
+                  </span>
                   {isAddressExpanded ? (
                     <ChevronUp className="h-5 w-5" />
                   ) : (
@@ -547,27 +558,11 @@ export function TeacherForm({
           <FormActions
             mode={mode}
             onCancel={onCancel}
-            onDelete={isEditMode && onDelete ? handleDelete : undefined}
-            showDelete={isEditMode && !!onDelete}
             isSubmitting={isLoading}
             submitLabel={mode === 'create' ? 'Create Teacher' : 'Update Teacher'}
           />
         </form>
       </Form>
-
-      {/* Delete Confirmation Dialog */}
-      <DeleteConfirmationDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        onConfirm={confirmDelete}
-        title="Delete Teacher"
-        itemName={
-          initialData
-            ? `${initialData.user.first_name} ${initialData.user.last_name} (${initialData.employee_id})`
-            : undefined
-        }
-        isSoftDelete={true}
-      />
 
       {/* Deleted Duplicate Dialog */}
       <DeletedDuplicateDialog

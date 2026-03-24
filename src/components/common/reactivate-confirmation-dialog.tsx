@@ -13,7 +13,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { RotateCcw } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { RotateCcw, AlertCircle } from 'lucide-react';
 
 interface ReactivateConfirmationDialogProps {
   open: boolean;
@@ -23,6 +24,7 @@ interface ReactivateConfirmationDialogProps {
   description?: string;
   itemName?: string;
   isReactivating?: boolean;
+  error?: string | null;
 }
 
 export function ReactivateConfirmationDialog({
@@ -33,6 +35,7 @@ export function ReactivateConfirmationDialog({
   description,
   itemName,
   isReactivating = false,
+  error = null,
 }: ReactivateConfirmationDialogProps) {
   const defaultDescription = itemName
     ? `Are you sure you want to reactivate "${itemName}"? This will restore the record and make it active again.`
@@ -52,6 +55,14 @@ export function ReactivateConfirmationDialog({
             {description || defaultDescription}
           </AlertDialogDescription>
         </AlertDialogHeader>
+        
+        {error && (
+          <Alert variant="destructive" className="mx-6 mb-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
         <AlertDialogFooter>
           <AlertDialogCancel
             disabled={isReactivating}

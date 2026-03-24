@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ErrorMessages, FormPlaceholders, SuccessMessages } from '@/constants';
 import { leaveApi, type LeaveAllocationPayload } from '@/lib/api/leave-api';
 import { getCurrentAcademicYear } from '@/lib/api/organization-api';
 import {
@@ -142,7 +143,7 @@ export function LeaveAllocationForm({
   const createMutation = useMutation({
     mutationFn: (data: LeaveAllocationPayload) => leaveApi.createAllocation(data),
     onSuccess: (data) => {
-      toast.success('Leave allocation policy created successfully', {
+      toast.success(SuccessMessages.CREATE_SUCCESS, {
         description: `${data.leave_type_name} policy has been created`,
         icon: <CheckCircle2 className="h-4 w-4" />,
       });
@@ -155,22 +156,22 @@ export function LeaveAllocationForm({
 
       // Check for non-field errors first (like duplicate allocation)
       if (nonFieldErrors.length > 0) {
-        toast.error('Unable to Create Policy', {
+        toast.error(ErrorMessages.CREATE_FAILED, {
           description: nonFieldErrors[0],
           icon: <AlertCircle className="h-4 w-4" />,
           duration: 6000,
         });
       } else if (hasFieldError) {
         // For field-specific errors, show a brief info toast since error is already on the field
-        toast.error('Please Review Form Errors', {
+        toast.error(ErrorMessages.FORM.INVALID_INPUT, {
           description: 'Check the highlighted fields below for specific error details',
           icon: <AlertCircle className="h-4 w-4" />,
           duration: 4000,
         });
       } else {
         // Fallback to generic error
-        const errorMessage = parseApiError(error, 'Failed to create leave allocation');
-        toast.error('Failed to Create Policy', {
+        const errorMessage = parseApiError(error, ErrorMessages.CREATE_FAILED);
+        toast.error(ErrorMessages.CREATE_FAILED, {
           description: errorMessage,
           icon: <AlertCircle className="h-4 w-4" />,
         });
@@ -183,7 +184,7 @@ export function LeaveAllocationForm({
     mutationFn: ({ id, data }: { id: string; data: Partial<LeaveAllocationPayload> }) =>
       leaveApi.updateAllocation(id, data),
     onSuccess: (data) => {
-      toast.success('Leave allocation policy updated successfully', {
+      toast.success(SuccessMessages.UPDATE_SUCCESS, {
         description: `${data.leave_type_name} policy has been updated`,
         icon: <CheckCircle2 className="h-4 w-4" />,
       });
@@ -196,21 +197,21 @@ export function LeaveAllocationForm({
 
       // Check for non-field errors first
       if (nonFieldErrors.length > 0) {
-        toast.error('Unable to Update Policy', {
+        toast.error(ErrorMessages.UPDATE_FAILED, {
           description: nonFieldErrors[0],
           icon: <AlertCircle className="h-4 w-4" />,
           duration: 6000,
         });
       } else if (hasFieldError) {
         // For field-specific errors, show a brief info toast since error is already on the field
-        toast.error('Please Review Form Errors', {
+        toast.error(ErrorMessages.FORM.INVALID_INPUT, {
           description: 'Check the highlighted fields below for specific error details',
           icon: <AlertCircle className="h-4 w-4" />,
           duration: 4000,
         });
       } else {
-        const errorMessage = parseApiError(error, 'Failed to update leave allocation');
-        toast.error('Failed to Update Policy', {
+        const errorMessage = parseApiError(error, ErrorMessages.UPDATE_FAILED);
+        toast.error(ErrorMessages.UPDATE_FAILED, {
           description: errorMessage,
           icon: <AlertCircle className="h-4 w-4" />,
         });
@@ -428,7 +429,7 @@ export function LeaveAllocationForm({
                           >
                             <FormControl>
                               <SelectTrigger className="bg-white">
-                                <SelectValue placeholder="Select leave type" />
+                                <SelectValue placeholder={FormPlaceholders.SELECT_LEAVE_TYPE} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -455,7 +456,7 @@ export function LeaveAllocationForm({
                           </FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="e.g., Annual Leave 2025-26"
+                              placeholder={FormPlaceholders.LEAVE_POLICY_NAME_EXAMPLE}
                               className="bg-white"
                               {...field}
                             />
@@ -476,7 +477,7 @@ export function LeaveAllocationForm({
                           </FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Add any additional details about this policy..."
+                              placeholder={FormPlaceholders.LEAVE_POLICY_DETAILS}
                               className="bg-white resize-none"
                               rows={3}
                               {...field}
@@ -584,7 +585,7 @@ export function LeaveAllocationForm({
                                     type="number"
                                     step="0.5"
                                     min="0.5"
-                                    placeholder="Max carry forward days"
+                                    placeholder={FormPlaceholders.MAX_CARRY_FORWARD_DAYS}
                                     className="bg-white"
                                     {...field}
                                     onChange={(e) => {
@@ -720,7 +721,7 @@ export function LeaveAllocationForm({
                               <DatePicker
                                 value={field.value}
                                 onChange={field.onChange}
-                                placeholder="Pick a date"
+                                placeholder={FormPlaceholders.PICK_A_DATE}
                                 minDate={new Date('1900-01-01')}
                                 className="w-full"
                               />
@@ -741,7 +742,7 @@ export function LeaveAllocationForm({
                               <DatePicker
                                 value={field.value}
                                 onChange={field.onChange}
-                                placeholder="Pick a date"
+                                placeholder={FormPlaceholders.PICK_A_DATE}
                                 minDate={form.watch('effective_from') || new Date('1900-01-01')}
                                 className="w-full"
                               />
@@ -856,7 +857,8 @@ export function LeaveAllocationForm({
                         <Button
                           type="submit"
                           size="lg"
-                          className="w-full bg-gradient-to-r from-teal-500 to-green-500 hover:from-teal-600 hover:to-green-600 shadow-md hover:shadow-lg transition-all font-semibold"
+                          variant="brand"
+                          className="w-full shadow-md hover:shadow-lg transition-all font-semibold"
                           disabled={createMutation.isPending || updateMutation.isPending}
                         >
                           {(createMutation.isPending || updateMutation.isPending) && (
@@ -866,7 +868,7 @@ export function LeaveAllocationForm({
                         </Button>
                         <Button
                           type="button"
-                          variant="outline"
+                          variant="brandOutline"
                           size="lg"
                           className="w-full border-2 font-semibold hover:bg-gray-100"
                           onClick={onCancel}

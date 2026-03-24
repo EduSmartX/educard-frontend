@@ -42,10 +42,16 @@ import { useClass } from '../hooks/use-classes';
 import { useTeachers } from '@/features/teachers/hooks/use-teachers';
 import { useCoreClasses } from '@/features/core/hooks/use-core-classes';
 import { ROUTES } from '@/constants/app-config';
-import { isDeletedDuplicateError, getDeletedDuplicateMessage } from '@/lib/utils/error-handler';
+import {
+  isDeletedDuplicateError,
+  getDeletedDuplicateMessage,
+  getDeletedRecordId,
+} from '@/lib/utils/error-handler';
 import { DeletedDuplicateDialog } from '@/components/common';
 import { useDeletedDuplicateHandler } from '@/hooks/use-deleted-duplicate-handler';
 import { classFormSchema, type ClassFormData } from '../schemas/class-form-schema';
+import { ErrorMessages, FormPlaceholders, SuccessMessages } from '@/constants';
+import { STANDARD_FORM_VALIDATION_CONFIG } from '@/lib/utils/form-validation';
 
 export default function ClassFormPage() {
   const navigate = useNavigate();
@@ -78,7 +84,10 @@ export default function ClassFormPage() {
   };
 
   // Duplicate handling
-  const duplicateHandler = useDeletedDuplicateHandler();
+  const duplicateHandler = useDeletedDuplicateHandler<{
+    formData: ClassFormData;
+    deletedRecordId?: string | null;
+  }>();
 
   // Delete dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -96,6 +105,7 @@ export default function ClassFormPage() {
 
   const form = useForm<ClassFormData>({
     resolver: zodResolver(classFormSchema),
+    ...STANDARD_FORM_VALIDATION_CONFIG,
     defaultValues: {
       class_master: '',
       name: '',
@@ -128,7 +138,11 @@ export default function ClassFormPage() {
     // Check for deleted duplicate error
     if (isDeletedDuplicateError(error)) {
       const message = getDeletedDuplicateMessage(error);
-      duplicateHandler.openDialog(message, form.getValues());
+      const deletedRecordId = getDeletedRecordId(error);
+      duplicateHandler.openDialog(message, {
+        formData: form.getValues(),
+        deletedRecordId,
+      });
       return;
     }
 
@@ -155,7 +169,7 @@ export default function ClassFormPage() {
   // Mutations
   const createMutation = useCreateClass({
     onSuccess: () => {
-      toast.success('Class created successfully');
+      toast.success(SuccessMessages.CLASS.CREATE_SUCCESS);
       navigate(ROUTES.CLASSES);
     },
     onError: handleFormErrors,
@@ -163,7 +177,7 @@ export default function ClassFormPage() {
 
   const updateMutation = useUpdateClass({
     onSuccess: () => {
-      toast.success('Class updated successfully');
+      toast.success(SuccessMessages.CLASS.UPDATE_SUCCESS);
       navigate(ROUTES.CLASSES);
     },
     onError: handleFormErrors,
@@ -171,27 +185,21 @@ export default function ClassFormPage() {
 
   const deleteMutation = useDeleteClass({
     onSuccess: () => {
-      toast.success('Class deleted successfully');
-      navigate(ROUTES.CLASSES);
+      toast.success(SuccessMessages.CLASS.DELETE_SUCCESS);
+      // Navigation happens before mutation is called
     },
     onError: (error: Error) => {
-      toast.error(`Failed to delete class: ${error.message}`);
+      toast.error(error.message || ErrorMessages.CLASS.DELETE_FAILED);
     },
   });
 
   const reactivateMutation = useReactivateClass({
     onSuccess: () => {
-      toast.success('Class reactivated successfully');
-      // Navigate to the view page without the deleted flag to prevent 404 on refetch
-      if (id) {
-        // Use replace: true to replace the history entry so back button works correctly
-        navigate(ROUTES.CLASSES_VIEW.replace(':id', id), { replace: true });
-      } else {
-        navigate(ROUTES.CLASSES);
-      }
+      toast.success(SuccessMessages.CLASS.REACTIVATE_SUCCESS);
+      // Navigation already happened before mutation was called
     },
     onError: (error: Error) => {
-      toast.error(`Failed to reactivate class: ${error.message}`);
+      toast.error(error.message || ErrorMessages.CLASS.REACTIVATE_FAILED);
     },
   });
 
@@ -203,6 +211,9 @@ export default function ClassFormPage() {
   const confirmDelete = () => {
     setShowDeleteDialog(false);
     if (classItem) {
+      // Navigate away first to avoid refetching deleted resource
+      navigate(ROUTES.CLASSES, { replace: true });
+      // Then execute delete mutation
       deleteMutation.mutate(classItem.public_id);
     }
   };
@@ -214,20 +225,34 @@ export default function ClassFormPage() {
 
   const confirmReactivate = () => {
     setShowReactivateDialog(false);
-    if (classItem) {
+    if (classItem && id) {
+      // Navigate away first to avoid 404 on refetch
+      navigate(ROUTES.CLASSES_VIEW.replace(':id', id), { replace: true });
+      // Then execute reactivate mutation
       reactivateMutation.mutate(classItem.public_id);
     }
   };
 
   // Handle reactivate from duplicate dialog
   const handleReactivate = () => {
-    duplicateHandler.closeDialog();
-    navigate(`${ROUTES.CLASSES}?showDeleted=true`);
+    const deletedRecordId = duplicateHandler.pendingData?.deletedRecordId;
+
+    if (!deletedRecordId) {
+      toast.error(ErrorMessages.CLASS.NOT_FOUND);
+      return;
+    }
+
+    reactivateMutation.mutate(deletedRecordId, {
+      onSuccess: () => {
+        duplicateHandler.closeDialog();
+        navigate(ROUTES.CLASSES, { replace: true });
+      },
+    });
   };
 
   // Handle force create from duplicate dialog
   const handleForceCreate = () => {
-    const pendingData = duplicateHandler.pendingData as ClassFormData | null;
+    const pendingData = duplicateHandler.pendingData?.formData;
     if (pendingData) {
       createMutation.mutate({
         payload: {
@@ -401,7 +426,7 @@ export default function ClassFormPage() {
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select class" />
+                              <SelectValue placeholder={FormPlaceholders.SELECT_CLASS} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -435,7 +460,7 @@ export default function ClassFormPage() {
                         </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="e.g., A, B, Section A"
+                            placeholder={FormPlaceholders.CLASS_SECTION_EXAMPLE}
                             disabled={isPending || mode === 'view'}
                             {...field}
                           />
@@ -460,7 +485,7 @@ export default function ClassFormPage() {
                           <Input
                             type="number"
                             min="1"
-                            placeholder="Enter class capacity"
+                            placeholder={FormPlaceholders.ENTER_CLASS_CAPACITY}
                             disabled={isPending || mode === 'view'}
                             {...field}
                           />
@@ -490,7 +515,7 @@ export default function ClassFormPage() {
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select class teacher" />
+                              <SelectValue placeholder={FormPlaceholders.SELECT_CLASS_TEACHER} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -519,7 +544,7 @@ export default function ClassFormPage() {
                       <FormLabel>Additional Information (Optional)</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Enter any additional information about this class section"
+                          placeholder={FormPlaceholders.CLASS_INFO}
                           disabled={isPending || mode === 'view'}
                           rows={3}
                           {...field}
@@ -536,12 +561,6 @@ export default function ClassFormPage() {
                 mode={mode}
                 isSubmitting={isPending}
                 onCancel={() => navigate(ROUTES.CLASSES)}
-                onDelete={
-                  mode === 'edit' || (mode === 'view' && !isViewingDeleted)
-                    ? handleDelete
-                    : undefined
-                }
-                showDelete={mode === 'edit' || (mode === 'view' && !isViewingDeleted)}
                 submitLabel={mode === 'edit' ? 'Update Class' : 'Create Class'}
               />
             </form>

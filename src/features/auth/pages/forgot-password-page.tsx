@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import { ROUTES, BRANDING } from '@/constants';
+import { ErrorMessages, FormPlaceholders, ROUTES, BRANDING, SuccessMessages } from '@/constants';
 import { authApi } from '@/lib/api/auth-api';
 
 // Step 1: Request OTP - Email or Username
@@ -80,10 +80,10 @@ export default function ForgotPasswordPage() {
 
       setIdentifier(formData.identifier);
       setCurrentStep('verify');
-      toast.success(`✉️ OTP sent to your ${useEmail ? 'email' : 'account'}!`);
+      toast.success(`${SuccessMessages.AUTH.OTP_SENT} to your ${useEmail ? 'email' : 'account'}!`);
     } catch (err: unknown) {
       const error = err as { message?: string };
-      toast.error(error?.message || 'Failed to send OTP. Please try again.');
+      toast.error(error?.message || ErrorMessages.AUTH.SEND_OTP_FAILED);
     } finally {
       setIsLoading(false);
     }
@@ -104,10 +104,10 @@ export default function ForgotPasswordPage() {
       await authApi.verifyPasswordResetOtp(verifyData);
 
       setCurrentStep('success');
-      toast.success('🎉 Password reset successful!');
+      toast.success(SuccessMessages.AUTH.PASSWORD_RESET_SUCCESS);
     } catch (err: unknown) {
       const error = err as { message?: string };
-      toast.error(error?.message || 'Invalid OTP or failed to reset password. Please try again.');
+      toast.error(error?.message || ErrorMessages.AUTH.PASSWORD_RESET_FAILED);
     } finally {
       setIsLoading(false);
     }
@@ -232,7 +232,9 @@ export default function ForgotPasswordPage() {
                 {/* Submit Button */}
                 <Button
                   type="submit"
-                  className="w-full h-14 text-base font-semibold bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 rounded-xl"
+                  variant="brand"
+                  size="xl"
+                  className="w-full font-semibold"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -309,7 +311,7 @@ export default function ForgotPasswordPage() {
                     id="otp"
                     type="text"
                     maxLength={6}
-                    placeholder="• • • • • •"
+                    placeholder={FormPlaceholders.OTP_MASK}
                     className={cn(
                       'w-full h-16 text-center text-2xl font-bold tracking-[0.5em] border-2 rounded-xl transition-all',
                       'focus:outline-none focus:ring-4',
@@ -339,7 +341,7 @@ export default function ForgotPasswordPage() {
                     <input
                       id="newPassword"
                       type={showPassword ? 'text' : 'password'}
-                      placeholder="Enter new password"
+                      placeholder={FormPlaceholders.ENTER_NEW_PASSWORD}
                       className={cn(
                         'w-full h-14 pl-4 pr-12 rounded-xl border-2 text-base transition-all duration-200',
                         'focus:outline-none focus:ring-4',
@@ -373,7 +375,7 @@ export default function ForgotPasswordPage() {
                     <input
                       id="confirmPassword"
                       type={showConfirmPassword ? 'text' : 'password'}
-                      placeholder="Confirm new password"
+                      placeholder={FormPlaceholders.CONFIRM_NEW_PASSWORD}
                       className={cn(
                         'w-full h-14 pl-4 pr-12 rounded-xl border-2 text-base transition-all duration-200',
                         'focus:outline-none focus:ring-4',
@@ -416,7 +418,9 @@ export default function ForgotPasswordPage() {
 
                 <Button
                   type="submit"
-                  className="w-full h-14 text-base font-semibold bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 rounded-xl"
+                  variant="brand"
+                  size="xl"
+                  className="w-full font-semibold"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -483,7 +487,9 @@ export default function ForgotPasswordPage() {
 
                 <Button
                   onClick={() => navigate(ROUTES.AUTH.LOGIN)}
-                  className="w-full h-14 text-base font-semibold bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 rounded-xl"
+                  variant="brand"
+                  size="xl"
+                  className="w-full font-semibold"
                 >
                   Go to Login
                 </Button>

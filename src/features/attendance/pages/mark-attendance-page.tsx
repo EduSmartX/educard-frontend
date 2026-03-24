@@ -1,12 +1,14 @@
 import { MarkAttendanceForm } from '../components/mark-attendance-form';
+import { PageHeader } from '@/components/common';
+import { AttendanceUiText } from '@/constants';
 
 export function MarkAttendancePage() {
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Mark Attendance</h1>
-        <p className="text-muted-foreground">Mark daily attendance for students in your classes</p>
-      </div>
+      <PageHeader
+        title={AttendanceUiText.MARK_PAGE_TITLE}
+        description={AttendanceUiText.MARK_PAGE_DESC}
+      />
 
       <MarkAttendanceForm />
     </div>

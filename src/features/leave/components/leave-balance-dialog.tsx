@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { CommonUiText, ErrorMessages, FormPlaceholders, SuccessMessages } from '@/constants';
 import type { LeaveBalance } from '@/lib/api/leave-api';
 import { getErrorMessage } from '@/lib/utils/error-handler';
 import { useCreateLeaveBalance, useUpdateLeaveBalance } from '../hooks';
@@ -79,11 +80,11 @@ export function LeaveBalanceDialog({
   const createBalanceMutation = useCreateLeaveBalance();
   const updateBalanceMutation = useUpdateLeaveBalance();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!userPublicId) {
-      toast.error('User not selected');
+      toast.error(ErrorMessages.LEAVE.USER_NOT_SELECTED);
       return;
     }
 
@@ -96,11 +97,11 @@ export function LeaveBalanceDialog({
         },
         {
           onSuccess: () => {
-            toast.success('Leave balance added successfully');
+            toast.success(SuccessMessages.LEAVE.BALANCE_ADDED);
             onClose(true);
           },
           onError: (error: Error) => {
-            toast.error('Failed to add leave balance', {
+            toast.error(ErrorMessages.LEAVE.ADD_BALANCE_FAILED, {
               description: getErrorMessage(error),
             });
           },
@@ -115,11 +116,11 @@ export function LeaveBalanceDialog({
         },
         {
           onSuccess: () => {
-            toast.success('Leave balance updated successfully');
+            toast.success(SuccessMessages.LEAVE.BALANCE_UPDATED);
             onClose(true);
           },
           onError: (error: Error) => {
-            toast.error('Failed to update leave balance', {
+            toast.error(ErrorMessages.LEAVE.UPDATE_BALANCE_FAILED, {
               description: getErrorMessage(error),
             });
           },
@@ -136,7 +137,7 @@ export function LeaveBalanceDialog({
 
   return (
     <Dialog open={open} onOpenChange={() => onClose()}>
-      <DialogContent className="sm:max-w-[550px] bg-white">
+      <DialogContent className="bg-white sm:max-w-[550px]">
         <DialogHeader className="space-y-3">
           <DialogTitle className="text-2xl font-bold text-gray-900">
             {mode === 'add' ? 'Add Leave Balance' : 'Edit Leave Balance'}
@@ -157,17 +158,17 @@ export function LeaveBalanceDialog({
               options={allocationOptions}
               value={allocationId}
               onValueChange={setAllocationId}
-              placeholder="Select a leave allocation policy..."
+              placeholder={FormPlaceholders.SELECT_LEAVE_ALLOCATION_POLICY}
               emptyText="No allocation policies available"
               disabled={mode === 'edit'} // Can't change allocation once created
             />
             {mode === 'edit' && (
-              <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
+              <p className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-600">
                 ⚠️ Leave allocation cannot be changed after creation
               </p>
             )}
             {mode === 'add' && availableAllocations.length === 0 && (
-              <p className="text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">
+              <p className="rounded border border-red-200 bg-red-50 p-2 text-xs text-red-600">
                 ⚠️ No available leave allocation policies. All policies have been assigned.
               </p>
             )}
@@ -185,8 +186,8 @@ export function LeaveBalanceDialog({
               min={0}
               step={0.5}
               required
-              placeholder="Enter number of days (e.g., 10 or 10.5)"
-              className="text-base h-11"
+              placeholder={FormPlaceholders.ENTER_ALLOCATED_DAYS}
+              className="h-11 text-base"
             />
           </div>
 
@@ -201,8 +202,8 @@ export function LeaveBalanceDialog({
               onChange={(e) => setCarryForward(Number(e.target.value))}
               min={0}
               step={0.5}
-              placeholder="Enter carry forward days (e.g., 5)"
-              className="text-base h-11"
+              placeholder={FormPlaceholders.ENTER_CARRY_FORWARD_DAYS}
+              className="h-11 text-base"
             />
           </div>
 
@@ -218,18 +219,19 @@ export function LeaveBalanceDialog({
             </Button>
             <Button
               type="submit"
+              variant="brand"
               disabled={
                 (mode === 'add' && createBalanceMutation.isPending) ||
                 (mode === 'edit' && updateBalanceMutation.isPending) ||
                 !allocationId ||
                 totalAllocated <= 0
               }
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white min-w-[120px]"
+              className="min-w-[120px]"
             >
               {createBalanceMutation.isPending || updateBalanceMutation.isPending ? (
                 <span className="flex items-center gap-2">
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Saving...
+                  {CommonUiText.SAVING}
                 </span>
               ) : mode === 'add' ? (
                 '✓ Add Balance'

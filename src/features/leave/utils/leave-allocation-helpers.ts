@@ -5,8 +5,10 @@
 
 import { format, parse } from 'date-fns';
 import type { LeaveAllocation, OrganizationRole } from '@/lib/api/leave-api';
-import type { LeaveAllocationFormValues } from '../schemas/leave-allocation-schema';
-import { getDefaultLeaveAllocationValues } from '../schemas/leave-allocation-schema';
+import {
+  getDefaultLeaveAllocationValues,
+  type LeaveAllocationFormValues,
+} from '../schemas/leave-allocation-schema';
 
 /**
  * Date format constants for consistent date handling
@@ -22,7 +24,9 @@ export const DATE_FORMATS = {
  * Format date for API submission (YYYY-MM-DD)
  */
 export function formatDateForApi(date: Date | string | null | undefined): string {
-  if (!date) return '';
+  if (!date) {
+    return '';
+  }
 
   if (typeof date === 'string') {
     try {
@@ -39,7 +43,9 @@ export function formatDateForApi(date: Date | string | null | undefined): string
  * Format date for display (MMM DD, YYYY)
  */
 export function formatDateForDisplay(date: Date | string | null | undefined): string {
-  if (!date) return 'N/A';
+  if (!date) {
+    return 'N/A';
+  }
 
   try {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
@@ -53,7 +59,9 @@ export function formatDateForDisplay(date: Date | string | null | undefined): st
  * Parse date string from API (YYYY-MM-DD) to Date object
  */
 export function parseDateFromApi(dateString: string | null | undefined): Date | undefined {
-  if (!dateString) return undefined;
+  if (!dateString) {
+    return undefined;
+  }
 
   try {
     return parse(dateString, DATE_FORMATS.API, new Date());
@@ -138,7 +146,9 @@ export function calculateEffectivePeriod(
   startDate: Date | string | null | undefined,
   endDate: Date | string | null | undefined
 ): number | null {
-  if (!startDate) return null;
+  if (!startDate) {
+    return null;
+  }
 
   const start = typeof startDate === 'string' ? new Date(startDate) : startDate;
   const end = endDate ? (typeof endDate === 'string' ? new Date(endDate) : endDate) : new Date();
@@ -153,7 +163,9 @@ export function calculateEffectivePeriod(
  * Get role names from role IDs
  */
 export function getRoleNames(roleIds: number[], roles: OrganizationRole[]): string {
-  if (roleIds.length === 0) return 'None';
+  if (roleIds.length === 0) {
+    return 'None';
+  }
 
   const roleNames = roleIds.map((id) => roles.find((role) => role.id === id)?.name).filter(Boolean);
 

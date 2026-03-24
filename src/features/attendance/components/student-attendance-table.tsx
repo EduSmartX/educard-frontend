@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { AttendanceUiText } from '@/constants';
 import type { AttendancePeriod } from '../types';
 
 interface StudentAttendanceRow {
@@ -94,26 +95,32 @@ export function StudentAttendanceTable({
         <Table>
           <TableHeader>
             <TableRow style={{ backgroundColor: '#E8F5E9' }}>
-              <TableHead className="w-[100px] font-bold text-gray-900">Roll No</TableHead>
-              <TableHead className="font-bold text-gray-900">Student Name</TableHead>
+              <TableHead className="w-[100px] font-bold text-gray-900">
+                {AttendanceUiText.ROLL_NO}
+              </TableHead>
+              <TableHead className="font-bold text-gray-900">
+                {AttendanceUiText.STUDENT_NAME}
+              </TableHead>
               {showMorning && (
                 <TableHead className="text-center w-[150px] font-bold text-gray-900">
-                  Morning
+                  {AttendanceUiText.PERIOD_MORNING}
                 </TableHead>
               )}
               {showAfternoon && (
                 <TableHead className="text-center w-[150px] font-bold text-gray-900">
-                  Afternoon
+                  {AttendanceUiText.PERIOD_AFTERNOON}
                 </TableHead>
               )}
-              <TableHead className="w-[200px] font-bold text-gray-900">Remarks</TableHead>
+              <TableHead className="w-[200px] font-bold text-gray-900">
+                {AttendanceUiText.REMARKS}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {students.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                  No students found in this class
+                  {AttendanceUiText.NO_STUDENTS}
                 </TableCell>
               </TableRow>
             ) : (
@@ -139,14 +146,14 @@ export function StudentAttendanceTable({
                                 variant="outline"
                                 className="bg-blue-50 text-blue-700 border-blue-200"
                               >
-                                On Leave
+                                {AttendanceUiText.ON_LEAVE}
                               </Badge>
                             ) : (
                               <Badge
                                 variant="outline"
                                 className="bg-yellow-50 text-yellow-700 border-yellow-200"
                               >
-                                Leave Pending
+                                {AttendanceUiText.LEAVE_PENDING}
                               </Badge>
                             )}
                             {student.leave_info.leave_type && (
@@ -187,7 +194,7 @@ export function StudentAttendanceTable({
                         onChange={(e) =>
                           onStudentChange(student.public_id, 'remarks', e.target.value)
                         }
-                        placeholder="Add remarks..."
+                        placeholder={AttendanceUiText.ADD_REMARKS}
                         disabled={!canEdit}
                         className="text-sm"
                       />

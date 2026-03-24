@@ -4,6 +4,7 @@
  */
 
 import api from '@/lib/api';
+import { isAdminUser } from '@/lib/utils/auth-utils';
 import type {
   Teacher,
   TeacherDetail,
@@ -16,7 +17,24 @@ import type {
   ApiResponse,
 } from '../types';
 
-const BASE_URL = '/teacher/admin/';
+// Admin endpoints - Full CRUD operations
+const ADMIN_BASE_URL = '/teacher/admin/';
+
+// Employee endpoints - Read-only access
+const EMPLOYEE_BASE_URL = '/teacher/employee/';
+
+/**
+ * Get the appropriate base URL based on user role and operation type
+ */
+function getBaseUrl(isWriteOperation = false): string {
+  // Write operations always use admin endpoint
+  if (isWriteOperation) {
+    return ADMIN_BASE_URL;
+  }
+  
+  // Read operations: use employee endpoint for non-admins, admin endpoint for admins
+  return isAdminUser() ? ADMIN_BASE_URL : EMPLOYEE_BASE_URL;
+}
 
 /**
  * Fetch all teachers with pagination and filters
@@ -24,7 +42,8 @@ const BASE_URL = '/teacher/admin/';
 export async function fetchTeachers(
   params: FetchTeachersParams = {}
 ): Promise<PaginatedResponse<Teacher>> {
-  const response = await api.get<TeachersResponse>(BASE_URL, { params });
+  const baseUrl = getBaseUrl(false); // Read operation
+  const response = await api.get<TeachersResponse>(baseUrl, { params });
   // Backend returns: { success, message, data: [...], pagination: {...}, code }
   // We need to restructure it to match PaginatedResponse<Teacher>
   return {
@@ -37,11 +56,24 @@ export async function fetchTeachers(
  * Fetch a single teacher by ID
  */
 export async function fetchTeacher(publicId: string, isDeleted?: boolean): Promise<TeacherDetail> {
+  const baseUrl = getBaseUrl(false); // Read operation
   const params = isDeleted ? { is_deleted: 'true' } : {};
-  const response = await api.get<ApiResponse<TeacherDetail>>(`${BASE_URL}${publicId}/`, {
-    params,
-  });
-  return response.data.data;
+  
+  try {
+    const response = await api.get<ApiResponse<TeacherDetail>>(`${baseUrl}${publicId}/`, {
+      params,
+    });
+    
+    // Ensure we return valid data or throw an error
+    if (!response?.data?.data) {
+      throw new Error('Teacher data not found');
+    }
+    
+    return response.data.data;
+  } catch (error) {
+    console.error('Error fetching teacher:', error);
+    throw error;
+  }
 }
 
 /**
@@ -51,8 +83,9 @@ export async function createTeacher(
   data: CreateTeacherPayload,
   forceCreate?: boolean
 ): Promise<TeacherDetail> {
+  const baseUrl = getBaseUrl(true); // Write operation
   const params = forceCreate ? { force_create: 'true' } : {};
-  const response = await api.post<ApiResponse<TeacherDetail>>(BASE_URL, data, { params });
+  const response = await api.post<ApiResponse<TeacherDetail>>(baseUrl, data, { params });
   return response.data.data;
 }
 
@@ -63,7 +96,8 @@ export async function updateTeacher(
   publicId: string,
   data: UpdateTeacherPayload
 ): Promise<TeacherDetail> {
-  const response = await api.put<ApiResponse<TeacherDetail>>(`${BASE_URL}${publicId}/`, data);
+  const baseUrl = getBaseUrl(true); // Write operation
+  const response = await api.put<ApiResponse<TeacherDetail>>(`${baseUrl}${publicId}/`, data);
   return response.data.data;
 }
 
@@ -71,17 +105,19 @@ export async function updateTeacher(
  * Delete a teacher (soft delete)
  */
 export async function deleteTeacher(publicId: string): Promise<void> {
-  await api.delete(`${BASE_URL}${publicId}/`);
+  const baseUrl = getBaseUrl(true); // Write operation
+  await api.delete(`${baseUrl}${publicId}/`);
 }
 
 /**
  * Bulk upload teachers from Excel file
  */
 export async function bulkUploadTeachers(file: File): Promise<TeacherBulkUploadResponse['data']> {
+  const baseUrl = getBaseUrl(true); // Write operation
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await api.post<TeacherBulkUploadResponse>(`${BASE_URL}bulk-upload/`, formData, {
+  const response = await api.post<TeacherBulkUploadResponse>(`${baseUrl}bulk-upload/`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -94,7 +130,8 @@ export async function bulkUploadTeachers(file: File): Promise<TeacherBulkUploadR
  * Download teacher bulk import template
  */
 export async function downloadTeacherTemplate(): Promise<Blob> {
-  const response = await api.get(`${BASE_URL}download-template/`, {
+  const baseUrl = getBaseUrl(true); // Write operation (admin only)
+  const response = await api.get(`${baseUrl}download-template/`, {
     responseType: 'blob',
   });
   return response.data;
@@ -104,6 +141,45 @@ export async function downloadTeacherTemplate(): Promise<Blob> {
  * Activate a deactivated teacher
  */
 export async function reactivateTeacher(publicId: string): Promise<Teacher> {
-  const response = await api.post<ApiResponse<Teacher>>(`${BASE_URL}${publicId}/activate/`);
+  const baseUrl = getBaseUrl(true); // Write operation
+  const response = await api.post<ApiResponse<Teacher>>(`${baseUrl}${publicId}/activate/`);
+  return response.data.data;
+}
+
+/**
+ * Validate email verification token and get user details
+ */
+export async function validateVerificationToken(token: string): Promise<{
+  email: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+}> {
+  const response = await api.get<ApiResponse<{
+    email: string;
+    username: string;
+    first_name: string;
+    last_name: string;
+  }>>(`/teacher/verify-email/`, {
+    params: { token },
+  });
+  return response.data.data;
+}
+
+/**
+ * Verify email and set password for new teacher
+ */
+export async function verifyEmailAndSetPassword(data: {
+  token: string;
+  password: string;
+  confirm_password: string;
+}): Promise<{
+  username: string;
+  email: string;
+}> {
+  const response = await api.post<ApiResponse<{
+    username: string;
+    email: string;
+  }>>(`/teacher/verify-email/`, data);
   return response.data.data;
 }

@@ -11,6 +11,7 @@ export interface CalendarException {
   override_type: OverrideType;
   reason: string;
   is_applicable_to_all_classes: boolean;
+  is_applicable_to_all_teachers: boolean;
   classes: string[]; // Array of class public_ids
   created_at: string;
   updated_at: string;
@@ -26,6 +27,7 @@ export interface CalendarExceptionCreate {
   override_type: OverrideType;
   reason: string;
   is_applicable_to_all_classes: boolean;
+  is_applicable_to_all_teachers?: boolean;
   classes?: string[]; // Optional, only if not applicable to all
 }
 
@@ -34,6 +36,7 @@ export interface CalendarExceptionUpdate {
   override_type?: OverrideType;
   reason?: string;
   is_applicable_to_all_classes?: boolean;
+  is_applicable_to_all_teachers?: boolean;
   classes?: string[];
 }
 

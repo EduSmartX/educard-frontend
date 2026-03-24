@@ -6,6 +6,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { updateOrganization, updateOrganizationAddress } from '../api/organization-api';
+import { ErrorMessages, SuccessMessages } from '@/constants';
 import type {
   UpdateOrganizationPayload,
   UpdateOrganizationAddressPayload,
@@ -21,10 +22,10 @@ export function useUpdateOrganization(publicId: string) {
     mutationFn: (payload: UpdateOrganizationPayload) => updateOrganization(publicId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization', publicId] });
-      toast.success('Organization updated successfully');
+      toast.success(SuccessMessages.ORGANIZATION.UPDATE_SUCCESS);
     },
     onError: () => {
-      toast.error('Failed to update organization');
+      toast.error(ErrorMessages.ORGANIZATION.UPDATE_FAILED);
     },
   });
 }
@@ -40,10 +41,10 @@ export function useUpdateOrganizationAddress(publicId: string) {
       updateOrganizationAddress(publicId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization', publicId] });
-      toast.success('Organization address updated successfully');
+      toast.success(SuccessMessages.ORGANIZATION.ADDRESS_UPDATE_SUCCESS);
     },
     onError: () => {
-      toast.error('Failed to update organization address');
+      toast.error(ErrorMessages.ORGANIZATION.UPDATE_FAILED);
     },
   });
 }

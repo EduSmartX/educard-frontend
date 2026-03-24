@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { DeleteConfirmationDialog, ReactivateConfirmationDialog } from '@/components/common';
+import { ErrorMessages, SuccessMessages } from '@/constants';
 import { useClasses } from '../hooks/use-classes';
 import { useDeleteClass, useReactivateClass } from '../hooks/mutations';
 import { ClassesList } from './classes-list';
@@ -14,7 +15,12 @@ import { ROUTES } from '@/constants/app-config';
 import { useDeletedView } from '@/hooks/use-deleted-view';
 import type { Class } from '../types';
 
-export function ClassesManagement() {
+interface ClassesManagementProps {
+  viewMode?: 'admin' | 'employee'; // Admin = full CRUD, Employee = read-only
+}
+
+export function ClassesManagement({ viewMode = 'admin' }: ClassesManagementProps) {
+  const isEmployeeView = viewMode === 'employee';
   const navigate = useNavigate();
 
   // Pagination state
@@ -47,22 +53,22 @@ export function ClassesManagement() {
   // Delete mutation
   const deleteMutation = useDeleteClass({
     onSuccess: () => {
-      toast.success('Class deleted successfully');
+      toast.success(SuccessMessages.CLASS.DELETE_SUCCESS);
       setClassToDelete(undefined);
     },
     onError: (error: Error) => {
-      toast.error(`Failed to delete class: ${error.message}`);
+      toast.error(error.message || ErrorMessages.CLASS.DELETE_FAILED);
     },
   });
 
   // Reactivate mutation
   const reactivateMutation = useReactivateClass({
     onSuccess: () => {
-      toast.success('Class reactivated successfully');
+      toast.success(SuccessMessages.CLASS.REACTIVATE_SUCCESS);
       setClassToReactivate(undefined);
     },
     onError: (error: Error) => {
-      toast.error(`Failed to reactivate class: ${error.message}`);
+      toast.error(error.message || ErrorMessages.CLASS.REACTIVATE_FAILED);
     },
   });
 
@@ -128,7 +134,7 @@ export function ClassesManagement() {
         error={error || undefined}
         pagination={pagination}
         showDeleted={showDeleted}
-        onToggleDeleted={toggleDeletedView}
+        onToggleDeleted={isEmployeeView ? undefined : toggleDeletedView} // No deleted toggle for employees
         onCreateNew={handleCreateNew}
         onView={handleView}
         onEdit={handleEdit}
@@ -137,9 +143,10 @@ export function ClassesManagement() {
         onPageSizeChange={handlePageSizeChange}
         onSearch={handleSearch}
         onFilterChange={handleFilterChange}
+        viewMode={viewMode} // Pass viewMode to list
       />
 
-      {!showDeleted && (
+      {!showDeleted && !isEmployeeView && (
         <DeleteConfirmationDialog
           open={!!classToDelete}
           onOpenChange={(open) => !open && setClassToDelete(undefined)}
@@ -155,7 +162,7 @@ export function ClassesManagement() {
         />
       )}
 
-      {showDeleted && (
+      {showDeleted && !isEmployeeView && (
         <ReactivateConfirmationDialog
           open={!!classToReactivate}
           onOpenChange={(open) => !open && setClassToReactivate(undefined)}

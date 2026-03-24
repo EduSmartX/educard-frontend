@@ -1,43 +1,41 @@
+/**
+ * Employee Sidebar Configuration
+ * Navigation menu for teachers and staff members
+ */
+
 import {
   LayoutDashboard,
   Calendar,
-  BarChart3,
-  Users,
-  GraduationCap,
-  BookOpen,
-  School,
-  CalendarCheck,
-  ClipboardCheck,
   CalendarDays,
+  CalendarCheck,
+  BookOpen,
+  ClipboardCheck,
   Settings,
-  Building2,
-  Sliders,
-  AlertTriangle,
   Briefcase,
+  AlertTriangle,
+  UserCog,
+  School,
+  GraduationCap,
+  BarChart3,
+  CheckSquare,
 } from 'lucide-react';
 import type { SidebarSection } from '@/components/layout/dashboard-sidebar';
 import { ROUTES } from '@/constants/app-config';
 
-export const adminSidebarConfig: SidebarSection[] = [
+export const employeeSidebarConfig: SidebarSection[] = [
   {
     items: [
       {
         id: 'dashboard',
         label: 'Dashboard',
         icon: LayoutDashboard,
-        path: ROUTES.DASHBOARD,
+        path: ROUTES.EMPLOYEE.DASHBOARD,
       },
       {
         id: 'calendar',
-        label: 'Calendar',
+        label: 'My Calendar',
         icon: Calendar,
         path: ROUTES.CALENDAR,
-      },
-      {
-        id: 'analytics',
-        label: 'Analytics',
-        icon: BarChart3,
-        path: ROUTES.ANALYTICS,
       },
     ],
   },
@@ -47,20 +45,20 @@ export const adminSidebarConfig: SidebarSection[] = [
       {
         id: 'teachers',
         label: 'Teachers',
-        icon: Users,
-        path: ROUTES.TEACHERS,
+        icon: UserCog,
+        path: ROUTES.EMPLOYEE.TEACHERS,
+      },
+      {
+        id: 'classes',
+        label: 'Classes',
+        icon: School,
+        path: ROUTES.EMPLOYEE.CLASSES,
       },
       {
         id: 'students',
         label: 'Students',
         icon: GraduationCap,
         path: ROUTES.STUDENTS,
-      },
-      {
-        id: 'classes',
-        label: 'Classes',
-        icon: School,
-        path: ROUTES.CLASSES,
       },
       {
         id: 'subjects',
@@ -77,19 +75,31 @@ export const adminSidebarConfig: SidebarSection[] = [
         id: 'mark-attendance',
         label: 'Mark Attendance',
         icon: ClipboardCheck,
-        path: '/attendance/mark',
+        path: ROUTES.EMPLOYEE.ATTENDANCE.MARK,
       },
       {
         id: 'attendance-summary',
         label: 'View Summary',
         icon: BarChart3,
-        path: '/attendance/summary',
+        path: ROUTES.EMPLOYEE.ATTENDANCE.SUMMARY,
       },
       {
         id: 'attendance-reports',
-        label: 'Monthly Report',
+        label: 'Attendance Report',
         icon: CalendarDays,
-        path: '/attendance/monthly',
+        path: ROUTES.EMPLOYEE.ATTENDANCE.REPORT,
+      },
+      {
+        id: 'attendance-timesheet',
+        label: 'My Timesheet',
+        icon: CalendarCheck,
+        path: ROUTES.EMPLOYEE.ATTENDANCE.TIMESHEET,
+      },
+      {
+        id: 'timesheet-approvals',
+        label: 'Timesheet Approvals',
+        icon: CheckSquare,
+        path: ROUTES.EMPLOYEE.ATTENDANCE.APPROVALS,
       },
     ],
   },
@@ -100,25 +110,25 @@ export const adminSidebarConfig: SidebarSection[] = [
         id: 'leave-dashboard',
         label: 'Leave Dashboard',
         icon: Briefcase,
-        path: ROUTES.LEAVE.DASHBOARD,
+        path: ROUTES.EMPLOYEE.LEAVE.DASHBOARD,
       },
       {
         id: 'leave-reviews',
         label: 'Leave Reviews',
         icon: ClipboardCheck,
-        path: ROUTES.LEAVE.REVIEWS,
+        path: ROUTES.EMPLOYEE.LEAVE.REVIEWS,
       },
       {
-        id: 'leave-balances',
+        id: 'manage-leave-balance',
         label: 'Manage Leave Balances',
         icon: CalendarDays,
-        path: ROUTES.LEAVE.BALANCES,
+        path: ROUTES.EMPLOYEE.LEAVE.MANAGE_BALANCE,
       },
       {
         id: 'leave-allocations',
         label: 'Leave Allocations',
         icon: CalendarCheck,
-        path: ROUTES.LEAVE.ALLOCATIONS,
+        path: ROUTES.EMPLOYEE.LEAVE.ALLOCATIONS,
       },
     ],
   },
@@ -129,29 +139,17 @@ export const adminSidebarConfig: SidebarSection[] = [
         id: 'holidays',
         label: 'Holiday Calendar',
         icon: CalendarDays,
-        path: ROUTES.HOLIDAYS,
+        path: ROUTES.EMPLOYEE.HOLIDAYS,
       },
       {
         id: 'exceptional-work',
         label: 'Exceptional Work Policy',
         icon: AlertTriangle,
-        path: ROUTES.EXCEPTIONAL_WORK,
+        path: ROUTES.EMPLOYEE.EXCEPTIONAL_WORK,
       },
       {
-        id: 'preferences',
-        label: 'Organization Preferences',
-        icon: Sliders,
-        path: ROUTES.PREFERENCES,
-      },
-      {
-        id: 'organization',
-        label: 'Organization',
-        icon: Building2,
-        path: ROUTES.ORGANIZATION,
-      },
-      {
-        id: 'settings',
-        label: 'Settings',
+        id: 'profile',
+        label: 'My Profile',
         icon: Settings,
         path: ROUTES.PROFILE,
       },

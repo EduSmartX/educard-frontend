@@ -3,7 +3,7 @@
  * Displays the table with filtering, search, and pagination capabilities
  */
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus, Filter, X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -37,6 +37,7 @@ interface TeachersListProps {
   onPageSizeChange?: (pageSize: number) => void;
   onSearch?: (query: string) => void;
   onFilterChange?: (filters: Record<string, string>) => void;
+  viewMode?: 'admin' | 'employee'; // Admin = full CRUD, Employee = read-only
 }
 
 export function TeachersList({
@@ -54,88 +55,94 @@ export function TeachersList({
   onPageSizeChange,
   onSearch,
   onFilterChange,
+  viewMode = 'admin',
 }: TeachersListProps) {
+  const isEmployeeView = viewMode === 'employee';
   const [appliedSearchQuery, setAppliedSearchQuery] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [showFilters, setShowFilters] = useState(false);
 
-  // Extract unique values for filter options
-  const designations = Array.from(new Set(teachers.map((t) => t.designation).filter(Boolean))).map(
-    (d) => ({
-      value: d!,
-      label: d!,
-    })
-  );
+  const filterFields: FilterField[] = useMemo(() => {
+    const designations = Array.from(
+      new Set(teachers.map((teacher) => teacher.designation).filter(Boolean))
+    ).map((designation) => ({
+      value: designation!,
+      label: designation!,
+    }));
 
-  const specializations = Array.from(
-    new Set(teachers.map((t) => t.specialization).filter(Boolean))
-  ).map((s) => ({
-    value: s!,
-    label: s!,
-  }));
+    const specializations = Array.from(
+      new Set(teachers.map((teacher) => teacher.specialization).filter(Boolean))
+    ).map((specialization) => ({
+      value: specialization!,
+      label: specialization!,
+    }));
 
-  const filterFields: FilterField[] = [
-    {
-      name: 'search',
-      label: 'Search',
-      type: 'text',
-      placeholder: 'Search by name, email, phone, or employee ID...',
-    },
-    {
-      name: 'designation',
-      label: 'Designation',
-      type: 'select',
-      placeholder: 'All designations',
-      options: designations,
-      searchable: true,
-    },
-    {
-      name: 'specialization',
-      label: 'Specialization',
-      type: 'select',
-      placeholder: 'All specializations',
-      options: specializations,
-      searchable: true,
-    },
-  ];
+    return [
+      {
+        name: 'search',
+        label: 'Search',
+        type: 'text',
+        placeholder: 'Search by name, email, phone, or employee ID...',
+      },
+      {
+        name: 'designation',
+        label: 'Designation',
+        type: 'select',
+        placeholder: 'All designations',
+        options: designations,
+        searchable: true,
+      },
+      {
+        name: 'specialization',
+        label: 'Specialization',
+        type: 'select',
+        placeholder: 'All specializations',
+        options: specializations,
+        searchable: true,
+      },
+    ];
+  }, [teachers]);
 
   const columns = createTeacherListColumns({
     onView,
     onEdit,
     onDelete,
     isDeletedView: showDeleted,
+    viewMode, // Pass viewMode to configure columns
   });
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        title={getListTitle('Teachers', showDeleted)}
-        description={getListDescription('Teachers', showDeleted)}
+        title={isEmployeeView ? 'Teachers' : getListTitle('Teachers', showDeleted)}
+        description={
+          isEmployeeView
+            ? 'View all teachers in your organization'
+            : getListDescription('Teachers', showDeleted)
+        }
         actions={[
-          ...(!showDeleted
+          ...(!showDeleted && !isEmployeeView
             ? [
                 {
                   label: 'Add Teacher',
                   onClick: onCreateNew,
-                  variant: 'default' as const,
+                  variant: 'brand' as const,
                   icon: Plus,
-                  className:
-                    'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700',
                 },
               ]
             : []),
         ]}
       >
         <div className="flex gap-2 items-center">
-          {onToggleDeleted && (
+          {onToggleDeleted && !isEmployeeView && (
             <DeletedViewToggle
               showDeleted={showDeleted}
               onToggle={onToggleDeleted}
               resourceName="teachers"
             />
           )}
-          {!showDeleted && <BulkUploadTeachersDialog />}
+          {!showDeleted && !isEmployeeView && <BulkUploadTeachersDialog />}
         </div>
       </PageHeader>
 

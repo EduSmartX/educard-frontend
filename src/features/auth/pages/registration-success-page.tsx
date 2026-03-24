@@ -184,13 +184,15 @@ export default function RegistrationSuccessPage() {
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <Button
                 onClick={() => navigate(ROUTES.AUTH.LOGIN)}
-                className="flex-1 h-12 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white shadow-lg"
+                variant="brand"
+                className="flex-1 h-12 font-semibold"
               >
                 Go to Login
               </Button>
               <Button
                 onClick={() => navigate('/')}
-                className="flex-1 h-12 border-2 bg-white hover:bg-gray-50"
+                variant="brandOutline"
+                className="flex-1 h-12 font-semibold"
               >
                 Back to Home
               </Button>

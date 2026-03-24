@@ -32,11 +32,12 @@ import {
 } from '../hooks/use-attendance';
 import { StudentAttendanceTable } from './student-attendance-table';
 import type { StudentRow } from '../types';
+import { AttendanceUiText, CommonUiText } from '@/constants';
 
 const formSchema = z.object({
-  class_id: z.string().min(1, 'Please select a class'),
+  class_id: z.string().min(1, AttendanceUiText.SELECT_CLASS),
   date: z.date({
-    required_error: 'Please select a date',
+    required_error: AttendanceUiText.SELECT_DATE,
   }),
   period: z.enum(['morning', 'afternoon', 'full_day']),
 });
@@ -205,6 +206,13 @@ export function MarkAttendanceForm() {
 
   const isSubmitting = bulkMarkMutation.isPending;
   const canSubmit = students.length > 0 && !isViewMode && isWorkingDay;
+  const hasNoStudentsForSelection =
+    !!classId &&
+    !!dateString &&
+    !loadingData &&
+    isWorkingDay &&
+    Array.isArray(comprehensiveData) &&
+    comprehensiveData.length === 0;
 
   return (
     <div className="space-y-6">
@@ -220,7 +228,9 @@ export function MarkAttendanceForm() {
                   name="class_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-semibold text-base">Class *</FormLabel>
+                      <FormLabel className="font-semibold text-base">
+                        {AttendanceUiText.CLASS_LABEL}
+                      </FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         value={field.value}
@@ -228,7 +238,7 @@ export function MarkAttendanceForm() {
                       >
                         <FormControl>
                           <SelectTrigger className="h-11">
-                            <SelectValue placeholder="Select a class" />
+                            <SelectValue placeholder={AttendanceUiText.SELECT_CLASS_PLACEHOLDER} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -250,12 +260,14 @@ export function MarkAttendanceForm() {
                   name="date"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-semibold text-base">Date *</FormLabel>
+                      <FormLabel className="font-semibold text-base">
+                        {AttendanceUiText.DATE_LABEL}
+                      </FormLabel>
                       <FormControl>
                         <DatePicker
                           value={field.value || null}
                           onChange={field.onChange}
-                          placeholder="Select date"
+                          placeholder={AttendanceUiText.SELECT_DATE_PLACEHOLDER}
                           maxDate={new Date()}
                           minDate={new Date('2020-01-01')}
                         />
@@ -271,7 +283,9 @@ export function MarkAttendanceForm() {
                   name="period"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-semibold text-base">Period *</FormLabel>
+                      <FormLabel className="font-semibold text-base">
+                        {AttendanceUiText.PERIOD_LABEL}
+                      </FormLabel>
                       <FormControl>
                         <div className="bg-white rounded-md border border-gray-300 px-4 h-11 flex items-center">
                           <RadioGroup
@@ -283,21 +297,25 @@ export function MarkAttendanceForm() {
                               <FormControl>
                                 <RadioGroupItem value="morning" />
                               </FormControl>
-                              <FormLabel className="font-normal cursor-pointer">Morning</FormLabel>
+                              <FormLabel className="font-normal cursor-pointer">
+                                {AttendanceUiText.PERIOD_MORNING}
+                              </FormLabel>
                             </FormItem>
                             <FormItem className="flex items-center space-x-2 space-y-0">
                               <FormControl>
                                 <RadioGroupItem value="afternoon" />
                               </FormControl>
                               <FormLabel className="font-normal cursor-pointer">
-                                Afternoon
+                                {AttendanceUiText.PERIOD_AFTERNOON}
                               </FormLabel>
                             </FormItem>
                             <FormItem className="flex items-center space-x-2 space-y-0">
                               <FormControl>
                                 <RadioGroupItem value="full_day" />
                               </FormControl>
-                              <FormLabel className="font-normal cursor-pointer">Full Day</FormLabel>
+                              <FormLabel className="font-normal cursor-pointer">
+                                {AttendanceUiText.PERIOD_FULL_DAY}
+                              </FormLabel>
                             </FormItem>
                           </RadioGroup>
                         </div>
@@ -311,24 +329,52 @@ export function MarkAttendanceForm() {
           </Card>
 
           {dateValidation && !dateValidation.is_working_day && (
-            <Alert className="border-l-4 border-l-red-500 bg-red-50">
-              <AlertCircle className="h-6 w-6 text-red-600" />
-              <AlertDescription className="text-red-900 font-semibold text-lg">
-                🚫 Cannot Submit Attendance - {dateValidation.reason || 'This is not a working day'}
-                <p className="mt-2 text-sm font-normal text-red-700">
-                  Attendance cannot be marked for holidays or weekends. Please select a valid
-                  working day.
-                </p>
-              </AlertDescription>
-            </Alert>
+            <Card className="border-red-200 bg-red-50">
+              <CardContent className="py-8">
+                <div className="mx-auto max-w-2xl text-center space-y-3">
+                  <h3 className="text-lg font-semibold text-red-900">
+                    Cannot Submit Attendance On -{' '}
+                    {dateValidation.reason || AttendanceUiText.NOT_WORKING_DAY}
+                  </h3>
+                  <p className="text-sm text-red-700">
+                    Attendance cannot be marked for holidays or weekends. Please select a valid
+                    working day.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Loading State */}
           {loadingData && classId && isWorkingDay && (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-muted-foreground">Loading attendance data...</span>
+              <span className="ml-2 text-muted-foreground">{AttendanceUiText.LOADING_ATTENDANCE}</span>
             </div>
+          )}
+
+          {/* No Students Info */}
+          {hasNoStudentsForSelection && (
+            <Card className="border-amber-200 bg-amber-50">
+              <CardContent className="py-8">
+                <div className="mx-auto max-w-2xl text-center space-y-3">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
+                    <AlertCircle className="h-6 w-6 text-amber-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-amber-900">
+                    No Students Found for This Class
+                  </h3>
+                  <p className="text-sm text-amber-800">
+                    There are no students available to mark attendance for the selected class and
+                    date.
+                  </p>
+                  <p className="text-sm text-amber-800">
+                    Please contact your supervisor or administrator to verify class assignments and
+                    student enrollment.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Student List with Leave Info - Only show if working day */}
@@ -337,14 +383,14 @@ export function MarkAttendanceForm() {
               {isViewMode && (
                 <Alert>
                   <AlertDescription className="flex items-center justify-between">
-                    <span>Attendance has already been marked for this date.</span>
+                    <span>{AttendanceUiText.ALREADY_MARKED}</span>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       onClick={() => setIsViewMode(false)}
                     >
-                      Edit Attendance
+                      {AttendanceUiText.EDIT_ATTENDANCE}
                     </Button>
                   </AlertDescription>
                 </Alert>
@@ -362,7 +408,7 @@ export function MarkAttendanceForm() {
                       className="bg-green-50 hover:bg-green-100 text-green-700 border-green-300"
                     >
                       <CheckCircle2 className="mr-2 h-4 w-4" />
-                      Mark All Present
+                      {AttendanceUiText.MARK_ALL_PRESENT}
                     </Button>
                     <Button
                       type="button"
@@ -372,17 +418,17 @@ export function MarkAttendanceForm() {
                       className="bg-red-50 hover:bg-red-100 text-red-700 border-red-300"
                     >
                       <XCircle className="mr-2 h-4 w-4" />
-                      Mark All Absent
+                      {AttendanceUiText.MARK_ALL_ABSENT}
                     </Button>
                   </div>
                   <div className="text-sm font-medium text-gray-700 flex items-center gap-4">
                     <span className="flex items-center gap-1">
                       <Users className="h-4 w-4 text-blue-600" />
-                      Total Students: {students.length}
+                      {AttendanceUiText.TOTAL_STUDENTS}: {students.length}
                     </span>
                     <span className="flex items-center gap-1">
                       <UserX className="h-4 w-4 text-orange-600" />
-                      On Leave: {students.filter((s) => s.leave_status).length}
+                      {AttendanceUiText.ON_LEAVE}: {students.filter((s) => s.leave_status).length}
                     </span>
                   </div>
                 </div>
@@ -410,7 +456,7 @@ export function MarkAttendanceForm() {
                 disabled={isSubmitting || !isWorkingDay}
                 className="px-6"
               >
-                Reset
+                {CommonUiText.RESET}
               </Button>
               <Button
                 type="submit"
@@ -418,7 +464,7 @@ export function MarkAttendanceForm() {
                 className="px-6 bg-blue-600 hover:bg-blue-700"
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isSubmitting ? 'Submitting...' : 'Submit Attendance'}
+                {isSubmitting ? CommonUiText.SUBMITTING : AttendanceUiText.SUBMIT_ATTENDANCE}
               </Button>
             </div>
           )}

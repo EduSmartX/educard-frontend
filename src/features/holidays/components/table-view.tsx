@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useRole } from '@/hooks/use-role';
 import type { Holiday } from '../types';
 import {
   sortHolidaysByDate,
@@ -41,6 +42,10 @@ export function TableView({ holidays, currentDate }: TableViewProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [holidayToDelete, setHolidayToDelete] = useState<Holiday | null>(null);
 
+  // Get user role to determine if edit/delete actions should be shown
+  const { role } = useRole();
+  const isAdmin = role === 'ADMIN';
+  
   const today = startOfDay(new Date());
   const deleteMutation = useDeleteHoliday();
 
@@ -87,9 +92,11 @@ export function TableView({ holidays, currentDate }: TableViewProps) {
               <TableHead className="text-center font-semibold text-white">Description</TableHead>
               <TableHead className="text-center font-semibold text-white">Duration</TableHead>
               <TableHead className="text-center font-semibold text-white">Type</TableHead>
-              <TableHead className="w-[120px] text-center font-semibold text-white">
-                Actions
-              </TableHead>
+              {isAdmin && (
+                <TableHead className="w-[120px] text-center font-semibold text-white">
+                  Actions
+                </TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -144,30 +151,32 @@ export function TableView({ holidays, currentDate }: TableViewProps) {
                       {formatHolidayType(holiday.holiday_type)}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-blue-100 hover:text-blue-700"
-                        onClick={() => handleEdit(holiday)}
-                        disabled={isWeekend || deleteMutation.isPending}
-                        title={isWeekend ? 'Cannot edit weekend holidays' : 'Edit holiday'}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-red-600 hover:bg-red-100 hover:text-red-700"
-                        onClick={() => handleDelete(holiday)}
-                        disabled={isWeekend || deleteMutation.isPending}
-                        title={isWeekend ? 'Cannot delete weekend holidays' : 'Delete holiday'}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                  {isAdmin && (
+                    <TableCell>
+                      <div className="flex items-center justify-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-blue-100 hover:text-blue-700"
+                          onClick={() => handleEdit(holiday)}
+                          disabled={isWeekend || deleteMutation.isPending}
+                          title={isWeekend ? 'Cannot edit weekend holidays' : 'Edit holiday'}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-red-600 hover:bg-red-100 hover:text-red-700"
+                          onClick={() => handleDelete(holiday)}
+                          disabled={isWeekend || deleteMutation.isPending}
+                          title={isWeekend ? 'Cannot delete weekend holidays' : 'Delete holiday'}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               );
             })}

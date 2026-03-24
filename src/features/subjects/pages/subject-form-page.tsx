@@ -7,7 +7,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Edit, X, Plus, Eye, Trash2, RefreshCw } from 'lucide-react';
+import { Edit, X, Plus, Eye, Trash2, RefreshCw, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   PageHeader,
@@ -16,9 +16,15 @@ import {
   ReactivateConfirmationDialog,
 } from '@/components/common';
 import { FormActions } from '@/components/form/form-actions';
-import { isDeletedDuplicateError, getDeletedDuplicateMessage } from '@/lib/utils/error-handler';
+import {
+  isDeletedDuplicateError,
+  getDeletedDuplicateMessage,
+  getDeletedRecordId,
+  getErrorMessage,
+} from '@/lib/utils/error-handler';
 import { useDeletedDuplicateHandler } from '@/hooks/use-deleted-duplicate-handler';
 import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Form,
   FormControl,
@@ -35,6 +41,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { ToastTitles } from '@/constants';
 import {
   useCreateSubject,
   useUpdateSubject,
@@ -45,7 +52,12 @@ import { useSubject } from '../hooks/use-subjects';
 import { useClasses } from '@/features/classes/hooks/use-classes';
 import { useSubjectMasters } from '@/features/core/hooks/use-subject-masters';
 import { useTeachers } from '@/features/teachers/hooks/use-teachers';
+import { useManagedClassesForSubjects } from '../hooks/use-managed-classes';
+import { useAuth } from '@/hooks/use-auth';
+import { USER_ROLES } from '@/constants/user-constants';
 import { ROUTES } from '@/constants/app-config';
+import { ErrorMessages, FormPlaceholders, SuccessMessages } from '@/constants';
+import { STANDARD_FORM_VALIDATION_CONFIG } from '@/lib/utils/form-validation';
 
 const subjectSchema = z.object({
   class_id: z.string().min(1, 'Class is required'),
@@ -75,21 +87,37 @@ export default function SubjectFormPage() {
   const firstErrorRef = useRef<HTMLDivElement>(null);
 
   // Duplicate handling
-  const duplicateHandler = useDeletedDuplicateHandler();
+  const duplicateHandler = useDeletedDuplicateHandler<{
+    formData: SubjectFormData;
+    deletedRecordId?: string | null;
+  }>();
 
   // Delete and reactivate dialog states
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showReactivateDialog, setShowReactivateDialog] = useState(false);
 
+  // Get current user to check role
+  const { user } = useAuth();
+  const isTeacher = user?.role === USER_ROLES.TEACHER;
+
   // Fetch subject data if editing/viewing (pass isDeleted flag)
   const { data: subject } = useSubject(id, isViewingDeleted);
+  
   // Fetch dropdown data
   const { data: classesData } = useClasses({ page_size: 100 });
+  const { data: managedClassesData } = useManagedClassesForSubjects();
   const { data: subjectMastersData } = useSubjectMasters({ page_size: 100 });
   const { data: teachersData } = useTeachers({ page_size: 100 });
+  
+  // Filter classes based on user role
+  // Teachers can only create subjects in classes they manage (where they are class teacher)
+  const availableClasses = isTeacher && managedClassesData && mode === 'create'
+    ? managedClassesData
+    : classesData?.data || [];
 
   const form = useForm<SubjectFormData>({
     resolver: zodResolver(subjectSchema),
+    ...STANDARD_FORM_VALIDATION_CONFIG,
     defaultValues: {
       class_id: '',
       subject_id: 0,
@@ -119,12 +147,20 @@ export default function SubjectFormPage() {
   const handleFormErrors = (error: Error, fieldErrors?: Record<string, string | undefined>) => {
     if (isDeletedDuplicateError(error)) {
       const message = getDeletedDuplicateMessage(error);
-      duplicateHandler.openDialog(message, form.getValues());
+      const deletedRecordId = getDeletedRecordId(error);
+      duplicateHandler.openDialog(message, {
+        formData: form.getValues(),
+        deletedRecordId,
+      });
       return;
     }
 
-    // Apply field errors to form (toast already shown by mutation)
-    if (fieldErrors) {
+    // Check if it's a permission error or other non-field error
+    const errorMessage = getErrorMessage(error);
+    const hasFieldErrors = fieldErrors && Object.keys(fieldErrors).length > 0;
+
+    // Apply field errors to form
+    if (hasFieldErrors) {
       Object.entries(fieldErrors).forEach(([field, message]) => {
         if (message) {
           form.setError(field as keyof SubjectFormData, {
@@ -140,13 +176,18 @@ export default function SubjectFormPage() {
         const focusable = firstErrorRef.current?.querySelector<HTMLElement>('input, button');
         focusable?.focus();
       }, 100);
+    } else {
+      // Show non-field errors (like permission errors) as toast
+      toast.error(ToastTitles.ERROR, {
+        description: errorMessage,
+      });
     }
   };
 
   // Mutations
   const createMutation = useCreateSubject({
     onSuccess: () => {
-      toast.success('Subject created successfully');
+      toast.success(SuccessMessages.SUBJECT.CREATE_SUCCESS);
       navigate(ROUTES.SUBJECTS);
     },
     onError: handleFormErrors,
@@ -154,7 +195,7 @@ export default function SubjectFormPage() {
 
   const updateMutation = useUpdateSubject({
     onSuccess: () => {
-      toast.success('Subject updated successfully');
+      toast.success(SuccessMessages.SUBJECT.UPDATE_SUCCESS);
       navigate(ROUTES.SUBJECTS);
     },
     onError: handleFormErrors,
@@ -162,27 +203,21 @@ export default function SubjectFormPage() {
 
   const deleteMutation = useDeleteSubject({
     onSuccess: () => {
-      toast.success('Subject deleted successfully');
-      navigate(ROUTES.SUBJECTS);
+      toast.success(SuccessMessages.SUBJECT.DELETE_SUCCESS);
+      // Navigation happens before mutation is called
     },
     onError: (error: Error) => {
-      toast.error(`Failed to delete subject: ${error.message}`);
+      toast.error(error.message || ErrorMessages.SUBJECT.DELETE_FAILED);
     },
   });
 
   const reactivateMutation = useReactivateSubject({
     onSuccess: () => {
-      toast.success('Subject reactivated successfully');
-      // Navigate to the view page without the deleted flag to prevent 404 on refetch
-      if (id) {
-        // Use replace: true to replace the history entry so back button works correctly
-        navigate(ROUTES.SUBJECTS_VIEW.replace(':id', id), { replace: true });
-      } else {
-        navigate(ROUTES.SUBJECTS);
-      }
+      toast.success(SuccessMessages.SUBJECT.REACTIVATE_SUCCESS);
+      // Navigation already happened before mutation was called
     },
     onError: (error: Error) => {
-      toast.error(`Failed to reactivate subject: ${error.message}`);
+      toast.error(error.message || ErrorMessages.SUBJECT.REACTIVATE_FAILED);
     },
   });
 
@@ -194,6 +229,9 @@ export default function SubjectFormPage() {
   const confirmDelete = () => {
     setShowDeleteDialog(false);
     if (subject) {
+      // Navigate away first to avoid refetching deleted resource
+      navigate(ROUTES.SUBJECTS, { replace: true });
+      // Then execute delete mutation
       deleteMutation.mutate(subject.public_id);
     }
   };
@@ -205,20 +243,32 @@ export default function SubjectFormPage() {
 
   const confirmReactivate = () => {
     setShowReactivateDialog(false);
-    if (subject) {
+    if (subject && id) {
+      navigate(ROUTES.SUBJECTS_VIEW.replace(':id', id), { replace: true });
       reactivateMutation.mutate(subject.public_id);
     }
   };
 
   // Handle reactivate from duplicate dialog
   const handleReactivate = () => {
-    duplicateHandler.closeDialog();
-    navigate(`${ROUTES.SUBJECTS}?showDeleted=true`);
+    const deletedRecordId = duplicateHandler.pendingData?.deletedRecordId;
+
+    if (!deletedRecordId) {
+      toast.error(ErrorMessages.SUBJECT.NOT_FOUND);
+      return;
+    }
+
+    reactivateMutation.mutate(deletedRecordId, {
+      onSuccess: () => {
+        duplicateHandler.closeDialog();
+        navigate(ROUTES.SUBJECTS, { replace: true });
+      },
+    });
   };
 
   // Handle force create from duplicate dialog
   const handleForceCreate = () => {
-    const pendingData = duplicateHandler.pendingData as SubjectFormData | null;
+    const pendingData = duplicateHandler.pendingData?.formData;
     if (pendingData) {
       createMutation.mutate({
         data: {
@@ -327,13 +377,6 @@ export default function SubjectFormPage() {
             className: 'border-2 border-gray-400 text-gray-700 hover:bg-gray-100',
           },
           {
-            label: 'Delete',
-            onClick: handleDelete,
-            variant: 'outline' as const,
-            icon: Trash2,
-            className: 'border-2 border-red-500 text-red-600 hover:bg-red-50',
-          },
-          {
             label: 'Edit',
             onClick: handleSwitchToEdit,
             variant: 'default' as const,
@@ -362,9 +405,8 @@ export default function SubjectFormPage() {
 
   const pageConfig = getPageConfig();
 
-  // Dropdown options
   const classOptions =
-    classesData?.data?.map((c) => ({
+    availableClasses?.map((c) => ({
       value: c.public_id,
       label: `${c.class_master.name} - ${c.name}`,
     })) || [];
@@ -392,6 +434,16 @@ export default function SubjectFormPage() {
         <CardContent className="pt-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Teacher Information Alert */}
+              {isTeacher && mode === 'create' && (
+                <Alert className="border-blue-200 bg-blue-50">
+                  <Info className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-blue-800">
+                    You can add subjects only for classes where you are assigned as the class teacher.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {/* Subject Information */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Subject Information</h3>
@@ -416,7 +468,7 @@ export default function SubjectFormPage() {
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select class" />
+                              <SelectValue placeholder={FormPlaceholders.SELECT_CLASS} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -456,7 +508,7 @@ export default function SubjectFormPage() {
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select subject" />
+                              <SelectValue placeholder={FormPlaceholders.SELECT_SUBJECT} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -499,7 +551,7 @@ export default function SubjectFormPage() {
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select teacher" />
+                              <SelectValue placeholder={FormPlaceholders.SELECT_TEACHER} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -528,7 +580,7 @@ export default function SubjectFormPage() {
                       <FormLabel>Additional Information (Optional)</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Enter any additional information about this subject"
+                          placeholder={FormPlaceholders.SUBJECT_INFO}
                           disabled={isPending || mode === 'view'}
                           rows={3}
                           {...field}

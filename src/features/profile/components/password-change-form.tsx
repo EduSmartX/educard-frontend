@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff, Loader2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -18,6 +18,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { CommonUiText, FormPlaceholders } from '@/constants';
 import { useChangePassword } from '../hooks/mutations';
 import { passwordChangeSchema, type PasswordChangeFormData } from '../schemas/profile-schemas';
 
@@ -46,7 +47,10 @@ export function PasswordChangeForm() {
 
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardHeader>
+        <CardTitle className="text-base font-medium">Change Password</CardTitle>
+      </CardHeader>
+      <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-4">
@@ -62,7 +66,7 @@ export function PasswordChangeForm() {
                       <div className="relative">
                         <Input
                           type={showCurrentPassword ? 'text' : 'password'}
-                          placeholder="Enter current password"
+                          placeholder={FormPlaceholders.ENTER_CURRENT_PASSWORD}
                           {...field}
                         />
                         <Button
@@ -97,7 +101,7 @@ export function PasswordChangeForm() {
                       <div className="relative">
                         <Input
                           type={showNewPassword ? 'text' : 'password'}
-                          placeholder="Enter new password (min 8 characters)"
+                          placeholder={FormPlaceholders.ENTER_NEW_PASSWORD}
                           {...field}
                         />
                         <Button
@@ -132,7 +136,7 @@ export function PasswordChangeForm() {
                       <div className="relative">
                         <Input
                           type={showConfirmPassword ? 'text' : 'password'}
-                          placeholder="Re-enter new password"
+                          placeholder={FormPlaceholders.REENTER_NEW_PASSWORD}
                           {...field}
                         />
                         <Button
@@ -163,12 +167,12 @@ export function PasswordChangeForm() {
                 onClick={() => form.reset()}
                 disabled={changeMutation.isPending}
               >
-                Reset
+                {CommonUiText.RESET}
               </Button>
               <Button type="submit" disabled={changeMutation.isPending}>
                 {changeMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <Save className="mr-2 h-4 w-4" />
-                Change Password
+                {CommonUiText.CHANGE_PASSWORD}
               </Button>
             </div>
           </form>

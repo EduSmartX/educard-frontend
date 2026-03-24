@@ -30,11 +30,9 @@ import {
   useUserLeaveBalancesSummary,
   useUserLeaveRequests,
 } from '../hooks';
-import type { LeaveBalanceSummary } from '../types';
+import { LeaveRequestStatus, type LeaveBalanceSummary, type LeaveRequest } from '../types';
 import { getLeaveRequestColumns } from './leave-request-table-columns';
 import { CancelLeaveRequestDialog } from './cancel-leave-request-dialog';
-import type { LeaveRequest } from '../types';
-import { LeaveRequestStatus } from '../types';
 import { getLeaveTypeName } from '../utils/leave-name-helper';
 import api from '@/lib/api';
 
@@ -47,7 +45,7 @@ interface UserInfo {
   phone: string;
   role: string;
   role_display: string;
-  organization_role: string;
+  organization_role: string | { code: string; name: string };
   employee_id?: string;
   profile_image?: string;
 }
@@ -127,7 +125,9 @@ export function LeaveDashboard() {
     'balances' in (rawBalances as object)
   ) {
     const ob = rawBalances as { balances?: unknown };
-    if (Array.isArray(ob.balances)) balances = ob.balances as LeaveBalanceSummary[];
+    if (Array.isArray(ob.balances)) {
+      balances = ob.balances as LeaveBalanceSummary[];
+    }
   }
   const requests = Array.isArray(requestsData?.data) ? requestsData.data : [];
   const pagination = requestsData?.pagination;
@@ -210,10 +210,10 @@ export function LeaveDashboard() {
   // Modern UI: summary cards and per-type cards
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f8fcff] to-[#f3f7fa] p-0">
-      <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+      <div className="mx-auto max-w-6xl space-y-8 px-4 py-8">
         {/* User Info Banner - Only show when viewing another user's dashboard */}
         {isViewingOtherUser && userInfo && (
-          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
             <CardContent className="pt-6">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4">
@@ -221,17 +221,22 @@ export function LeaveDashboard() {
                     <img
                       src={userInfo.profile_image}
                       alt={userInfo.full_name}
-                      className="w-16 h-16 rounded-full object-cover border-2 border-blue-300"
+                      className="h-16 w-16 rounded-full border-2 border-blue-300 object-cover"
                     />
                   ) : (
-                    <div className="w-16 h-16 rounded-full bg-blue-200 flex items-center justify-center border-2 border-blue-300">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-blue-300 bg-blue-200">
                       <User className="h-8 w-8 text-blue-600" />
                     </div>
                   )}
                   <div className="space-y-2">
                     <div>
                       <h2 className="text-2xl font-bold text-gray-900">{userInfo.full_name}</h2>
-                      <p className="text-sm text-gray-600">{userInfo.organization_role}</p>
+                      <p className="text-sm text-gray-600">
+                        {typeof userInfo.organization_role === 'object' &&
+                        userInfo.organization_role
+                          ? userInfo.organization_role.name
+                          : userInfo.organization_role}
+                      </p>
                     </div>
                     <div className="flex flex-wrap gap-4 text-sm text-gray-700">
                       <div className="flex items-center gap-1.5">
@@ -286,10 +291,7 @@ export function LeaveDashboard() {
             Refresh
           </Button>
           {!isViewingOtherUser && (
-            <Button
-              onClick={handleApplyLeave}
-              className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md"
-            >
+            <Button onClick={handleApplyLeave} variant="brand" className="gap-2 shadow-md">
               <Plus className="h-4 w-4" />
               Apply for Leave
             </Button>
@@ -297,13 +299,13 @@ export function LeaveDashboard() {
         </PageHeader>
 
         <div>
-          <h2 className="text-2xl font-bold text-primary mb-4">Leave Balances</h2>
+          <h2 className="text-primary mb-4 text-2xl font-bold">Leave Balances</h2>
           {isLoadingBalances && !balancesData ? (
-            <div className="flex gap-4 mb-4">
+            <div className="mb-4 flex gap-4">
               {Array.from({ length: 3 }).map((_, i) => (
                 <Card key={i} className="w-[180px] min-w-[180px]">
                   <CardContent className="py-8">
-                    <Skeleton className="h-10 w-24 mb-2" />
+                    <Skeleton className="mb-2 h-10 w-24" />
                     <Skeleton className="h-5 w-20" />
                   </CardContent>
                 </Card>
@@ -312,7 +314,7 @@ export function LeaveDashboard() {
           ) : balances.length === 0 ? (
             <Card className="col-span-full">
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
+                <Calendar className="text-muted-foreground mb-4 h-12 w-12" />
                 <p className="text-muted-foreground text-center">
                   No leave balances found. Contact your administrator to set up your leave
                   allocations.
@@ -322,11 +324,11 @@ export function LeaveDashboard() {
           ) : (
             <>
               {/* Summary Cards: Available, Used, Pending - Reduced Width */}
-              <div className="flex gap-4 mb-6">
+              <div className="mb-6 flex gap-4">
                 {(() => {
                   const totalAvailable = balances.reduce((sum, b) => sum + (b.available || 0), 0);
                   return (
-                    <div className="rounded-xl border-2 border-green-300 bg-green-50 px-6 py-5 w-44 flex flex-col items-center justify-center shadow-sm">
+                    <div className="flex w-44 flex-col items-center justify-center rounded-xl border-2 border-green-300 bg-green-50 px-6 py-5 shadow-sm">
                       <div className="text-4xl font-extrabold text-green-700">
                         {totalAvailable.toFixed(1)}
                       </div>
@@ -339,7 +341,7 @@ export function LeaveDashboard() {
                 {(() => {
                   const totalUsed = balances.reduce((sum, b) => sum + (b.used || 0), 0);
                   return (
-                    <div className="rounded-xl border-2 border-red-300 bg-red-50 px-6 py-5 w-44 flex flex-col items-center justify-center shadow-sm">
+                    <div className="flex w-44 flex-col items-center justify-center rounded-xl border-2 border-red-300 bg-red-50 px-6 py-5 shadow-sm">
                       <div className="text-4xl font-extrabold text-red-700">{totalUsed}</div>
                       <div className="mt-2 text-sm font-semibold text-red-900">Total Used</div>
                     </div>
@@ -348,7 +350,7 @@ export function LeaveDashboard() {
                 {(() => {
                   const totalPending = balances.reduce((sum, b) => sum + (b.pending || 0), 0);
                   return (
-                    <div className="rounded-xl border-2 border-yellow-300 bg-yellow-50 px-6 py-5 w-44 flex flex-col items-center justify-center shadow-sm">
+                    <div className="flex w-44 flex-col items-center justify-center rounded-xl border-2 border-yellow-300 bg-yellow-50 px-6 py-5 shadow-sm">
                       <div className="text-4xl font-extrabold text-yellow-700">{totalPending}</div>
                       <div className="mt-2 text-sm font-semibold text-yellow-900">
                         Pending Leaves
@@ -360,7 +362,7 @@ export function LeaveDashboard() {
 
               {/* Per-Leave-Type Cards Row with Horizontal Scroll */}
               <div className="overflow-x-auto">
-                <div className="flex gap-6 mb-6 min-w-min pb-2">
+                <div className="mb-6 flex min-w-min gap-6 pb-2">
                   {balances.map((balance, index) => {
                     const total = balance.total_allocated || 0;
                     const available = balance.available || 0;
@@ -405,17 +407,17 @@ export function LeaveDashboard() {
                     return (
                       <div
                         key={balance.public_id}
-                        className={`rounded-xl border-2 ${style.border} ${style.bg} px-6 py-5 min-w-[240px] flex flex-col items-center justify-center shadow-sm transition-shadow hover:shadow-md`}
+                        className={`rounded-xl border-2 ${style.border} ${style.bg} flex min-w-[240px] flex-col items-center justify-center px-6 py-5 shadow-sm transition-shadow hover:shadow-md`}
                       >
-                        <div className={`text-base font-bold mb-2 ${style.text} text-center`}>
+                        <div className={`mb-2 text-base font-bold ${style.text} text-center`}>
                           {getLeaveTypeName(balance)}
                         </div>
-                        <div className="flex items-center gap-2 mb-2 flex-wrap justify-center">
+                        <div className="mb-2 flex flex-wrap items-center justify-center gap-2">
                           <div className={`text-3xl font-extrabold ${style.text}`}>
                             {parseFloat(total.toString()).toFixed(1)}
                           </div>
                         </div>
-                        <div className="flex flex-col gap-2 text-xs font-semibold w-full">
+                        <div className="flex w-full flex-col gap-2 text-xs font-semibold">
                           <div className="flex justify-between">
                             <span className="text-gray-700">Available:</span>
                             <span className="font-bold text-green-700">{available}</span>
@@ -453,7 +455,7 @@ export function LeaveDashboard() {
                     onClick={handleFilterReset}
                     className="h-8 px-2 text-xs"
                   >
-                    <X className="h-3 w-3 mr-1" />
+                    <X className="mr-1 h-3 w-3" />
                     Clear ({activeFiltersCount})
                   </Button>
                 )}

@@ -73,10 +73,37 @@ export const QUERY_KEYS = {
   },
   // Leave
   leave: {
-    requests: (filters?: unknown) => ['leave', 'requests', filters],
+    all: ['leave'],
+    requests: (filters?: unknown) => ['leave-requests', filters],
+    request: (id: string) => ['leave-request', id],
     myRequests: (filters?: unknown) => ['leave', 'my-requests', filters],
+    reviews: (filters?: unknown) => ['leave-request-reviews', filters],
     balance: (userId?: string | number) => ['leave', 'balance', userId],
-    allocations: ['leave', 'allocations'],
+    balances: (filters?: unknown) => ['leave-balances', filters],
+    userBalances: (userId?: string | number) => ['user-leave-balances', userId],
+    allocations: (filters?: unknown) => ['leave-allocations', filters],
+    userAllocations: (userId?: string | number) => ['user-leave-allocations', userId],
+    types: ['leave-types'],
+    teacherContext: ['leave', 'teacher-context'],
+  },
+  // Users & Classes (for leave management)
+  users: {
+    manageable: (userRole?: string) => ['manageable-users', userRole],
+  },
+  classesForLeave: {
+    forReviews: (userRole?: string, isAdmin?: boolean, context?: unknown) => [
+      'classes-list-for-reviews',
+      userRole,
+      isAdmin,
+      context,
+    ],
+    forBalances: (userRole?: string, isAdmin?: boolean, context?: unknown) => [
+      'classes-list-for-balances',
+      userRole,
+      isAdmin,
+      context,
+    ],
+    students: (classId?: string | number) => ['class-students', classId],
   },
   // Organization
   organization: {
@@ -177,9 +204,9 @@ export const ROUTES = {
     REGISTRATION_SUCCESS: '/auth/registration-success',
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password',
+    VERIFY_EMAIL: '/auth/verify-email',
     ORGANIZATION_NOT_APPROVED: '/auth/organization-not-approved',
   },
-  DASHBOARD: '/dashboard',
   // Common routes (role-agnostic)
   ORGANIZATION: '/organization',
   STUDENTS: '/students',
@@ -204,6 +231,10 @@ export const ROUTES = {
   ATTENDANCE: {
     STUDENTS: '/attendance/students',
     STAFF: '/attendance/staff',
+    REPORT: '/attendance/report',
+    TIMESHEET: '/attendance/timesheet',
+    TIMESHEET_SUBMIT: '/attendance/timesheet/submit',
+    TIMESHEET_APPROVALS: '/attendance/timesheet/approvals',
   },
   LEAVE: {
     DASHBOARD: '/leave/dashboard',
@@ -215,8 +246,9 @@ export const ROUTES = {
   HOLIDAYS: '/holidays',
   PREFERENCES: '/preferences',
   EXCEPTIONAL_WORK: '/exceptional-work',
-  // Role-specific routes (legacy - kept for backward compatibility)
+  // Role-specific routes
   ADMIN: {
+    DASHBOARD: '/admin/dashboard',
     ORGANIZATION: '/admin/organization',
     STUDENTS: '/admin/students',
     TEACHERS: '/admin/teachers',
@@ -229,6 +261,8 @@ export const ROUTES = {
     ATTENDANCE: {
       STUDENTS: '/admin/attendance/students',
       STAFF: '/admin/attendance/staff',
+      REPORT: '/admin/attendance/report',
+      APPROVALS: '/admin/attendance/approvals',
     },
     LEAVE: {
       REQUESTS: '/admin/leave/requests',
@@ -236,7 +270,37 @@ export const ROUTES = {
       BALANCES: '/admin/leave/balances',
       ALLOCATIONS: '/admin/leave/allocations',
     },
+    HOLIDAYS: '/admin/holidays',
+    EXCEPTIONAL_WORK: '/admin/exceptional-work',
     PREFERENCES: '/admin/preferences',
+  },
+  EMPLOYEE: {
+    DASHBOARD: '/employee/dashboard',
+    MY_CLASSES: '/employee/classes',
+    MY_STUDENTS: '/employee/students',
+    HOLIDAYS: '/employee/holidays',
+    EXCEPTIONAL_WORK: '/employee/exceptional-work',
+    TEACHERS: '/employee/teachers',
+    TEACHERS_VIEW: '/employee/teachers/:id',
+    CLASSES: '/employee/classes-list',
+    ATTENDANCE: {
+      MARK: '/employee/attendance/mark',
+      SUMMARY: '/employee/attendance/summary',
+      REPORT: '/employee/attendance/report',
+      TIMESHEET: '/employee/attendance/timesheet',
+      SUBMIT: '/employee/attendance/submit',
+      APPROVALS: '/employee/attendance/approvals',
+    },
+    LEAVE: {
+      DASHBOARD: '/employee/leave/dashboard',
+      APPLY: '/employee/leave/apply',
+      HISTORY: '/employee/leave/history',
+      BALANCE: '/employee/leave/balance',
+      REVIEWS: '/employee/leave/reviews',
+      ALLOCATIONS: '/employee/leave/allocations',
+      MANAGE_BALANCE: '/employee/leave/manage-balance',
+    },
+    PROFILE: '/employee/profile',
   },
   TEACHER: {
     MY_CLASSES: '/teacher/classes',
@@ -244,8 +308,14 @@ export const ROUTES = {
     LEAVE: '/teacher/leave',
   },
   PARENT: {
+    DASHBOARD: '/parent/dashboard',
     MY_CHILDREN: '/parent/children',
     ATTENDANCE: '/parent/attendance',
+    LEAVE: {
+      APPLY: '/parent/leave/apply',
+      HISTORY: '/parent/leave/history',
+    },
+    PROFILE: '/parent/profile',
   },
   PROFILE: '/profile',
 } as const;

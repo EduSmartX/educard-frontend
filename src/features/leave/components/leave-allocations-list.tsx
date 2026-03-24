@@ -9,11 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { DataTable } from '@/components/ui/data-table';
+import { DataTable, type PaginationInfo } from '@/components/ui/data-table';
 import { ResourceFilter, type FilterField } from '@/components/filters/resource-filter';
 import { PageHeader } from '@/components/common';
 import type { LeaveAllocation } from '@/lib/api/leave-api';
-import type { PaginationInfo } from '@/components/ui/data-table';
 import { createLeaveAllocationColumns } from './leave-allocation-table-columns';
 import { LeaveAllocationStats } from './leave-allocation-stats';
 import { LeaveAllocationFeatureBanner } from './leave-allocation-feature-banner';
@@ -32,6 +31,7 @@ interface LeaveAllocationsListProps {
   onPageSizeChange?: (pageSize: number) => void;
   onSearch?: (query: string) => void;
   onFilterChange?: (filters: Record<string, string>) => void;
+  readOnly?: boolean;
 }
 
 export function LeaveAllocationsList({
@@ -46,6 +46,7 @@ export function LeaveAllocationsList({
   onPageSizeChange,
   onSearch,
   onFilterChange,
+  readOnly = false,
 }: LeaveAllocationsListProps) {
   const [appliedSearchQuery, setAppliedSearchQuery] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -125,6 +126,7 @@ export function LeaveAllocationsList({
     onView,
     onEdit,
     onDelete: handleDelete,
+    readOnly,
   });
 
   return (
@@ -132,16 +134,23 @@ export function LeaveAllocationsList({
       {/* Header */}
       <PageHeader
         title="Leave Allocation Policies"
-        description="Manage leave policies and entitlements for your organization"
+        description={
+          readOnly
+            ? 'View leave policies and entitlements'
+            : 'Manage leave policies and entitlements for your organization'
+        }
       >
-        <Button
-          onClick={onCreateNew}
-          size="lg"
-          className="gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md hover:shadow-lg transition-all duration-200 font-semibold"
-        >
-          <Plus className="h-5 w-5" />
-          <span>Create Policy</span>
-        </Button>
+        {!readOnly && (
+          <Button
+            onClick={onCreateNew}
+            variant="brand"
+            size="lg"
+            className="gap-2 font-semibold shadow-md transition-all duration-200 hover:shadow-lg"
+          >
+            <Plus className="h-5 w-5" />
+            <span>Create Policy</span>
+          </Button>
+        )}
       </PageHeader>
 
       {/* Feature Banner */}
@@ -155,7 +164,7 @@ export function LeaveAllocationsList({
         <CardHeader>
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-4">
-              <div className="text-sm text-muted-foreground">
+              <div className="text-muted-foreground text-sm">
                 {allocations.length} {allocations.length === 1 ? 'policy' : 'policies'} found
               </div>
               <Button
@@ -170,8 +179,8 @@ export function LeaveAllocationsList({
 
             {/* Active filters display */}
             {Object.keys(filters).length > 0 && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm text-muted-foreground">Active filters:</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-muted-foreground text-sm">Active filters:</span>
                 {Object.entries(filters).map(([key, value]) => (
                   <Badge key={key} variant="secondary" className="gap-1">
                     <span className="capitalize">
@@ -189,7 +198,7 @@ export function LeaveAllocationsList({
                           onFilterChange(newFilters);
                         }
                       }}
-                      className="rounded-full p-0.5 hover:bg-muted"
+                      className="hover:bg-muted rounded-full p-0.5"
                     >
                       <X className="h-3 w-3" />
                     </button>

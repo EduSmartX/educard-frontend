@@ -5,8 +5,8 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getErrorMessage, getFieldErrors } from '@/lib/utils/error-handler';
-import { ErrorMessages, SuccessMessages, QueryKeys } from '@/constants';
+import { getErrorMessage, getFieldErrors, isDeletedDuplicateError } from '@/lib/utils/error-handler';
+import { ErrorMessages, QueryKeys, SuccessMessages, ToastTitles } from '@/constants';
 import type { CreateClassPayload, UpdateClassPayload } from '../types';
 import {
   createClass,
@@ -43,18 +43,21 @@ export function useCreateClass(options?: MutationOptions) {
     }) => createClass(payload, forceCreate),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QueryKeys.CLASSES.ALL });
-      toast.success('Class Created', {
-        description: SuccessMessages.CLASS.CREATE_SUCCESS,
-      });
+      toast.success(SuccessMessages.CLASS.CREATE_SUCCESS);
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
       const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.CREATE_FAILED);
       const fieldErrors = getFieldErrors(error) as ClassFieldErrors | undefined;
-      toast.error('Error Creating Class', {
-        description: errorMessage,
-        duration: 5000,
-      });
+      
+      // Don't show toast for deleted duplicate errors - the dialog will handle it
+      if (!isDeletedDuplicateError(error)) {
+        toast.error(ToastTitles.ERROR, {
+          description: errorMessage,
+          duration: 5000,
+        });
+      }
+      
       options?.onError?.(error, fieldErrors);
     },
   });
@@ -66,20 +69,16 @@ export function useReactivateClass(options?: MutationOptions) {
   return useMutation({
     mutationFn: (publicId: string) => reactivateClass(publicId),
     onSuccess: () => {
-      // Only invalidate the list queries, not individual class queries
-      // The navigation will handle refreshing the detail view
       queryClient.invalidateQueries({
         queryKey: QueryKeys.CLASSES.ALL,
-        exact: true, // Only invalidate the exact list query, not detail queries
+        refetchType: 'all',
       });
-      toast.success('Class Reactivated', {
-        description: SuccessMessages.CLASS.REACTIVATE_SUCCESS,
-      });
+      toast.success(SuccessMessages.CLASS.REACTIVATE_SUCCESS);
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.UPDATE_FAILED);
-      toast.error('Error Reactivating Class', {
+      const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.REACTIVATE_FAILED);
+      toast.error(ToastTitles.ERROR, {
         description: errorMessage,
         duration: 5000,
       });
@@ -96,18 +95,21 @@ export function useUpdateClass(options?: MutationOptions) {
       updateClass(publicId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QueryKeys.CLASSES.ALL });
-      toast.success('Class Updated', {
-        description: SuccessMessages.CLASS.UPDATE_SUCCESS,
-      });
+      toast.success(SuccessMessages.CLASS.UPDATE_SUCCESS);
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
       const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.UPDATE_FAILED);
       const fieldErrors = getFieldErrors(error) as ClassFieldErrors | undefined;
-      toast.error('Error Updating Class', {
-        description: errorMessage,
-        duration: 5000,
-      });
+      
+      // Don't show toast for deleted duplicate errors - the dialog will handle it
+      if (!isDeletedDuplicateError(error)) {
+        toast.error(ToastTitles.ERROR, {
+          description: errorMessage,
+          duration: 5000,
+        });
+      }
+      
       options?.onError?.(error, fieldErrors);
     },
   });
@@ -119,15 +121,17 @@ export function useDeleteClass(options?: MutationOptions) {
   return useMutation({
     mutationFn: (publicId: string) => deleteClass(publicId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QueryKeys.CLASSES.ALL });
-      toast.success('Class Deleted', {
-        description: SuccessMessages.CLASS.DELETE_SUCCESS,
+      // Invalidate all classes queries (with any params) to refresh the list
+      queryClient.invalidateQueries({
+        queryKey: QueryKeys.CLASSES.ALL,
+        refetchType: 'all',
       });
+      toast.success(SuccessMessages.CLASS.DELETE_SUCCESS);
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
       const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.DELETE_FAILED);
-      toast.error('Error Deleting Class', {
+      toast.error(ToastTitles.ERROR, {
         description: errorMessage,
         duration: 5000,
       });
@@ -144,20 +148,18 @@ export function useBulkUploadClasses(options?: MutationOptions) {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: QueryKeys.CLASSES.ALL });
       if (response.failed_count > 0) {
-        toast.warning('Upload Completed with Errors', {
+        toast.warning(ErrorMessages.CLASS.BULK_UPLOAD_FAILED, {
           description: `${response.created_count} classes created, ${response.failed_count} failed.`,
           duration: 6000,
         });
       } else {
-        toast.success('Bulk Upload Successful', {
-          description: SuccessMessages.CLASS.CREATE_SUCCESS,
-        });
+        toast.success(SuccessMessages.CLASS.BULK_UPLOAD_SUCCESS);
       }
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.CREATE_FAILED);
-      toast.error('Bulk Upload Failed', {
+      const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.BULK_UPLOAD_FAILED);
+      toast.error(ToastTitles.ERROR, {
         description: errorMessage,
         duration: 5000,
       });

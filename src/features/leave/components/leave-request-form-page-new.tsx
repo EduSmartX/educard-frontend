@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { ErrorMessages, FormPlaceholders, SuccessMessages, ToastTitles } from '@/constants';
 import {
   Table,
   TableBody,
@@ -49,8 +50,7 @@ import {
   useCalculateWorkingDays,
 } from '../hooks';
 import { leaveRequestFormSchema, type LeaveRequestFormData } from '../schemas';
-import type { HolidayInfo } from '../types';
-import { LEAVE_STATUS_CONFIG } from '../types';
+import { LEAVE_STATUS_CONFIG, type HolidayInfo } from '../types';
 
 type PageMode = 'create' | 'edit' | 'view';
 
@@ -66,8 +66,12 @@ export function LeaveRequestFormPageNew() {
   const formPopulated = useRef(false);
 
   const getMode = (): PageMode => {
-    if (!id) return 'create';
-    if (location.pathname.endsWith('/edit')) return 'edit';
+    if (!id) {
+      return 'create';
+    }
+    if (location.pathname.endsWith('/edit')) {
+      return 'edit';
+    }
     return 'view';
   };
 
@@ -122,8 +126,12 @@ export function LeaveRequestFormPageNew() {
 
   useEffect(() => {
     if (startDate && endDate) {
-      if (mode === 'view') return;
-      if (mode === 'edit' && isInitialMount.current) return;
+      if (mode === 'view') {
+        return;
+      }
+      if (mode === 'edit' && isInitialMount.current) {
+        return;
+      }
 
       const start = new Date(startDate);
       const end = new Date(endDate);
@@ -163,14 +171,14 @@ export function LeaveRequestFormPageNew() {
     if (mode === 'create') {
       createMutation.mutate(data, {
         onSuccess: () => {
-          toast.success('Leave Request Submitted', {
+          toast.success(SuccessMessages.LEAVE.REQUEST_SUBMITTED, {
             description: 'Your leave request has been submitted successfully.',
           });
           navigate('/leave/dashboard');
         },
         onError: (error) => {
-          const errorMessage = getErrorMessage(error, 'Failed to submit leave request');
-          toast.error('Submission Failed', { description: errorMessage });
+          const errorMessage = getErrorMessage(error, ErrorMessages.LEAVE.CREATE_REQUEST_FAILED);
+          toast.error(ToastTitles.ERROR, { description: errorMessage });
         },
       });
     } else if (mode === 'edit' && id) {
@@ -178,14 +186,14 @@ export function LeaveRequestFormPageNew() {
         { publicId: id, data },
         {
           onSuccess: () => {
-            toast.success('Leave Request Updated', {
+            toast.success(SuccessMessages.LEAVE.REQUEST_UPDATED, {
               description: 'Your leave request has been updated successfully.',
             });
             navigate('/leave/dashboard');
           },
           onError: (error) => {
-            const errorMessage = getErrorMessage(error, 'Failed to update leave request');
-            toast.error('Update Failed', { description: errorMessage });
+            const errorMessage = getErrorMessage(error, ErrorMessages.LEAVE.UPDATE_REQUEST_FAILED);
+            toast.error(ToastTitles.ERROR, { description: errorMessage });
           },
         }
       );
@@ -195,7 +203,9 @@ export function LeaveRequestFormPageNew() {
   const handleBack = () => navigate('/leave/dashboard');
 
   const handleEdit = () => {
-    if (id) navigate(`/leave/requests/${id}/edit`);
+    if (id) {
+      navigate(`/leave/requests/${id}/edit`);
+    }
   };
 
   const isLoading = isLoadingBalances || (!!id && isLoadingRequest);
@@ -263,7 +273,7 @@ export function LeaveRequestFormPageNew() {
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select leave type" />
+                          <SelectValue placeholder={FormPlaceholders.SELECT_LEAVE_TYPE} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -377,7 +387,7 @@ export function LeaveRequestFormPageNew() {
                   control={form.control}
                   name="is_half_day"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormItem className="flex flex-row items-start space-y-0 space-x-3 rounded-md border p-4">
                       <FormControl>
                         <Checkbox
                           checked={field.value}
@@ -439,7 +449,7 @@ export function LeaveRequestFormPageNew() {
                     <FormControl>
                       <Textarea
                         {...field}
-                        placeholder="Enter reason for leave..."
+                        placeholder={FormPlaceholders.ENTER_LEAVE_REASON}
                         rows={4}
                         disabled={mode === 'view'}
                       />
@@ -463,7 +473,7 @@ export function LeaveRequestFormPageNew() {
 
               {/* Submit Button */}
               {mode !== 'view' && (
-                <div className="flex justify-end gap-2 pt-4 border-t">
+                <div className="flex justify-end gap-2 border-t pt-4">
                   <Button
                     type="button"
                     variant="outline"
@@ -474,10 +484,11 @@ export function LeaveRequestFormPageNew() {
                   </Button>
                   <Button
                     type="submit"
+                    variant="brand"
                     disabled={
                       isSubmitting || dateRangeError !== null || form.watch('number_of_days') <= 0
                     }
-                    className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md"
+                    className="gap-2 shadow-md"
                   >
                     {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                     {mode === 'create' ? 'Submit Request' : 'Save Changes'}

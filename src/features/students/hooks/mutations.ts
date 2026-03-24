@@ -15,7 +15,11 @@ import {
 
 export function useCreateStudent(
   options?: Omit<
-    UseMutationOptions<Student, Error, { classId: string; payload: CreateStudentPayload }>,
+    UseMutationOptions<
+      Student,
+      Error,
+      { classId: string; payload: CreateStudentPayload; forceCreate?: boolean }
+    >,
     'mutationFn'
   >
 ) {
@@ -24,8 +28,15 @@ export function useCreateStudent(
 
   return useMutation({
     ...restOptions,
-    mutationFn: ({ classId, payload }: { classId: string; payload: CreateStudentPayload }) =>
-      createStudent(classId, payload),
+    mutationFn: ({
+      classId,
+      payload,
+      forceCreate,
+    }: {
+      classId: string;
+      payload: CreateStudentPayload;
+      forceCreate?: boolean;
+    }) => createStudent(classId, payload, forceCreate),
     onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
       queryClient.invalidateQueries({ queryKey: ['classes'] });
@@ -82,8 +93,15 @@ export function useDeleteStudent(
     mutationFn: ({ classId, publicId }: { classId: string; publicId: string }) =>
       deleteStudent(classId, publicId),
     onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: ['students'] });
-      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      // Invalidate all students queries (with any params) to refresh the list
+      queryClient.invalidateQueries({ 
+        queryKey: ['students'],
+        refetchType: 'all',
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['classes'],
+        refetchType: 'all',
+      });
       // Call custom onSuccess if provided
       onSuccess?.(...args);
     },
@@ -103,9 +121,15 @@ export function useReactivateStudent(
     ...restOptions,
     mutationFn: ({ classId, publicId }: { classId: string; publicId: string }) =>
       reactivateStudent(classId, publicId),
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: ['students'] });
-      queryClient.invalidateQueries({ queryKey: ['classes'] });
+    onSuccess: (...args) => {  
+      queryClient.invalidateQueries({
+        queryKey: ['students'],
+        refetchType: 'all',
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['classes'],
+        refetchType: 'all',
+      });
       // Call custom onSuccess if provided
       onSuccess?.(...args);
     },

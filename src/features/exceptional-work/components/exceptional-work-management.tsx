@@ -1,5 +1,6 @@
 /**
  * Exceptional Work Policy Management Component
+ * Role-aware component that adapts UI based on user permissions
  */
 
 import { useQuery } from '@tanstack/react-query';
@@ -23,6 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
+import { useRole } from '@/hooks/use-role';
 import { cn } from '@/lib/utils';
 import { fetchCalendarExceptions } from '../api/calendar-exception-api';
 import { useDeleteCalendarException } from '../hooks';
@@ -30,6 +32,10 @@ import type { CalendarException } from '../types';
 import { ExceptionDialog } from './exception-dialog';
 
 export function ExceptionalWorkManagement() {
+  // Get user role for conditional rendering
+  const { role } = useRole();
+  const isAdmin = role === 'ADMIN';
+
   // State
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -147,7 +153,7 @@ export function ExceptionalWorkManagement() {
       sortKey: 'override_type',
     },
     {
-      header: 'Applicable To',
+      header: 'Student Scope',
       accessor: (row: CalendarException) => {
         if (row.is_applicable_to_all_classes) {
           return (
@@ -164,35 +170,58 @@ export function ExceptionalWorkManagement() {
       },
     },
     {
+      header: 'Teacher Scope',
+      accessor: (row: CalendarException) => {
+        if (row.is_applicable_to_all_teachers) {
+          return (
+            <Badge variant="default" className="font-normal bg-blue-100 text-blue-700 border-blue-200">
+              All Teachers
+            </Badge>
+          );
+        }
+        return (
+          <Badge variant="outline" className="font-normal text-gray-500">
+            Students Only
+          </Badge>
+        );
+      },
+    },
+    {
       header: 'Reason',
       accessor: (row: CalendarException) => (
         <div className="max-w-md truncate text-sm text-gray-600">{row.reason}</div>
       ),
     },
-    {
-      header: 'Actions',
-      accessor: (row: CalendarException) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setEditingException(row)}
-            className="h-8 w-8 p-0"
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setDeletingException(row)}
-            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
-    },
+    // Conditionally add Actions column for admin users only
+    ...(isAdmin
+      ? [
+          {
+            header: 'Actions',
+            accessor: (row: CalendarException) => (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setEditingException(row)}
+                  className="h-8 w-8 p-0"
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDeletingException(row)}
+                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ),
+          },
+        ]
+      : []),
   ];
+
 
   if (isError) {
     return (
@@ -217,15 +246,23 @@ export function ExceptionalWorkManagement() {
       {/* Page Header */}
       <PageHeader
         title="Exceptional Work Policy"
-        description="Manage working day exceptions for specific dates and classes"
+        description={
+          isAdmin
+            ? 'Manage working day exceptions for specific dates and classes'
+            : 'View working day exceptions for specific dates and classes'
+        }
       >
-        <Button
-          onClick={() => setShowAddDialog(true)}
-          className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 shadow-sm hover:shadow-md transition-all"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Exception
-        </Button>
+        {/* Add Exception button - Admin only */}
+        {isAdmin && (
+          <Button
+            onClick={() => setShowAddDialog(true)}
+            variant="brand"
+            className="shadow-sm hover:shadow-md transition-all"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Exception
+          </Button>
+        )}
       </PageHeader>
 
       {/* Info Card - Redesigned */}

@@ -15,6 +15,7 @@ import {
 } from '../api/profile-api';
 import { authApi } from '@/lib/api/auth-api';
 import { ROUTES } from '@/constants/app-config';
+import { ErrorMessages, SuccessMessages } from '@/constants';
 import type {
   ChangePasswordPayload,
   SendOTPPayload,
@@ -33,10 +34,10 @@ export function useUpdateProfile() {
     mutationFn: (payload: UpdateProfilePayload) => updateProfile(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-profile', 'me'] });
-      toast.success('Profile updated successfully');
+      toast.success(SuccessMessages.PROFILE.UPDATED);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update profile');
+      toast.error(error.message || ErrorMessages.PROFILE.UPDATE_FAILED);
     },
   });
 }
@@ -50,7 +51,7 @@ export function useChangePassword() {
   return useMutation({
     mutationFn: (payload: ChangePasswordPayload) => changePassword(payload),
     onSuccess: async () => {
-      toast.success('Password changed successfully. Logging out...');
+      toast.success(SuccessMessages.PROFILE.PASSWORD_CHANGED);
 
       // Wait a moment for user to see the message
       await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -69,7 +70,7 @@ export function useChangePassword() {
       window.location.reload();
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to change password');
+      toast.error(error.message || ErrorMessages.PROFILE.CHANGE_PASSWORD_FAILED);
     },
   });
 }
@@ -81,10 +82,10 @@ export function useSendOTP() {
   return useMutation({
     mutationFn: (payload: SendOTPPayload) => sendOTP(payload),
     onSuccess: (data) => {
-      toast.success(data.data?.message || 'OTP sent successfully');
+      toast.success(data.data?.message || SuccessMessages.PROFILE.OTP_SENT);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to send OTP');
+      toast.error(error.message || ErrorMessages.PROFILE.SEND_OTP_FAILED);
     },
   });
 }
@@ -99,10 +100,10 @@ export function useUpdateEmail() {
     mutationFn: (payload: UpdateEmailPayload) => updateEmail(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-profile', 'me'] });
-      toast.success('Email updated successfully');
+      toast.success(SuccessMessages.PROFILE.EMAIL_UPDATED);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update email');
+      toast.error(error.message || ErrorMessages.PROFILE.UPDATE_EMAIL_FAILED);
     },
   });
 }
@@ -117,10 +118,10 @@ export function useUpdatePhone() {
     mutationFn: (payload: UpdatePhonePayload) => updatePhone(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-profile', 'me'] });
-      toast.success('Phone updated successfully');
+      toast.success(SuccessMessages.PROFILE.PHONE_UPDATED);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update phone');
+      toast.error(error.message || ErrorMessages.PROFILE.UPDATE_PHONE_FAILED);
     },
   });
 }

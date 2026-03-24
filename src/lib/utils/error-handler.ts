@@ -449,31 +449,43 @@ export function getDeletedDuplicateMessage(error: unknown): string {
   const axiosError = error as AxiosErrorWrapper;
   const data = axiosError.response?.data;
 
+  const normalizeMessage = (message: string): string => {
+    return message
+      .replace(
+        /Please navigate to 'View Deleted' to restore it, or do you need to create a new ([^?]+)\?/i,
+        "You can modify here, or go to 'View Deleted' to restore it. Do you want to create a new $1?"
+      )
+      .replace(
+        /Please navigate to 'View Deleted' to restore it\.?/i,
+        "You can modify here, or go to 'View Deleted' to restore it."
+      );
+  };
+
   if (!data || !data.errors) {
-    return 'A deleted record with the same details already exists.';
+    return "A deleted record with the same details already exists. You can modify here, or go to 'View Deleted' to restore it.";
   }
 
   const errors = data.errors;
 
   // Check non_field_errors for the message
   if (Array.isArray(errors.non_field_errors) && errors.non_field_errors.length > 0) {
-    return errors.non_field_errors[0];
+    return normalizeMessage(errors.non_field_errors[0]);
   }
 
   if (typeof errors.non_field_errors === 'string') {
-    return errors.non_field_errors;
+    return normalizeMessage(errors.non_field_errors);
   }
 
   // Check detail field
   if (typeof errors.detail === 'string') {
-    return errors.detail;
+    return normalizeMessage(errors.detail);
   }
 
   if (Array.isArray(errors.detail) && errors.detail.length > 0) {
-    return errors.detail[0] as string;
+    return normalizeMessage(errors.detail[0] as string);
   }
 
-  return 'A deleted record with the same details already exists.';
+  return "A deleted record with the same details already exists. You can modify here, or go to 'View Deleted' to restore it.";
 }
 
 /**

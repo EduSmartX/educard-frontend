@@ -4,16 +4,15 @@
  */
 
 import type { TeacherFormValues } from '../schemas/teacher-form-schema';
-import type { CreateTeacherPayload, TeacherDetail } from '../types';
+import type { CreateTeacherPayload, UpdateTeacherPayload, TeacherDetail } from '../types';
 import type { GenderValue, BloodGroupValue } from '@/constants/form-enums';
 import { ADDRESS_TYPE } from '@/constants/address-type';
 
 /**
- * Transform form values to API payload format
- * Backend expects nested user object with address
+ * Transform form values to CREATE payload format
+ * Backend expects nested user object with address and organization_role (ID)
  */
-export function transformFormToPayload(values: TeacherFormValues): CreateTeacherPayload {
-  // Check if any address fields are filled
+export function transformFormToCreatePayload(values: TeacherFormValues): CreateTeacherPayload {
   const hasAddress =
     values.street_address ||
     values.address_line_2 ||
@@ -22,7 +21,6 @@ export function transformFormToPayload(values: TeacherFormValues): CreateTeacher
     values.postal_code ||
     values.country;
 
-  // Build the payload with nested user object
   const payload: CreateTeacherPayload = {
     employee_id: values.employee_id,
     user: {
@@ -30,11 +28,13 @@ export function transformFormToPayload(values: TeacherFormValues): CreateTeacher
       first_name: values.first_name,
       last_name: values.last_name,
       gender: values.gender,
-      organization_role_code: values.organization_role,
     },
   };
 
-  // Add optional user fields
+  if (values.organization_role) {
+    payload.user.organization_role = parseInt(values.organization_role);
+  }
+
   if (values.phone) {
     payload.user.phone = values.phone;
   }
@@ -51,7 +51,6 @@ export function transformFormToPayload(values: TeacherFormValues): CreateTeacher
     payload.user.supervisor_email = values.supervisor_email;
   }
 
-  // Add address if any field is filled
   if (hasAddress) {
     payload.user.address = {
       address_type: ADDRESS_TYPE.USER_CURRENT,
@@ -60,11 +59,102 @@ export function transformFormToPayload(values: TeacherFormValues): CreateTeacher
       city: values.city || '',
       state: values.state || '',
       zip_code: values.postal_code || '',
-      country: values.country || 'India',
+      country: values.country || '',
     };
   }
 
-  // Add optional teacher fields
+  if (values.designation) {
+    payload.designation = values.designation;
+  }
+
+  if (values.highest_qualification) {
+    payload.highest_qualification = values.highest_qualification;
+  }
+
+  if (values.specialization) {
+    payload.specialization = values.specialization;
+  }
+
+  if (values.experience_years !== undefined) {
+    payload.experience_years = values.experience_years;
+  }
+
+  if (values.joining_date) {
+    payload.joining_date = values.joining_date;
+  }
+
+  if (values.emergency_contact_name) {
+    payload.emergency_contact_name = values.emergency_contact_name;
+  }
+
+  if (values.emergency_contact_number) {
+    payload.emergency_contact_number = values.emergency_contact_number;
+  }
+
+  if (values.subjects && values.subjects.length > 0) {
+    payload.subjects = values.subjects;
+  }
+
+  return payload;
+}
+
+/**
+ * Transform form values to UPDATE payload format
+ * Backend expects nested user object with organization_role (ID)
+ */
+export function transformFormToUpdatePayload(values: TeacherFormValues): UpdateTeacherPayload {
+  const hasAddress =
+    values.street_address ||
+    values.address_line_2 ||
+    values.city ||
+    values.state ||
+    values.postal_code ||
+    values.country;
+
+  const payload: UpdateTeacherPayload = {
+    employee_id: values.employee_id,
+    user: {
+      email: values.email,
+      first_name: values.first_name,
+      last_name: values.last_name,
+      gender: values.gender,
+    },
+  };
+
+  if (payload.user && values.organization_role) {
+    payload.user.organization_role = parseInt(values.organization_role);
+  }
+
+  if (payload.user) {
+    if (values.phone) {
+      payload.user.phone = values.phone;
+    }
+
+    if (values.blood_group) {
+      payload.user.blood_group = values.blood_group;
+    }
+
+    if (values.date_of_birth) {
+      payload.user.date_of_birth = values.date_of_birth;
+    }
+
+    if (values.supervisor_email) {
+      payload.user.supervisor_email = values.supervisor_email;
+    }
+
+    if (hasAddress) {
+      payload.user.address = {
+        address_type: ADDRESS_TYPE.USER_CURRENT,
+        street_address: values.street_address || '',
+        address_line_2: values.address_line_2 || '',
+        city: values.city || '',
+        state: values.state || '',
+        zip_code: values.postal_code || '',
+        country: values.country || '',
+      };
+    }
+  }
+
   if (values.designation) {
     payload.designation = values.designation;
   }
@@ -102,8 +192,16 @@ export function transformFormToPayload(values: TeacherFormValues): CreateTeacher
 
 /**
  * Transform teacher response to form values for editing
+ * @param teacher - Teacher detail from API
  */
-export function transformTeacherToForm(teacher: TeacherDetail): Partial<TeacherFormValues> {
+export function transformTeacherToForm(
+  teacher: TeacherDetail
+): Partial<TeacherFormValues> {
+  let organizationRoleId = '';
+  if (teacher.user?.organization_role?.id) {
+    organizationRoleId = teacher.user.organization_role.id.toString();
+  }
+
   return {
     employee_id: teacher.employee_id || '',
     email: teacher.user?.email || '',
@@ -113,7 +211,7 @@ export function transformTeacherToForm(teacher: TeacherDetail): Partial<TeacherF
     gender: (teacher.user?.gender as GenderValue) || undefined,
     blood_group: (teacher.user?.blood_group as BloodGroupValue) || undefined,
     date_of_birth: teacher.user?.date_of_birth || '',
-    organization_role: teacher.user?.organization_role || '',
+    organization_role: organizationRoleId,
     supervisor_email: teacher.user?.supervisor?.email || '',
     designation: teacher.designation || '',
     highest_qualification: teacher.highest_qualification || '',
@@ -127,8 +225,7 @@ export function transformTeacherToForm(teacher: TeacherDetail): Partial<TeacherF
     city: teacher.user?.address?.city || '',
     state: teacher.user?.address?.state || '',
     postal_code: teacher.user?.address?.zip_code || '',
-    country: teacher.user?.address?.country || 'India',
-    // Convert subject public_ids (strings) back to numbers
+    country: teacher.user?.address?.country || '',    
     subjects: teacher.subjects?.map((subject) => parseInt(subject.public_id)) || [],
   };
 }

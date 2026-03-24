@@ -1,4 +1,5 @@
 import api from '../api';
+import { getParsedLocalStorageItem } from '@/lib/utils/storage';
 
 // Types
 export interface LoginCredentials {
@@ -52,6 +53,7 @@ export interface Organization {
   is_active: boolean;
   is_verified: boolean;
   is_approved: boolean;
+  is_rejected: boolean;
 }
 
 export interface PasswordResetRequest {
@@ -272,15 +274,7 @@ export const authApi = {
    * Get stored user data
    */
   getStoredUser: (): User | null => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        return JSON.parse(userStr);
-      } catch {
-        return null;
-      }
-    }
-    return null;
+    return getParsedLocalStorageItem<User>('user');
   },
 
   /**

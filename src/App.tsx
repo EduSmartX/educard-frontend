@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { ROUTES } from './constants/app-config';
 
 // Lazy load pages for better performance
@@ -18,12 +18,34 @@ const RegistrationSuccessPage = lazy(
   () => import('./features/auth/pages/registration-success-page')
 );
 const ForgotPasswordPage = lazy(() => import('./features/auth/pages/forgot-password-page'));
+const VerifyEmailPage = lazy(() => import('./pages/verify-email-page'));
 const OrganizationNotApprovedPage = lazy(
   () => import('./features/auth/pages/organization-not-approved-page')
 );
 
-// Dashboard router - Routes to appropriate dashboard based on user role
-const DashboardRouter = lazy(() => import('./features/dashboard/dashboard-router'));
+// Role-based route guards
+const AdminRoute = lazy(() =>
+  import('./components/guards/role-guards').then((m) => ({ default: m.AdminRoute }))
+);
+const EmployeeRoute = lazy(() =>
+  import('./components/guards/role-guards').then((m) => ({ default: m.EmployeeRoute }))
+);
+const ParentRoute = lazy(() =>
+  import('./components/guards/role-guards').then((m) => ({ default: m.ParentRoute }))
+);
+
+// Role-specific dashboards
+const AdminDashboardPage = lazy(
+  () => import('./features/admin/dashboard/pages/admin-dashboard-page')
+);
+const EmployeeDashboardPage = lazy(
+  () => import('./features/employee/dashboard/pages/employee-dashboard-page')
+);
+const EmployeeTeachersPage = lazy(() => import('./features/employee/pages/employee-teachers-page'));
+const EmployeeClassesPage = lazy(() => import('./features/employee/pages/employee-classes-page'));
+const ParentDashboardPage = lazy(
+  () => import('./features/parent/dashboard/pages/parent-dashboard-page')
+);
 
 // Student pages
 const StudentsListPage = lazy(() => import('./features/students/pages/students-list-page'));
@@ -82,6 +104,24 @@ const MonthlyAttendanceReportPage = lazy(() =>
     default: m.MonthlyAttendanceReportPage,
   }))
 );
+const AttendanceReportPage = lazy(() =>
+  import('./features/attendance/pages/attendance-report-page').then((m) => ({
+    default: m.AttendanceReportPage,
+  }))
+);
+const EmployeeTimesheetPage = lazy(() =>
+  import('./features/attendance/pages/employee-timesheet-page').then((m) => ({
+    default: m.EmployeeTimesheetPage,
+  }))
+);
+const EmployeeTimesheetSubmitPage = lazy(() =>
+  import('./features/attendance/pages/employee-timesheet-submit-page').then((m) => ({
+    default: m.EmployeeTimesheetSubmitPage,
+  }))
+);
+const TimesheetApprovalsPage = lazy(
+  () => import('./features/attendance/pages/timesheet-approvals-page')
+);
 
 // Preferences
 const PreferencesPage = lazy(() => import('./features/preferences/pages/preferences-page'));
@@ -95,9 +135,12 @@ const ExceptionalWorkPage = lazy(() => import('./pages/exceptional-work-page'));
 // Profile
 const ProfilePage = lazy(() => import('./features/profile/pages/profile-page'));
 
+// Coming Soon
+const ComingSoonPage = lazy(() => import('./pages/coming-soon-page'));
+
 function App() {
   return (
-    <div className="min-h-screen bg-background font-sans antialiased">
+    <div className="bg-background min-h-screen font-sans antialiased">
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public Routes */}
@@ -106,6 +149,9 @@ function App() {
           <Route path={ROUTES.AUTH.SIGNUP} element={<SignupPage />} />
           <Route path={ROUTES.AUTH.REGISTRATION_SUCCESS} element={<RegistrationSuccessPage />} />
           <Route path={ROUTES.AUTH.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
+          <Route path={ROUTES.AUTH.VERIFY_EMAIL} element={<VerifyEmailPage />} />
+          {/* Backward compatibility: redirect /verify-email to /auth/verify-email */}
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route
             path={ROUTES.AUTH.ORGANIZATION_NOT_APPROVED}
             element={<OrganizationNotApprovedPage />}
@@ -113,8 +159,38 @@ function App() {
 
           {/* Protected Routes - Header rendered once in ProtectedLayout */}
           <Route element={<ProtectedLayout />}>
-            {/* Dashboard (role-based routing) */}
-            <Route path={ROUTES.DASHBOARD} element={<DashboardRouter />} />
+            {/* Role-based Dashboard Routes */}
+            <Route path="/admin" element={<AdminRoute />}>
+              <Route path="dashboard" element={<AdminDashboardPage />} />
+            </Route>
+
+            <Route path="/employee" element={<EmployeeRoute />}>
+              <Route path="dashboard" element={<EmployeeDashboardPage />} />
+              <Route path="holidays" element={<HolidayCalendarPage />} />
+              <Route path="exceptional-work" element={<ExceptionalWorkPage />} />
+              <Route path="teachers" element={<EmployeeTeachersPage />} />
+              <Route path="teachers/:id" element={<TeacherFormPage />} />
+              <Route path="classes-list" element={<EmployeeClassesPage />} />
+
+              {/* Employee Attendance Management */}
+              <Route path="attendance/mark" element={<MarkAttendancePage />} />
+              <Route path="attendance/summary" element={<AttendanceSummaryPage />} />
+              <Route path="attendance/report" element={<AttendanceReportPage />} />
+              <Route path="attendance/monthly" element={<MonthlyAttendanceReportPage />} />
+              <Route path="attendance/timesheet" element={<EmployeeTimesheetPage />} />
+              <Route path="attendance/submit" element={<EmployeeTimesheetSubmitPage />} />
+              <Route path="attendance/approvals" element={<TimesheetApprovalsPage />} />
+
+              {/* Employee Leave Management */}
+              <Route path="leave/dashboard" element={<LeaveDashboardPage />} />
+              <Route path="leave/reviews" element={<LeaveRequestReviewsPage />} />
+              <Route path="leave/allocations" element={<LeaveAllocationsPage />} />
+              <Route path="leave/manage-balance" element={<ManageLeaveBalances />} />
+            </Route>
+
+            <Route path="/parent" element={<ParentRoute />}>
+              <Route path="dashboard" element={<ParentDashboardPage />} />
+            </Route>
 
             {/* Students */}
             <Route path={ROUTES.STUDENTS} element={<StudentsListPage />} />
@@ -155,10 +231,42 @@ function App() {
             {/* Profile */}
             <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
 
+            {/* Calendar - Coming Soon */}
+            <Route
+              path={ROUTES.CALENDAR}
+              element={
+                <ComingSoonPage
+                  title="Calendar"
+                  description="Calendar feature is currently under development and will be available soon."
+                />
+              }
+            />
+
+            {/* Analytics - Coming Soon */}
+            <Route
+              path={ROUTES.ANALYTICS}
+              element={
+                <ComingSoonPage
+                  title="Analytics"
+                  description="Analytics feature is currently under development and will be available soon."
+                />
+              }
+            />
+
             {/* Attendance */}
             <Route path="/attendance/mark" element={<MarkAttendancePage />} />
             <Route path="/attendance/summary" element={<AttendanceSummaryPage />} />
+            <Route path="/attendance/report" element={<AttendanceReportPage />} />
             <Route path="/attendance/monthly" element={<MonthlyAttendanceReportPage />} />
+            <Route path={ROUTES.ATTENDANCE.TIMESHEET} element={<EmployeeTimesheetPage />} />
+            <Route
+              path={ROUTES.ATTENDANCE.TIMESHEET_SUBMIT}
+              element={<EmployeeTimesheetSubmitPage />}
+            />
+            <Route
+              path={ROUTES.ATTENDANCE.TIMESHEET_APPROVALS}
+              element={<TimesheetApprovalsPage />}
+            />
 
             {/* Leave Management (with nested layout) */}
             <Route element={<LeaveLayout />}>
@@ -184,9 +292,6 @@ function App() {
             <Route path="/leave/requests/:id/edit" element={<LeaveRequestFormPage />} />
           </Route>
 
-          {/* Default redirect */}
-          <Route path="/" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
-
           {/* 404 - Not Found */}
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -201,9 +306,9 @@ function NotFound() {
     <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">
         <h1 className="text-4xl font-bold">404</h1>
-        <p className="mt-2 text-muted-foreground">Page not found</p>
-        <a href={ROUTES.DASHBOARD} className="mt-4 inline-block text-primary hover:underline">
-          Go to Dashboard
+        <p className="text-muted-foreground mt-2">Page not found</p>
+        <a href="/" className="text-primary mt-4 inline-block hover:underline">
+          Go to Home
         </a>
       </div>
     </div>

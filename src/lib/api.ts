@@ -1,5 +1,6 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { toast } from 'sonner';
+import { ErrorMessages } from '@/constants';
 
 // API Base URL from environment
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
@@ -93,8 +94,13 @@ function handleApiError(error: AxiosError): void {
       data.errors &&
       Array.isArray(data.errors);
 
-    if (isOtpError) {
-      // Don't show toast for OTP errors - they'll be displayed on the form
+    // Skip toast for login errors (will be handled by login form)
+    const isLoginError = 
+      error.config?.url?.includes('/auth/login') && 
+      status === 401;
+
+    if (isOtpError || isLoginError) {
+      // Don't show toast - errors will be displayed on the form
       return;
     }
 
@@ -111,51 +117,50 @@ function handleApiError(error: AxiosError): void {
         } else if (data.non_field_errors) {
           toast.error(data.non_field_errors[0]);
         } else {
-          toast.error('Invalid request. Please check your input.');
+          toast.error(ErrorMessages.INVALID_REQUEST);
         }
         break;
 
-      case 401:
-        toast.error('Authentication required. Please login again.');
+      case 401:        
         break;
 
       case 403:
-        toast.error('You do not have permission to perform this action.');
+        toast.error(ErrorMessages.FORBIDDEN_ACTION);
         break;
 
       case 404:
-        toast.error('The requested resource was not found.');
+        toast.error(ErrorMessages.NOT_FOUND);
         break;
 
       case 409:
-        toast.error(data.detail || 'A conflict occurred.');
+        toast.error(data.detail || ErrorMessages.CONFLICT);
         break;
 
       case 422:
-        toast.error('Validation error. Please check your input.');
+        toast.error(ErrorMessages.VALIDATION_ERROR);
         break;
 
       case 429:
-        toast.error('Too many requests. Please try again later.');
+        toast.error(ErrorMessages.TOO_MANY_REQUESTS);
         break;
 
       case 500:
-        toast.error('Server error. Please try again later.');
+        toast.error(ErrorMessages.SERVER_ERROR);
         break;
 
       case 503:
-        toast.error('Service unavailable. Please try again later.');
+        toast.error(ErrorMessages.SERVICE_UNAVAILABLE);
         break;
 
       default:
-        toast.error(data.detail || 'An error occurred. Please try again.');
+        toast.error(data.detail || ErrorMessages.GENERIC_RETRY);
     }
   } else if (error.request) {
     // Request made but no response
-    toast.error('No response from server. Please check your internet connection.');
+    toast.error(ErrorMessages.NO_SERVER_RESPONSE);
   } else {
     // Error in request setup
-    toast.error('An error occurred. Please try again.');
+    toast.error(ErrorMessages.GENERIC_RETRY);
   }
 }
 

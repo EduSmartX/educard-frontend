@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ROUTES } from '@/constants/app-config';
+import { ErrorMessages, SuccessMessages } from '@/constants';
 import { useTeachers } from '../hooks/use-teachers';
 import { useDeleteTeacher, useReactivateTeacher } from '../hooks/mutations';
 import { TeachersList } from './teachers-list';
@@ -17,7 +18,12 @@ import { useDeletedView } from '@/hooks/use-deleted-view';
 
 type PageMode = 'list' | 'create' | 'edit' | 'view';
 
-export function TeachersManagement() {
+interface TeachersManagementProps {
+  viewMode?: 'admin' | 'employee'; // Admin = full CRUD, Employee = read-only
+}
+
+export function TeachersManagement({ viewMode = 'admin' }: TeachersManagementProps) {
+  const isEmployeeView = viewMode === 'employee';
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
 
@@ -56,28 +62,30 @@ export function TeachersManagement() {
   // Delete mutation
   const deleteMutation = useDeleteTeacher({
     onSuccess: () => {
-      toast.success('Teacher deleted successfully');
+      toast.success(SuccessMessages.TEACHER.DELETE_SUCCESS);
       setTeacherToDelete(null);
     },
     onError: (error: Error) => {
-      toast.error(`Failed to delete teacher: ${error.message}`);
+      toast.error(error.message || ErrorMessages.TEACHER.DELETE_FAILED);
     },
   });
 
   // Reactivate mutation
   const reactivateMutation = useReactivateTeacher({
     onSuccess: () => {
-      toast.success('Teacher reactivated successfully');
+      toast.success(SuccessMessages.TEACHER.REACTIVATE_SUCCESS);
       setTeacherToReactivate(null);
     },
     onError: (error: Error) => {
-      toast.error(`Failed to reactivate teacher: ${error.message}`);
+      toast.error(error.message || ErrorMessages.TEACHER.REACTIVATE_FAILED);
     },
   });
 
   // Navigation handlers
   const handleView = (teacher: Teacher) => {
-    const path = ROUTES.TEACHERS_VIEW.replace(':id', teacher.public_id);
+    const path = isEmployeeView
+      ? ROUTES.EMPLOYEE.TEACHERS_VIEW.replace(':id', teacher.public_id)
+      : ROUTES.TEACHERS_VIEW.replace(':id', teacher.public_id);
     // Add query param if viewing deleted teacher
     navigate(showDeleted ? `${path}?deleted=true` : path);
   };
@@ -131,6 +139,11 @@ export function TeachersManagement() {
 
   // Render form modes (create, edit, view)
   if (mode !== 'list') {
+    // Employee view cannot access create/edit/view forms
+    if (isEmployeeView) {
+      navigate(ROUTES.EMPLOYEE.TEACHERS); // Redirect back to list
+      return null;
+    }
     return <TeacherFormPage />;
   }
 
@@ -146,7 +159,7 @@ export function TeachersManagement() {
         error={error || undefined}
         pagination={pagination}
         showDeleted={showDeleted}
-        onToggleDeleted={toggleDeletedView}
+        onToggleDeleted={isEmployeeView ? undefined : toggleDeletedView} // No deleted toggle for employees
         onCreateNew={handleCreateNew}
         onView={handleView}
         onEdit={handleEdit}
@@ -155,9 +168,10 @@ export function TeachersManagement() {
         onPageSizeChange={handlePageSizeChange}
         onSearch={handleSearch}
         onFilterChange={handleFilterChange}
+        viewMode={viewMode} // Pass viewMode to list
       />
 
-      {!showDeleted && (
+      {!showDeleted && !isEmployeeView && (
         <DeleteConfirmationDialog
           open={!!teacherToDelete}
           onOpenChange={(open) => !open && setTeacherToDelete(null)}
@@ -169,7 +183,7 @@ export function TeachersManagement() {
         />
       )}
 
-      {showDeleted && (
+      {showDeleted && !isEmployeeView && (
         <ReactivateConfirmationDialog
           open={!!teacherToReactivate}
           onOpenChange={(open) => !open && setTeacherToReactivate(null)}

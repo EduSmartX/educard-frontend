@@ -39,7 +39,7 @@ export interface UserProfile {
   gender: string;
   blood_group?: string;
   date_of_birth?: string;
-  organization_role: string;
+  organization_role: string | { code: string; name: string };
   is_active: boolean;
   is_email_verified: boolean;
   notification_opt_in: boolean;
@@ -53,6 +53,7 @@ export interface UpdateProfilePayload {
   gender?: string;
   blood_group?: string;
   date_of_birth?: string;
+  organization_role?: string;
   notification_opt_in?: boolean;
   address?: {
     address_type?: string;

@@ -81,3 +81,59 @@ export const AttendanceStatusLabels: Record<AttendanceStatusType, string> = {
   [AttendanceStatus.LEAVE]: 'On Leave',
   [AttendanceStatus.HOLIDAY]: 'Holiday',
 };
+
+/**
+ * Timesheet submission status values
+ * Matches backend TimesheetSubmission.SubmissionStatus choices
+ */
+export const TimesheetStatus = {
+  DRAFT: 'DRAFT',
+  SUBMITTED: 'SUBMITTED',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  RETURNED: 'RETURNED',
+} as const;
+
+export type TimesheetStatusValue = (typeof TimesheetStatus)[keyof typeof TimesheetStatus];
+
+export const TimesheetStatusLabels: Record<TimesheetStatusValue, string> = {
+  [TimesheetStatus.DRAFT]: 'Draft',
+  [TimesheetStatus.SUBMITTED]: 'Pending Approval',
+  [TimesheetStatus.APPROVED]: 'Approved',
+  [TimesheetStatus.REJECTED]: 'Rejected',
+  [TimesheetStatus.RETURNED]: 'Returned',
+};
+
+/**
+ * Timesheet review action types
+ */
+export const TimesheetReviewAction = {
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+} as const;
+
+export type TimesheetReviewActionValue = 
+  (typeof TimesheetReviewAction)[keyof typeof TimesheetReviewAction];
+
+/**
+ * Leave-related day types for attendance locking
+ */
+export const DayLockReason = {
+  HOLIDAY: 'holiday',
+  LEAVE: 'leave',
+  NON_WORKING_DAY: 'non_working_day',
+} as const;
+
+export type DayLockReasonValue = (typeof DayLockReason)[keyof typeof DayLockReason];
+
+/**
+ * Attendance session types (morning/afternoon)
+ */
+export const AttendanceSession = {
+  MORNING: 'morning',
+  AFTERNOON: 'afternoon',
+  FULL_DAY: 'full_day',
+} as const;
+
+export type AttendanceSessionValue = 
+  (typeof AttendanceSession)[keyof typeof AttendanceSession];

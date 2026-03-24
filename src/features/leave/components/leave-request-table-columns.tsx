@@ -7,8 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Column } from '@/components/ui/data-table';
 import { formatDate } from '@/lib/utils/date-utils';
-import type { LeaveRequest } from '../types';
-import { LEAVE_STATUS_CONFIG } from '../types';
+import { LEAVE_STATUS_CONFIG, type LeaveRequest } from '../types';
 
 interface ColumnActions {
   onView?: (request: LeaveRequest) => void;
@@ -22,23 +21,22 @@ export function getLeaveRequestColumns(actions: ColumnActions): Column<LeaveRequ
       accessor: (row) => (
         <div>
           <div className="font-medium text-gray-900">{row.leave_name}</div>
-          <div className="text-xs text-muted-foreground">{row.leave_type_code}</div>
+          <div className="text-muted-foreground text-xs">{row.leave_type_code}</div>
         </div>
       ),
       sortable: true,
       sortKey: 'leave_name',
     },
     {
-      header: 'Start Date',
-      accessor: (row) => <div className="text-sm text-gray-900">{formatDate(row.start_date)}</div>,
+      header: 'Start / End Date',
+      accessor: (row) => (
+        <div>
+          <div className="text-sm text-gray-900">{formatDate(row.start_date)}</div>
+          <div className="text-muted-foreground text-xs">to {formatDate(row.end_date)}</div>
+        </div>
+      ),
       sortable: true,
       sortKey: 'start_date',
-    },
-    {
-      header: 'End Date',
-      accessor: (row) => <div className="text-sm text-gray-900">{formatDate(row.end_date)}</div>,
-      sortable: true,
-      sortKey: 'end_date',
     },
     {
       header: 'Days',
@@ -65,11 +63,36 @@ export function getLeaveRequestColumns(actions: ColumnActions): Column<LeaveRequ
       sortKey: 'status',
     },
     {
+      header: 'Reviewed',
+      accessor: (row) => (
+        <div>
+          <div className="text-sm text-gray-900">{row.reviewed_by_name?.trim() || '-'}</div>
+          <div className="text-muted-foreground text-xs">
+            {row.reviewed_at ? formatDate(row.reviewed_at) : '-'}
+          </div>
+        </div>
+      ),
+      sortable: true,
+      sortKey: 'reviewed_at',
+    },
+    {
+      header: 'Comments',
+      accessor: (row) => (
+        <div
+          className="max-w-[220px] truncate text-sm text-gray-900"
+          title={row.review_comments || '-'}
+        >
+          {row.review_comments?.trim() || '-'}
+        </div>
+      ),
+      sortable: false,
+    },
+    {
       header: 'Created',
       accessor: (row) => (
         <div>
           <div className="text-sm text-gray-900">{row.created_by_name || 'System'}</div>
-          <div className="text-xs text-muted-foreground">{formatDate(row.created_at)}</div>
+          <div className="text-muted-foreground text-xs">{formatDate(row.created_at)}</div>
         </div>
       ),
       sortable: true,
@@ -80,7 +103,7 @@ export function getLeaveRequestColumns(actions: ColumnActions): Column<LeaveRequ
       accessor: (row) => (
         <div>
           <div className="text-sm text-gray-900">{row.updated_by_name || 'System'}</div>
-          <div className="text-xs text-muted-foreground">{formatDate(row.updated_at)}</div>
+          <div className="text-muted-foreground text-xs">{formatDate(row.updated_at)}</div>
         </div>
       ),
       sortable: true,
@@ -95,7 +118,7 @@ export function getLeaveRequestColumns(actions: ColumnActions): Column<LeaveRequ
               variant="ghost"
               size="sm"
               onClick={() => actions.onView?.(row)}
-              className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              className="h-8 px-2 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
             >
               <Eye className="h-4 w-4" />
             </Button>
@@ -105,7 +128,7 @@ export function getLeaveRequestColumns(actions: ColumnActions): Column<LeaveRequ
               variant="ghost"
               size="sm"
               onClick={() => actions.onCancel?.(row)}
-              className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="h-8 px-2 text-red-600 hover:bg-red-50 hover:text-red-700"
             >
               <X className="h-4 w-4" />
             </Button>

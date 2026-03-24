@@ -16,6 +16,7 @@ import {
   deleteSubject,
   reactivateSubject,
 } from '../api/subjects-api';
+import { ErrorMessages, SuccessMessages, ToastTitles } from '@/constants';
 import type { SubjectCreatePayload, SubjectUpdatePayload } from '../types/subject';
 
 export interface SubjectFieldErrors {
@@ -45,12 +46,12 @@ export function useCreateSubject(options?: MutationOptions) {
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, 'Failed to create subject. Please try again.');
+      const errorMessage = getErrorMessage(error, ErrorMessages.SUBJECT.CREATE_FAILED);
       const fieldErrors = getFieldErrors(error) as SubjectFieldErrors | undefined;
 
       // Don't show toast for deleted duplicates (dialog will be shown by page)
       if (!isDeletedDuplicateError(error)) {
-        toast.error('Error Creating Subject', {
+        toast.error(ToastTitles.ERROR, {
           description: errorMessage,
           duration: 5000,
         });
@@ -75,12 +76,12 @@ export function useUpdateSubject(options?: MutationOptions) {
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, 'Failed to update subject. Please try again.');
+      const errorMessage = getErrorMessage(error, ErrorMessages.SUBJECT.UPDATE_FAILED);
       const fieldErrors = getFieldErrors(error) as SubjectFieldErrors | undefined;
 
       // Don't show toast for deleted duplicates (dialog will be shown by page)
       if (!isDeletedDuplicateError(error)) {
-        toast.error('Error Updating Subject', {
+        toast.error(ToastTitles.ERROR, {
           description: errorMessage,
           duration: 5000,
         });
@@ -100,20 +101,18 @@ export function useDeleteSubject(options?: MutationOptions) {
   return useMutation({
     mutationFn: deleteSubject,
     onSuccess: () => {
-      // Only invalidate the list queries, not individual subject queries
+      // Invalidate all subjects queries (with any params) to refresh the list
       queryClient.invalidateQueries({
         queryKey: ['subjects'],
-        exact: true,
+        refetchType: 'all',
       });
-      toast.success('Subject Deleted', {
-        description: 'The subject has been deleted successfully.',
-      });
+      toast.success(SuccessMessages.SUBJECT.DELETE_SUCCESS);
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, 'Failed to delete subject. Please try again.');
+      const errorMessage = getErrorMessage(error, ErrorMessages.SUBJECT.DELETE_FAILED);
 
-      toast.error('Error Deleting Subject', {
+      toast.error(ToastTitles.ERROR, {
         description: errorMessage,
         duration: 5000,
       });
@@ -131,25 +130,18 @@ export function useReactivateSubject(options?: MutationOptions) {
 
   return useMutation({
     mutationFn: reactivateSubject,
-    onSuccess: () => {
-      // Only invalidate the list queries, not individual subject queries
-      // The navigation will handle refreshing the detail view
+    onSuccess: () => {  
       queryClient.invalidateQueries({
         queryKey: ['subjects'],
-        exact: true,
+        refetchType: 'all',
       });
-      toast.success('Subject Reactivated', {
-        description: 'The subject has been reactivated successfully.',
-      });
+      toast.success(SuccessMessages.SUBJECT.REACTIVATE_SUCCESS);
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(
-        error,
-        'Failed to reactivate subject. Please try again.'
-      );
+      const errorMessage = getErrorMessage(error, ErrorMessages.SUBJECT.REACTIVATE_FAILED);
 
-      toast.error('Error Reactivating Subject', {
+      toast.error(ToastTitles.ERROR, {
         description: errorMessage,
         duration: 5000,
       });

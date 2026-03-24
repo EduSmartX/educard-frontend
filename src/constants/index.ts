@@ -6,3 +6,4 @@ export * from './address-type';
 export * from './attendance';
 export * from './error-messages';
 export * from './api-constants';
+export * from './user-constants';

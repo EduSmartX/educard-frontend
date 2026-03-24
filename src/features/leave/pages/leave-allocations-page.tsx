@@ -5,6 +5,8 @@
 
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '@/hooks/use-auth';
+import { USER_ROLES } from '@/constants';
 import { ROUTES } from '@/constants/app-config';
 import { useLeaveAllocations } from '../hooks/use-leave-allocations';
 import { LeaveAllocationsList } from '../components/leave-allocations-list';
@@ -16,6 +18,10 @@ type PageMode = 'list' | 'create' | 'edit' | 'view';
 export default function LeaveAllocationsPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+
+  // Check if user is a teacher (read-only mode)
+  const isTeacher = user?.role === USER_ROLES.TEACHER;
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -39,6 +45,7 @@ export default function LeaveAllocationsPage() {
     page: currentPage,
     pageSize,
     enabled: mode === 'list',
+    readOnly: isTeacher,
   });
 
   // Navigation handlers
@@ -95,6 +102,7 @@ export default function LeaveAllocationsPage() {
       onPageSizeChange={handlePageSizeChange}
       onSearch={handleSearch}
       onFilterChange={handleFilterChange}
+      readOnly={isTeacher}
     />
   );
 }
