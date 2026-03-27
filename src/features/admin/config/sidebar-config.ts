@@ -95,7 +95,7 @@ export const adminSidebarConfig: SidebarSection[] = [
         id: 'attendance-reports',
         label: 'Attendance Report',
         icon: CalendarDays,
-        path: '/attendance/monthly',
+        path: '/attendance/report',
       },
       {
         id: 'attendance-timesheet',
