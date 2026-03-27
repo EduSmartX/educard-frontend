@@ -64,7 +64,7 @@ export const BRANDING = {
   // Contact Information
   CONTACT: {
     EMAIL: 'support@educard.com',
-    PHONE: '+1 (555) 123-4567',
+    PHONE: '+91 1800-123-4567',
     ADDRESS: '123 Education Street, Tech City, TC 12345',
   },
 

@@ -150,14 +150,14 @@ export default function HomePage() {
       {/* Hero Section */}
       <div className="relative flex min-h-[600px] w-full flex-col overflow-hidden lg:min-h-[600px] lg:flex-row lg:items-center">
         {/* Content */}
-        <div className="relative flex w-full items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50/30 to-emerald-50/30 p-6 lg:w-3/5 lg:py-12 lg:px-12 z-10">
+        <div className="relative z-10 flex w-full items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50/30 to-emerald-50/30 p-6 lg:w-3/5 lg:px-12 lg:py-12">
           <div className="w-full max-w-3xl space-y-8">
-            <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <div className="animate-in fade-in slide-in-from-bottom-4 space-y-5 duration-1000">
               <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-100 to-teal-100 px-4 py-2 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200">
                 <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"></div>
                 Smarter Learning, Simplified
               </div>
-              <h1 className="text-foreground font-serif text-3xl font-bold leading-[1.15] tracking-tight lg:text-4xl">
+              <h1 className="text-foreground font-serif text-3xl leading-[1.15] font-bold tracking-tight lg:text-4xl">
                 <span className="bg-gradient-to-r from-blue-600 to-emerald-500 bg-clip-text text-transparent">
                   E
                 </span>
@@ -170,17 +170,17 @@ export default function HomePage() {
                   {COMPANY_NAME}
                 </span>
               </h1>
-              <p className="text-muted-foreground text-base leading-relaxed max-w-lg">
+              <p className="text-muted-foreground max-w-lg text-base leading-relaxed">
                 A unified platform connecting management system brings students, educators, and
                 parents through intelligent tools for learning, communication and administration.
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200">
+            <div className="animate-in fade-in slide-in-from-bottom-4 flex flex-col gap-3 delay-200 duration-1000 sm:flex-row">
               <Button
                 variant="brand"
                 size="lg"
-                className="group text-base h-12 px-8"
+                className="group h-12 px-8 text-base"
                 onClick={() => navigate(ROUTES.AUTH.LOGIN)}
               >
                 Launch Your Future
@@ -189,7 +189,7 @@ export default function HomePage() {
               <Button
                 variant="brandOutline"
                 size="lg"
-                className="text-base h-12 px-8"
+                className="h-12 px-8 text-base"
                 onClick={scrollToFeatures}
               >
                 Learn More
@@ -197,21 +197,21 @@ export default function HomePage() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-6 pt-6 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
+            <div className="animate-in fade-in slide-in-from-bottom-4 grid grid-cols-3 gap-6 pt-6 delay-300 duration-1000">
               <div className="space-y-1">
-                <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-emerald-500 bg-clip-text text-transparent lg:text-4xl">
+                <div className="bg-gradient-to-r from-blue-600 to-emerald-500 bg-clip-text text-3xl font-bold text-transparent lg:text-4xl">
                   20K+
                 </div>
                 <div className="text-muted-foreground text-xs font-medium">Users</div>
               </div>
               <div className="space-y-1">
-                <div className="text-3xl font-bold bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent lg:text-4xl">
+                <div className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-3xl font-bold text-transparent lg:text-4xl">
                   1K+
                 </div>
                 <div className="text-muted-foreground text-xs font-medium">Educators</div>
               </div>
               <div className="space-y-1">
-                <div className="text-3xl font-bold bg-gradient-to-r from-teal-500 to-blue-500 bg-clip-text text-transparent lg:text-4xl">
+                <div className="bg-gradient-to-r from-teal-500 to-blue-500 bg-clip-text text-3xl font-bold text-transparent lg:text-4xl">
                   100+
                 </div>
                 <div className="text-muted-foreground text-xs font-medium">Institutions</div>
@@ -230,9 +230,9 @@ export default function HomePage() {
             <div className="absolute top-1/2 right-1/4 h-20 w-20 rounded-full bg-teal-200/20 blur-2xl"></div>
 
             {/* Floating Shapes */}
-            <div className="absolute top-20 right-1/4 h-3 w-3 rounded-full bg-blue-400/30 animate-float"></div>
-            <div className="absolute bottom-32 right-16 h-2 w-2 rounded-full bg-emerald-400/30 animate-float animation-delay-200"></div>
-            <div className="absolute top-1/3 right-12 h-4 w-4 rounded bg-teal-400/20 animate-float animation-delay-400"></div>
+            <div className="animate-float absolute top-20 right-1/4 h-3 w-3 rounded-full bg-blue-400/30"></div>
+            <div className="animate-float animation-delay-200 absolute right-16 bottom-32 h-2 w-2 rounded-full bg-emerald-400/30"></div>
+            <div className="animate-float animation-delay-400 absolute top-1/3 right-12 h-4 w-4 rounded bg-teal-400/20"></div>
           </div>
 
           {/* Hero Image with Float Animation */}
@@ -240,14 +240,14 @@ export default function HomePage() {
             <img
               src={heroImage}
               alt="EduSphere Platform Illustration"
-              className="w-full max-w-xl h-auto object-contain drop-shadow-2xl"
+              className="h-auto w-full max-w-xl object-contain drop-shadow-2xl"
             />
           </div>
         </div>
       </div>
 
       {/* Features Section */}
-      <div id="features-section" className="w-full bg-muted/30 px-6 py-16 lg:px-16">
+      <div id="features-section" className="bg-muted/30 w-full px-6 py-16 lg:px-16">
         <div className="mx-auto max-w-7xl">
           <div className="mb-12 text-center">
             <h2 className="text-foreground mb-3 font-serif text-3xl font-bold lg:text-4xl">
@@ -265,7 +265,7 @@ export default function HomePage() {
               return (
                 <Card
                   key={index}
-                  className="group border-2 transition-all hover:shadow-lg hover:scale-105"
+                  className="group border-2 transition-all hover:scale-105 hover:shadow-lg"
                 >
                   <CardHeader className="pb-3">
                     <div
@@ -288,14 +288,14 @@ export default function HomePage() {
       </div>
 
       {/* Testimonials Section */}
-      <div className="w-full bg-background px-6 py-16 lg:px-16">
+      <div className="bg-background w-full px-6 py-16 lg:px-16">
         <div className="mx-auto max-w-7xl">
           <div className="mb-12 text-center">
             <h2 className="text-foreground mb-3 font-serif text-3xl font-bold lg:text-4xl">
               Loved by Schools Worldwide
             </h2>
             <p className="text-muted-foreground mx-auto max-w-2xl text-base lg:text-lg">
-              See what educators are saying about their experience with EduCard
+              See what educators are saying about their experience with {COMPANY_NAME}
             </p>
           </div>
 
@@ -314,7 +314,7 @@ export default function HomePage() {
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-3">
-                            <Avatar className="h-12 w-12 border-2 border-primary/20">
+                            <Avatar className="border-primary/20 h-12 w-12 border-2">
                               <AvatarImage src={testimonial.avatar} alt={testimonial.name} />
                               <AvatarFallback>
                                 {testimonial.name
@@ -324,16 +324,16 @@ export default function HomePage() {
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <h4 className="font-semibold text-foreground text-sm">
+                              <h4 className="text-foreground text-sm font-semibold">
                                 {testimonial.name}
                               </h4>
-                              <p className="text-xs text-muted-foreground">{testimonial.role}</p>
-                              <p className="text-[10px] text-primary font-medium">
+                              <p className="text-muted-foreground text-xs">{testimonial.role}</p>
+                              <p className="text-primary text-[10px] font-medium">
                                 {testimonial.school}
                               </p>
                             </div>
                           </div>
-                          <Quote className="h-6 w-6 text-primary/20" />
+                          <Quote className="text-primary/20 h-6 w-6" />
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-3">
@@ -342,7 +342,7 @@ export default function HomePage() {
                             <Star key={i} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                           ))}
                         </div>
-                        <p className="text-muted-foreground leading-relaxed text-sm">
+                        <p className="text-muted-foreground text-sm leading-relaxed">
                           &ldquo;{testimonial.review}&rdquo;
                         </p>
                       </CardContent>
@@ -358,20 +358,20 @@ export default function HomePage() {
       </div>
 
       {/* CTA Section */}
-      <div className="w-full bg-primary px-6 py-16 lg:px-16">
-        <div className="mx-auto max-w-4xl text-center flex flex-col items-center justify-center">
+      <div className="bg-primary w-full px-6 py-16 lg:px-16">
+        <div className="mx-auto flex max-w-4xl flex-col items-center justify-center text-center">
           <h2 className="mb-5 font-serif text-3xl font-bold text-white lg:text-4xl">
             Ready to Transform Your School?
           </h2>
-          <p className="mb-6 text-base text-primary-foreground/90 lg:text-lg max-w-3xl">
-            Join hundreds of schools already using EduCard to improve their operations and enhance
-            the learning experience.
+          <p className="text-primary-foreground/90 mb-6 max-w-3xl text-base lg:text-lg">
+            Join hundreds of schools already using {COMPANY_NAME} to improve their operations and
+            enhance the learning experience.
           </p>
-          <div className="flex flex-col gap-3 sm:flex-row items-center justify-center">
+          <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button
               size="lg"
               variant="secondary"
-              className="text-base h-12 px-8"
+              className="h-12 px-8 text-base"
               onClick={() => navigate(ROUTES.AUTH.LOGIN)}
             >
               Start Free Trial
@@ -379,7 +379,7 @@ export default function HomePage() {
             <Button
               size="lg"
               variant="outline"
-              className="text-base h-12 border-2 border-white bg-transparent px-8 text-white hover:bg-white hover:text-primary"
+              className="hover:text-primary h-12 border-2 border-white bg-transparent px-8 text-base text-white hover:bg-white"
               onClick={() => navigate(ROUTES.AUTH.LOGIN)}
             >
               Schedule a Demo
@@ -389,17 +389,17 @@ export default function HomePage() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t bg-background px-6 py-8 lg:px-16">
+      <footer className="bg-background border-t px-6 py-8 lg:px-16">
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-col items-center justify-center gap-4 md:gap-8">
             <div className="flex items-center justify-center gap-2">
-              <GraduationCap className="h-8 w-8 text-primary" />
+              <GraduationCap className="text-primary h-8 w-8" />
               <span className="text-xl font-bold">{COMPANY_NAME}</span>
             </div>
-            <p className="text-muted-foreground text-sm text-center">
+            <p className="text-muted-foreground text-center text-sm">
               © 2026 {COMPANY_NAME}. All rights reserved.
             </p>
-            <div className="flex gap-6 justify-center flex-wrap">
+            <div className="flex flex-wrap justify-center gap-6">
               <button
                 type="button"
                 className="text-muted-foreground hover:text-foreground text-sm transition-colors"
