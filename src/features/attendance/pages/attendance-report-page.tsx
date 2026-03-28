@@ -82,13 +82,26 @@ export function AttendanceReportPage() {
     queryFn: getCurrentAcademicYear,
   });
 
-  // Update selected date when academic year is loaded
+  // Update selected date ONCE when academic year is first loaded
   useEffect(() => {
     if (academicYear?.start_date) {
-      const academicStartYear = new Date(academicYear.start_date).getFullYear();
-      setSelectedDate(new Date(academicStartYear, selectedMonth));
+      // Keep the current month but only adjust the year if we haven't already
+      const currentDate = new Date();
+      const academicStart = new Date(academicYear.start_date);
+      const academicStartYear = academicStart.getFullYear();
+      const currentMonth = currentDate.getMonth();
+
+      // Determine the correct year for the current month within the academic year.
+      // Academic year typically spans two calendar years (e.g., June 2025 - May 2026).
+      // If the current month is before the academic start month, we're in the second
+      // calendar year of the academic year.
+      const academicStartMonth = academicStart.getMonth();
+      const yearForCurrentMonth =
+        currentMonth >= academicStartMonth ? academicStartYear : academicStartYear + 1;
+
+      setSelectedDate(new Date(yearForCurrentMonth, currentMonth));
     }
-  }, [academicYear, selectedMonth]);
+  }, [academicYear]);
 
   // Fetch manageable users for staff view
   const { data: manageableUsersData, isLoading: isLoadingUsers } = useQuery({

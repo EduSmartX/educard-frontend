@@ -7,6 +7,7 @@ import type { TeacherFormValues } from '../schemas/teacher-form-schema';
 import type { CreateTeacherPayload, UpdateTeacherPayload, TeacherDetail } from '../types';
 import type { GenderValue, BloodGroupValue } from '@/constants/form-enums';
 import { ADDRESS_TYPE } from '@/constants/address-type';
+import { getTenDigitPhoneNumber } from '@/lib/phone-utils';
 
 /**
  * Transform form values to CREATE payload format
@@ -194,9 +195,7 @@ export function transformFormToUpdatePayload(values: TeacherFormValues): UpdateT
  * Transform teacher response to form values for editing
  * @param teacher - Teacher detail from API
  */
-export function transformTeacherToForm(
-  teacher: TeacherDetail
-): Partial<TeacherFormValues> {
+export function transformTeacherToForm(teacher: TeacherDetail): Partial<TeacherFormValues> {
   let organizationRoleId = '';
   if (teacher.user?.organization_role?.id) {
     organizationRoleId = teacher.user.organization_role.id.toString();
@@ -207,7 +206,7 @@ export function transformTeacherToForm(
     email: teacher.user?.email || '',
     first_name: teacher.user?.first_name || '',
     last_name: teacher.user?.last_name || '',
-    phone: teacher.user?.phone || '',
+    phone: getTenDigitPhoneNumber(teacher.user?.phone || ''),
     gender: (teacher.user?.gender as GenderValue) || undefined,
     blood_group: (teacher.user?.blood_group as BloodGroupValue) || undefined,
     date_of_birth: teacher.user?.date_of_birth || '',
@@ -219,13 +218,13 @@ export function transformTeacherToForm(
     experience_years: teacher.experience_years || undefined,
     joining_date: teacher.joining_date || '',
     emergency_contact_name: teacher.emergency_contact_name || '',
-    emergency_contact_number: teacher.emergency_contact_number || '',
+    emergency_contact_number: getTenDigitPhoneNumber(teacher.emergency_contact_number || ''),
     street_address: teacher.user?.address?.street_address || '',
     address_line_2: teacher.user?.address?.address_line_2 || '',
     city: teacher.user?.address?.city || '',
     state: teacher.user?.address?.state || '',
     postal_code: teacher.user?.address?.zip_code || '',
-    country: teacher.user?.address?.country || '',    
+    country: teacher.user?.address?.country || '',
     subjects: teacher.subjects?.map((subject) => parseInt(subject.public_id)) || [],
   };
 }

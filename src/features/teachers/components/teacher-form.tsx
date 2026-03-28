@@ -29,15 +29,18 @@ import {
   getDeletedDuplicateMessage,
   getDeletedRecordId,
 } from '@/lib/utils/error-handler';
-import type { TeacherDetail } from '../types';
-import { transformFormToCreatePayload, transformFormToUpdatePayload, transformTeacherToForm } from '../utils/form-utils';
+import type { TeacherDetail, CreateTeacherPayload } from '../types';
+import {
+  transformFormToCreatePayload,
+  transformFormToUpdatePayload,
+  transformTeacherToForm,
+} from '../utils/form-utils';
 import { SubjectsMultiSelectField } from '@/components/form/subjects-multi-select-field';
 import { FormActions } from '@/components/form/form-actions';
 import { STANDARD_FORM_VALIDATION_CONFIG } from '@/lib/utils/form-validation';
 import { FormMetadata } from '@/components/form/form-metadata';
 import { DeletedDuplicateDialog } from '@/components/common';
 import { useDeletedDuplicateHandler } from '@/hooks/use-deleted-duplicate-handler';
-import type { CreateTeacherPayload } from '../types';
 import { ErrorMessages, FormPlaceholders, SuccessMessages, ToastTitles } from '@/constants';
 
 /**
@@ -48,7 +51,7 @@ import { ErrorMessages, FormPlaceholders, SuccessMessages, ToastTitles } from '@
  */
 function scrollToFirstError(
   setIsAddressExpanded?: (value: boolean) => void,
-  formErrors?: Record<string, any>
+  formErrors?: Record<string, unknown>
 ) {
   // Small delay to ensure DOM is updated with error messages
   setTimeout(() => {
@@ -319,7 +322,7 @@ export function TeacherForm({
         <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-6">
           {/* Quick Add Toggle - Only for create mode */}
           {mode === 'create' && (
-            <Card className="bg-blue-50 border-blue-200">
+            <Card className="border-blue-200 bg-blue-50">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="quick-add" className="text-sm font-medium">
@@ -341,7 +344,7 @@ export function TeacherForm({
             <CardHeader>
               <CardTitle>Basic Information</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <TextInputField
                 control={form.control}
                 name="employee_id"
@@ -387,6 +390,7 @@ export function TeacherForm({
                 name="organization_role"
                 disabled={isViewMode}
                 required
+                viewValue={initialData?.user?.organization_role?.name}
               />
               {!useQuickAdd && (
                 <>
@@ -421,7 +425,7 @@ export function TeacherForm({
               <CardHeader>
                 <CardTitle>Professional Details</CardTitle>
               </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <TextInputField
                   control={form.control}
                   name="designation"
@@ -468,6 +472,11 @@ export function TeacherForm({
                   control={form.control}
                   name="supervisor_email"
                   disabled={isViewMode}
+                  viewValue={
+                    initialData?.user?.supervisor
+                      ? `${initialData.user.supervisor.full_name} (${initialData.user.supervisor.email})`
+                      : undefined
+                  }
                 />
                 <SubjectsMultiSelectField
                   control={form.control}
@@ -490,7 +499,7 @@ export function TeacherForm({
               <CardHeader>
                 <CardTitle>Emergency Contact</CardTitle>
               </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <TextInputField
                   control={form.control}
                   name="emergency_contact_name"
@@ -521,7 +530,8 @@ export function TeacherForm({
               >
                 <CardTitle className="flex items-center justify-between">
                   <span>
-                    Address <span className="text-sm text-muted-foreground font-normal">(Optional)</span>
+                    Address{' '}
+                    <span className="text-muted-foreground text-sm font-normal">(Optional)</span>
                   </span>
                   {isAddressExpanded ? (
                     <ChevronUp className="h-5 w-5" />

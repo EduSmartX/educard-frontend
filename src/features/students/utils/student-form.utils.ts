@@ -1,4 +1,5 @@
 import { ADDRESS_TYPE } from '@/constants/address-type';
+import { getTenDigitPhoneNumber } from '@/lib/phone-utils';
 import type { CreateStudentPayload, Student } from '../types';
 import type { StudentFormData } from '../schemas/student-form-schema';
 
@@ -73,7 +74,7 @@ export function getStudentFormValuesFromInitialData(initialData: Student): Stude
     roll_number: initialData.roll_number,
     class_id: initialData.class_info.public_id,
     email: userInfo.email,
-    phone: userInfo.phone || '',
+    phone: getTenDigitPhoneNumber(userInfo.phone || ''),
     gender: userInfo.gender || undefined,
     blood_group: userInfo.blood_group || undefined,
     date_of_birth: userInfo.date_of_birth || '',
@@ -81,11 +82,11 @@ export function getStudentFormValuesFromInitialData(initialData: Student): Stude
     admission_number: initialData.admission_number || '',
     admission_date: initialData.admission_date || '',
     guardian_name: initialData.guardian_name || '',
-    guardian_phone: initialData.guardian_phone || '',
+    guardian_phone: getTenDigitPhoneNumber(initialData.guardian_phone || ''),
     guardian_email: initialData.guardian_email || '',
     guardian_relationship: initialData.guardian_relationship || '',
     emergency_contact_name: initialData.emergency_contact_name || '',
-    emergency_contact_phone: initialData.emergency_contact_phone || '',
+    emergency_contact_phone: getTenDigitPhoneNumber(initialData.emergency_contact_phone || ''),
     medical_conditions: initialData.medical_conditions || '',
     description: initialData.description || '',
     previous_school_name: initialData.previous_school_name || '',
@@ -158,7 +159,7 @@ export function shouldShowValidationToast(message?: string): boolean {
 export function scrollToFirstFormError(
   setIsAddressExpanded?: (value: boolean) => void,
   setIsPreviousSchoolExpanded?: (value: boolean) => void,
-  formErrors?: Record<string, any>
+  formErrors?: Record<string, unknown>
 ) {
   setTimeout(() => {
     // Address field names that require expanding the address section

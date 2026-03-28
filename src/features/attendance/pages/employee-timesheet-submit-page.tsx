@@ -23,7 +23,7 @@ import {
   Trash2,
   XCircle,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { PageHeader } from '@/components/common';
@@ -137,12 +137,19 @@ type WeekBlock = {
 
 export function EmployeeTimesheetSubmitPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [weeks, setWeeks] = useState<WeekBlock[]>([]);
   const [addingWeek, setAddingWeek] = useState(false);
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [selectedDateForLeave, setSelectedDateForLeave] = useState<Date | null>(null);
+
+  // Detect if we're on the employee route to use the correct paths
+  const isEmployeeRoute = location.pathname.startsWith('/employee');
+  const timesheetRoute = isEmployeeRoute
+    ? ROUTES.EMPLOYEE.ATTENDANCE.TIMESHEET
+    : ROUTES.ATTENDANCE.TIMESHEET;
 
   // Fetch current month attendance to get submission config
   const currentMonthStart = useMemo(() => startOfMonth(new Date()), []);
@@ -162,7 +169,7 @@ export function EmployeeTimesheetSubmitPage() {
     onSuccessCallback: () => {
       // Redirect to timesheet page after successful submission
       setTimeout(() => {
-        navigate(ROUTES.ATTENDANCE.TIMESHEET);
+        navigate(timesheetRoute);
       }, 1000);
     },
   });
@@ -227,7 +234,7 @@ export function EmployeeTimesheetSubmitPage() {
         const end = parseISO(leave.end_date);
         eachDayOfInterval({ start, end }).forEach((day) => {
           leaveByDate.set(format(day, 'yyyy-MM-dd'), {
-            leave_name: leave.leave_name || 'Leave',
+            leave_name: leave.leave_type_name || leave.leave_name || 'Leave',
             status: leave.status,
           });
         });
@@ -320,33 +327,31 @@ export function EmployeeTimesheetSubmitPage() {
       const today = new Date();
       today.setHours(0, 0, 0, 0); // Set to start of day for comparison
 
-      // IMPORTANT: Fetch actual submitted attendance records if week is already submitted
-      // This allows viewing the actual present/absent status that was stored in the database
+      // IMPORTANT: Always fetch actual attendance records for this week.
+      // This covers both submitted timesheets AND daily attendance that was
+      // recorded but not yet submitted as a timesheet.
       const submittedAttendanceMap = new Map<
         string,
         { morning_present: boolean; afternoon_present: boolean; remarks: string }
       >();
-      const submissionData = submissionStatus?.submission;
 
-      if (submissionData) {
-        try {
-          const attendanceResponse = await getEmployeeAttendance({
-            from_date: fromDate,
-            to_date: toDate,
-          });
+      try {
+        const attendanceResponse = await getEmployeeAttendance({
+          from_date: fromDate,
+          to_date: toDate,
+        });
 
-          // Build a map of date -> attendance record for quick lookup
-          (attendanceResponse?.records || []).forEach((record) => {
-            submittedAttendanceMap.set(record.date, {
-              morning_present: record.morning_present,
-              afternoon_present: record.afternoon_present,
-              remarks: record.remarks || '',
-            });
+        // Build a map of date -> attendance record for quick lookup
+        (attendanceResponse?.records || []).forEach((record) => {
+          submittedAttendanceMap.set(record.date, {
+            morning_present: record.morning_present,
+            afternoon_present: record.afternoon_present,
+            remarks: record.remarks || '',
           });
-        } catch (error) {
-          console.error('Error fetching submitted attendance:', error);
-          toast.warning('Could not load submitted attendance records');
-        }
+        });
+      } catch (error) {
+        console.error('Error fetching attendance records:', error);
+        toast.warning('Could not load existing attendance records');
       }
 
       const rows: WeekRow[] = eachDayOfInterval({ start: weekStart, end: weekEnd })
@@ -540,7 +545,7 @@ export function EmployeeTimesheetSubmitPage() {
               label: 'Back to Timesheet',
               variant: 'outline',
               icon: ArrowLeft,
-              onClick: () => navigate(ROUTES.ATTENDANCE.TIMESHEET),
+              onClick: () => navigate(timesheetRoute),
             },
           ]}
         />
@@ -759,8 +764,12 @@ export function EmployeeTimesheetSubmitPage() {
                           </TableCell>
                           <TableCell className="text-center">
                             <AttendanceIndicator
-                              morningPresent={row.morning_present}
-                              afternoonPresent={row.afternoon_present}
+                              morningPresent={
+                                row.locked_reason === 'leave' ? false : row.morning_present
+                              }
+                              afternoonPresent={
+                                row.locked_reason === 'leave' ? false : row.afternoon_present
+                              }
                               disabled={
                                 // If status is SUBMITTED or APPROVED, lock everything
                                 week.submissionStatus === TimesheetStatus.SUBMITTED ||

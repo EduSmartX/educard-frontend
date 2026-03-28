@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select';
 import { useFormContext, type Control, type FieldValues, type Path } from 'react-hook-form';
 import { getValidator, type ValidationResult } from '@/lib/utils/field-validators';
+import { formatPhoneNumber, getTenDigitPhoneNumber } from '@/lib/phone-utils';
 
 /**
  * Text Input Field Props
@@ -67,6 +68,7 @@ export function TextInputField<T extends FieldValues>({
 }: TextInputFieldProps<T>) {
   const [blurError, setBlurError] = useState<string | undefined>();
   const form = useFormContext<T>();
+  const isPhone = validationType === 'phone';
 
   const handleBlur = async (value: string, onChange: (value: string) => void) => {
     // Clear previous blur error
@@ -77,13 +79,15 @@ export function TextInputField<T extends FieldValues>({
       return;
     }
 
+    // For phone fields, validate the clean digits
+    const valueToValidate = isPhone ? getTenDigitPhoneNumber(value) : value;
     const validator = getValidator(validationType, validationOptions);
-    const result: ValidationResult = validator(value);
+    const result: ValidationResult = validator(valueToValidate);
 
     if (!result.isValid && result.error) {
       setBlurError(result.error);
       // Trigger form validation by setting the field value again
-      onChange(value);
+      onChange(isPhone ? getTenDigitPhoneNumber(value) : value);
     }
 
     await form.trigger(name);
@@ -93,39 +97,56 @@ export function TextInputField<T extends FieldValues>({
     <FormField
       control={control}
       name={name}
-      render={({ field, fieldState }) => (
-        <FormItem>
-          <FormLabel>
-            {label} {required && <span className="text-red-500">*</span>}
-          </FormLabel>
-          <FormControl>
-            <Input
-              {...field}
-              type={type}
-              disabled={disabled}
-              readOnly={readOnly}
-              placeholder={placeholder}
-              max={max instanceof Date ? max.toISOString().split('T')[0] : max}
-              min={min instanceof Date ? min.toISOString().split('T')[0] : min}
-              onBlur={(e) => {
-                field.onBlur();
-                void handleBlur(e.target.value, field.onChange);
-              }}
-              className={
-                readOnly
-                  ? 'cursor-not-allowed bg-gray-50 text-gray-700'
-                  : 'bg-gray-50 border-gray-300 focus:bg-white disabled:cursor-default disabled:opacity-100 transition-colors'
-              }
-            />
-          </FormControl>
-          {description && <FormDescription>{description}</FormDescription>}
-          {/* Show blur error if exists and no field error */}
-          {blurError && !fieldState.error && (
-            <p className="text-sm font-medium text-amber-600">{blurError}</p>
-          )}
-          <FormMessage />
-        </FormItem>
-      )}
+      render={({ field, fieldState }) => {
+        // For phone fields, display formatted value (XXX-XXX-XXXX) but store clean digits
+        const displayValue =
+          isPhone && field.value ? formatPhoneNumber(String(field.value)) : (field.value ?? '');
+
+        return (
+          <FormItem>
+            <FormLabel>
+              {label} {required && <span className="text-red-500">*</span>}
+            </FormLabel>
+            <FormControl>
+              <Input
+                {...field}
+                value={displayValue}
+                type={isPhone ? 'tel' : type}
+                disabled={disabled}
+                readOnly={readOnly}
+                placeholder={isPhone ? placeholder || '999-999-9999' : placeholder}
+                max={max instanceof Date ? max.toISOString().split('T')[0] : max}
+                min={min instanceof Date ? min.toISOString().split('T')[0] : min}
+                onChange={(e) => {
+                  if (isPhone) {
+                    // Format display, store clean 10 digits
+                    const formatted = formatPhoneNumber(e.target.value);
+                    const clean = getTenDigitPhoneNumber(formatted);
+                    field.onChange(clean);
+                  } else {
+                    field.onChange(e);
+                  }
+                }}
+                onBlur={(e) => {
+                  field.onBlur();
+                  void handleBlur(e.target.value, field.onChange);
+                }}
+                className={
+                  readOnly
+                    ? 'cursor-not-allowed bg-gray-50 text-gray-700'
+                    : 'border-gray-300 bg-gray-50 transition-colors focus:bg-white disabled:cursor-default disabled:opacity-100'
+                }
+              />
+            </FormControl>
+            {description && <FormDescription>{description}</FormDescription>}
+            {/* Show blur error if exists and no field error */}
+            {blurError && !fieldState.error && (
+              <p className="text-sm font-medium text-amber-600">{blurError}</p>
+            )}
+            <FormMessage />
+          </FormItem>
+        );
+      }}
     />
   );
 }
@@ -181,7 +202,7 @@ export function SelectField<T extends FieldValues>({
               disabled={disabled}
             >
               <FormControl>
-                <SelectTrigger className="bg-gray-50 border-gray-300 focus:bg-white disabled:cursor-default disabled:opacity-100 transition-colors">
+                <SelectTrigger className="border-gray-300 bg-gray-50 transition-colors focus:bg-white disabled:cursor-default disabled:opacity-100">
                   <SelectValue placeholder={placeholder} />
                 </SelectTrigger>
               </FormControl>

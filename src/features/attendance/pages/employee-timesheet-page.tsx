@@ -22,7 +22,7 @@ import {
   PlusCircle,
   X,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { PageHeader } from '@/components/common';
@@ -80,7 +80,7 @@ function getDayState(
   const exception = exceptions.get(key);
 
   // Check for force working day exception (overrides holiday/weekend)
-  if (exception?.type === 'FORCE_WORKING') {
+  if (exception?.type === 'force_working' || exception?.type === 'FORCE_WORKING') {
     const attendance = attendanceByDate.get(key);
     if (attendance) {
       return attendance.morning_present && attendance.afternoon_present ? 'present' : 'absent';
@@ -92,7 +92,7 @@ function getDayState(
   }
 
   // Check for force holiday exception
-  if (exception?.type === 'FORCE_HOLIDAY') {
+  if (exception?.type === 'force_holiday' || exception?.type === 'FORCE_HOLIDAY') {
     return 'holiday';
   }
 
@@ -170,10 +170,17 @@ function stateStyles(state: DayState) {
 
 export function EmployeeTimesheetPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, organization } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Detect if we're on the employee route to use the correct submit path
+  const isEmployeeRoute = location.pathname.startsWith('/employee');
+  const submitTimesheetRoute = isEmployeeRoute
+    ? ROUTES.EMPLOYEE.ATTENDANCE.SUBMIT
+    : ROUTES.ATTENDANCE.TIMESHEET_SUBMIT;
 
   const monthStart = useMemo(() => startOfMonth(currentDate), [currentDate]);
   const monthEnd = useMemo(() => endOfMonth(currentDate), [currentDate]);
@@ -236,6 +243,7 @@ export function EmployeeTimesheetPage() {
 
   const holidaySet = useMemo(() => {
     const set = new Set<string>();
+    // From dedicated holiday calendar API
     (holidaysData || []).forEach((holiday: { start_date: string; end_date: string }) => {
       const start = parseISO(holiday.start_date);
       const end = parseISO(holiday.end_date);
@@ -243,8 +251,16 @@ export function EmployeeTimesheetPage() {
         set.add(toDateKey(date));
       });
     });
+    // Also include official holidays from attendance API's holiday_descriptions
+    // This catches holidays that may be missing from the holiday calendar API (e.g. pagination)
+    const descriptions = attendanceData?.holiday_descriptions || {};
+    Object.entries(descriptions).forEach(([dateKey, info]: [string, { type?: string }]) => {
+      if (info?.type === 'official_holiday') {
+        set.add(dateKey);
+      }
+    });
     return set;
-  }, [holidaysData]);
+  }, [holidaysData, attendanceData]);
 
   const exceptionsMap = useMemo(() => {
     const map = new Map<string, { type: string; reason: string }>();
@@ -431,7 +447,7 @@ export function EmployeeTimesheetPage() {
               </div>
               <Button
                 size="sm"
-                onClick={() => navigate(ROUTES.ATTENDANCE.TIMESHEET_SUBMIT)}
+                onClick={() => navigate(submitTimesheetRoute)}
                 className="bg-indigo-600 font-semibold text-white shadow-lg transition-all duration-200 hover:bg-indigo-700 hover:shadow-xl"
               >
                 <PlusCircle className="mr-1.5 h-4 w-4" /> Submit Timesheet
@@ -834,6 +850,10 @@ export function EmployeeTimesheetPage() {
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
           date={selectedDate}
+          workingDayPolicy={attendanceData?.working_day_policy || null}
+          holidaySet={holidaySet}
+          exceptionsMap={exceptionsMap}
+          attendanceByDate={attendanceByDate}
         />
       )}
     </div>

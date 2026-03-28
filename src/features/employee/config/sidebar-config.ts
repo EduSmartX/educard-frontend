@@ -18,6 +18,7 @@ import {
   GraduationCap,
   BarChart3,
   CheckSquare,
+  Sliders,
 } from 'lucide-react';
 import type { SidebarSection } from '@/components/layout/dashboard-sidebar';
 import { ROUTES } from '@/constants/app-config';
@@ -136,16 +137,23 @@ export const employeeSidebarConfig: SidebarSection[] = [
     title: 'SETTINGS',
     items: [
       {
-        id: 'holidays',
-        label: 'Holiday Calendar',
-        icon: CalendarDays,
-        path: ROUTES.EMPLOYEE.HOLIDAYS,
-      },
-      {
-        id: 'exceptional-work',
-        label: 'Exceptional Work Policy',
-        icon: AlertTriangle,
-        path: ROUTES.EMPLOYEE.EXCEPTIONAL_WORK,
+        id: 'preferences-group',
+        label: 'Preferences',
+        icon: Sliders,
+        children: [
+          {
+            id: 'holidays',
+            label: 'Holiday Calendar',
+            icon: CalendarDays,
+            path: ROUTES.EMPLOYEE.HOLIDAYS,
+          },
+          {
+            id: 'exceptional-work',
+            label: 'Exceptional Work Policy',
+            icon: AlertTriangle,
+            path: ROUTES.EMPLOYEE.EXCEPTIONAL_WORK,
+          },
+        ],
       },
       {
         id: 'profile',

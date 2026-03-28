@@ -144,22 +144,29 @@ export const adminSidebarConfig: SidebarSection[] = [
     title: 'SETTINGS',
     items: [
       {
-        id: 'holidays',
-        label: 'Holiday Calendar',
-        icon: CalendarDays,
-        path: ROUTES.HOLIDAYS,
-      },
-      {
-        id: 'exceptional-work',
-        label: 'Exceptional Work Policy',
-        icon: AlertTriangle,
-        path: ROUTES.EXCEPTIONAL_WORK,
-      },
-      {
-        id: 'preferences',
-        label: 'Organization Preferences',
+        id: 'preferences-group',
+        label: 'Preferences',
         icon: Sliders,
-        path: ROUTES.PREFERENCES,
+        children: [
+          {
+            id: 'holidays',
+            label: 'Holiday Calendar',
+            icon: CalendarDays,
+            path: ROUTES.HOLIDAYS,
+          },
+          {
+            id: 'exceptional-work',
+            label: 'Exceptional Work Policy',
+            icon: AlertTriangle,
+            path: ROUTES.EXCEPTIONAL_WORK,
+          },
+          {
+            id: 'preferences',
+            label: 'Organization Preferences',
+            icon: Sliders,
+            path: ROUTES.PREFERENCES,
+          },
+        ],
       },
       {
         id: 'organization',

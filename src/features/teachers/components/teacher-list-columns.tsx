@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Eye, RotateCcw } from 'lucide-react';
 import type { Column } from '@/components/ui/data-table';
+import { formatPhoneNumber } from '@/lib/phone-utils';
 import type { Teacher } from '../types';
 import { createCommonColumns } from '@/components/tables/common-columns';
 
@@ -26,7 +27,7 @@ export function createTeacherListColumns({
   viewMode = 'admin',
 }: CreateColumnsParams): Column<Teacher>[] {
   const isEmployeeView = viewMode === 'employee';
-  
+
   return [
     {
       header: 'Employee ID',
@@ -48,13 +49,19 @@ export function createTeacherListColumns({
       width: 250,
     },
     // Phone column - Hidden for employee view (security)
-    ...(!isEmployeeView ? [
-      {
-        header: 'Phone',
-        accessor: (row: Teacher) => <span className="text-gray-700">{row.phone || '—'}</span>,
-        width: 140,
-      } as Column<Teacher>,
-    ] : []),
+    ...(!isEmployeeView
+      ? [
+          {
+            header: 'Phone',
+            accessor: (row: Teacher) => (
+              <span className="text-gray-700">
+                {row.phone ? formatPhoneNumber(row.phone) : '—'}
+              </span>
+            ),
+            width: 140,
+          } as Column<Teacher>,
+        ]
+      : []),
     {
       header: 'Designation',
       accessor: (row) => (
@@ -106,7 +113,7 @@ export function createTeacherListColumns({
           {
             header: 'Actions',
             accessor: (teacher: Teacher) => (
-              <div className="flex gap-2 justify-end">
+              <div className="flex justify-end gap-2">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -114,7 +121,7 @@ export function createTeacherListColumns({
                     e.stopPropagation();
                     onView(teacher);
                   }}
-                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  className="text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                   title="View details"
                 >
                   <Eye className="h-4 w-4" />
@@ -137,7 +144,7 @@ export function createTeacherListColumns({
                       e.stopPropagation();
                       onView(teacher);
                     }}
-                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                    className="text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                     title="View details"
                   >
                     <Eye className="h-4 w-4" />
@@ -150,7 +157,7 @@ export function createTeacherListColumns({
                         e.stopPropagation();
                         onDelete(teacher);
                       }}
-                      className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                      className="text-green-600 hover:bg-green-50 hover:text-green-700"
                       title="Restore Teacher"
                     >
                       <RotateCcw className="h-4 w-4" />

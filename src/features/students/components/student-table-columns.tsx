@@ -7,6 +7,7 @@ import { Eye, Pencil, Trash2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Column } from '@/components/ui/data-table';
+import { formatPhoneNumber } from '@/lib/phone-utils';
 import type { StudentListItem } from '../types';
 
 interface GetColumnsOptions {
@@ -14,7 +15,7 @@ interface GetColumnsOptions {
   onEdit: (student: StudentListItem) => void;
   onDelete: (student: StudentListItem) => void;
   isDeletedView?: boolean;
-  isClassTeacher?: boolean;  // NEW: Whether user is class teacher
+  isClassTeacher?: boolean; // NEW: Whether user is class teacher
 }
 
 export function getStudentColumns({
@@ -22,7 +23,6 @@ export function getStudentColumns({
   onEdit,
   onDelete,
   isDeletedView = false,
-  isClassTeacher = false,  // Default false
 }: GetColumnsOptions): Column<StudentListItem>[] {
   return [
     {
@@ -73,14 +73,18 @@ export function getStudentColumns({
     },
     {
       header: 'Phone',
-      accessor: (row) => <span className="text-gray-700">{row.phone || '—'}</span>,
+      accessor: (row) => (
+        <span className="text-gray-700">{row.phone ? formatPhoneNumber(row.phone) : '—'}</span>
+      ),
       width: 150,
     },
     {
       header: 'Gender',
       accessor: (row) => {
         const gender = row.gender;
-        if (!gender) return <span className="text-gray-400">—</span>;
+        if (!gender) {
+          return <span className="text-gray-400">—</span>;
+        }
 
         const genderLabel = gender === 'M' ? 'Male' : gender === 'F' ? 'Female' : 'Other';
         const genderColor =
@@ -104,7 +108,7 @@ export function getStudentColumns({
         // Check if user can manage this student
         // For class teachers, use can_manage field; admins can manage all
         const canManage = row.can_manage ?? true; // Default true for admins
-        
+
         return (
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => onView(row)} className="h-8 w-8 p-0">
@@ -124,8 +128,8 @@ export function getStudentColumns({
                 onClick={() => onDelete(row)}
                 className={
                   isDeletedView
-                    ? 'h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50'
-                    : 'h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50'
+                    ? 'h-8 w-8 p-0 text-green-600 hover:bg-green-50 hover:text-green-700'
+                    : 'h-8 w-8 p-0 text-red-600 hover:bg-red-50 hover:text-red-700'
                 }
               >
                 {isDeletedView ? <RotateCcw className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}

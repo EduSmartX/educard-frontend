@@ -31,7 +31,7 @@ function getBaseUrl(isWriteOperation = false): string {
   if (isWriteOperation) {
     return ADMIN_BASE_URL;
   }
-  
+
   // Read operations: use employee endpoint for non-admins, admin endpoint for admins
   return isAdminUser() ? ADMIN_BASE_URL : EMPLOYEE_BASE_URL;
 }
@@ -42,10 +42,9 @@ function getBaseUrl(isWriteOperation = false): string {
 export async function fetchTeachers(
   params: FetchTeachersParams = {}
 ): Promise<PaginatedResponse<Teacher>> {
-  const baseUrl = getBaseUrl(false); // Read operation
+  // Deleted view requires admin endpoint (employee endpoint ignores is_deleted)
+  const baseUrl = params.is_deleted ? ADMIN_BASE_URL : getBaseUrl(false);
   const response = await api.get<TeachersResponse>(baseUrl, { params });
-  // Backend returns: { success, message, data: [...], pagination: {...}, code }
-  // We need to restructure it to match PaginatedResponse<Teacher>
   return {
     data: response.data.data,
     pagination: response.data.pagination!,
@@ -56,19 +55,20 @@ export async function fetchTeachers(
  * Fetch a single teacher by ID
  */
 export async function fetchTeacher(publicId: string, isDeleted?: boolean): Promise<TeacherDetail> {
-  const baseUrl = getBaseUrl(false); // Read operation
+  // Deleted teacher detail requires admin endpoint
+  const baseUrl = isDeleted ? ADMIN_BASE_URL : getBaseUrl(false);
   const params = isDeleted ? { is_deleted: 'true' } : {};
-  
+
   try {
     const response = await api.get<ApiResponse<TeacherDetail>>(`${baseUrl}${publicId}/`, {
       params,
     });
-    
+
     // Ensure we return valid data or throw an error
     if (!response?.data?.data) {
       throw new Error('Teacher data not found');
     }
-    
+
     return response.data.data;
   } catch (error) {
     console.error('Error fetching teacher:', error);
@@ -155,12 +155,14 @@ export async function validateVerificationToken(token: string): Promise<{
   first_name: string;
   last_name: string;
 }> {
-  const response = await api.get<ApiResponse<{
-    email: string;
-    username: string;
-    first_name: string;
-    last_name: string;
-  }>>(`/teacher/verify-email/`, {
+  const response = await api.get<
+    ApiResponse<{
+      email: string;
+      username: string;
+      first_name: string;
+      last_name: string;
+    }>
+  >(`/teacher/verify-email/`, {
     params: { token },
   });
   return response.data.data;
@@ -177,9 +179,11 @@ export async function verifyEmailAndSetPassword(data: {
   username: string;
   email: string;
 }> {
-  const response = await api.post<ApiResponse<{
-    username: string;
-    email: string;
-  }>>(`/teacher/verify-email/`, data);
+  const response = await api.post<
+    ApiResponse<{
+      username: string;
+      email: string;
+    }>
+  >(`/teacher/verify-email/`, data);
   return response.data.data;
 }

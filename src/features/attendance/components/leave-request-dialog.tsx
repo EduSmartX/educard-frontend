@@ -5,8 +5,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
-import { CalendarDays, Loader2 } from 'lucide-react';
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, parseISO } from 'date-fns';
+import { CalendarDays, Loader2, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -28,9 +28,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/date-picker';
-import { calculateWorkingDays } from '@/features/leave/api/leave-api';
-import { createLeaveRequest } from '@/features/leave/api/leave-api';
-import { fetchMyLeaveBalances } from '@/features/leave/api/leave-api';
+import {
+  calculateWorkingDays,
+  createLeaveRequest,
+  fetchMyLeaveBalances,
+} from '@/features/leave/api/leave-api';
+import {
+  getTimesheetSubmissions,
+  type TimesheetSubmission,
+} from '@/features/attendance/api/attendance-api';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface LeaveRequestDialogProps {
@@ -61,10 +67,7 @@ export function LeaveRequestDialog({
     enabled: open,
   });
 
-  const leaveBalances = useMemo(
-    () => leaveBalancesData?.data || [],
-    [leaveBalancesData]
-  );
+  const leaveBalances = useMemo(() => leaveBalancesData?.data || [], [leaveBalancesData]);
 
   // Calculate working days when dates change
   useEffect(() => {
@@ -89,6 +92,78 @@ export function LeaveRequestDialog({
     }
   }, [startDate, endDate]);
 
+  // --- Timesheet conflict check ---
+  // Query timesheet submissions covering the full week range of selected leave dates
+  const timesheetQueryFrom = useMemo(
+    () =>
+      startDate ? format(startOfWeek(startDate, { weekStartsOn: 0 }), 'yyyy-MM-dd') : undefined,
+    [startDate]
+  );
+  const timesheetQueryTo = useMemo(
+    () => (endDate ? format(endOfWeek(endDate, { weekStartsOn: 0 }), 'yyyy-MM-dd') : undefined),
+    [endDate]
+  );
+
+  const { data: timesheetData } = useQuery({
+    queryKey: ['timesheet-submissions', 'leave-conflict', timesheetQueryFrom, timesheetQueryTo],
+    queryFn: () =>
+      getTimesheetSubmissions({
+        from_date: timesheetQueryFrom,
+        to_date: timesheetQueryTo,
+      }),
+    enabled: open && !!startDate && !!endDate && !!timesheetQueryFrom && !!timesheetQueryTo,
+    staleTime: 30_000,
+  });
+
+  // Compute which leave dates are blocked by submitted/approved timesheets
+  const timesheetConflict = useMemo(() => {
+    if (!startDate || !endDate || !timesheetData?.results) {
+      return { status: 'none' as const, blockedDates: [] as string[], freeCount: 0, totalDays: 0 };
+    }
+
+    const lockedSheets = timesheetData.results.filter(
+      (ts: TimesheetSubmission) =>
+        ts.submission_status === 'SUBMITTED' || ts.submission_status === 'APPROVED'
+    );
+
+    if (lockedSheets.length === 0) {
+      return { status: 'none' as const, blockedDates: [] as string[], freeCount: 0, totalDays: 0 };
+    }
+
+    // Build a set of all dates covered by locked timesheets
+    const lockedDateSet = new Set<string>();
+    for (const ts of lockedSheets) {
+      const wsStart = parseISO(ts.week_start_date);
+      const wsEnd = parseISO(ts.week_end_date);
+      eachDayOfInterval({ start: wsStart, end: wsEnd }).forEach((d) =>
+        lockedDateSet.add(format(d, 'yyyy-MM-dd'))
+      );
+    }
+
+    // Check which requested leave dates fall within locked ranges
+    const leaveDays = eachDayOfInterval({ start: startDate, end: endDate });
+    const blockedDates: string[] = [];
+    let freeCount = 0;
+    for (const day of leaveDays) {
+      const key = format(day, 'yyyy-MM-dd');
+      if (lockedDateSet.has(key)) {
+        blockedDates.push(key);
+      } else {
+        freeCount++;
+      }
+    }
+
+    const totalDays = leaveDays.length;
+
+    if (blockedDates.length === totalDays) {
+      return { status: 'all_blocked' as const, blockedDates, freeCount, totalDays };
+    }
+    if (blockedDates.length > 0) {
+      return { status: 'partial' as const, blockedDates, freeCount, totalDays };
+    }
+    return { status: 'none' as const, blockedDates, freeCount, totalDays };
+  }, [startDate, endDate, timesheetData]);
+
   // Reset form when dialog opens with selected date
   useEffect(() => {
     if (open && selectedDate) {
@@ -107,7 +182,7 @@ export function LeaveRequestDialog({
       handleClose();
       onSuccess?.();
     },
-    onError: (error: any) => {
+    onError: (error: Error & { response?: { data?: { message?: string; errors?: string[] } } }) => {
       const message =
         error?.response?.data?.message ||
         error?.response?.data?.errors?.join(', ') ||
@@ -160,38 +235,48 @@ export function LeaveRequestDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[95vh] overflow-y-auto bg-white shadow-2xl border-2 border-gray-300">
-        <DialogHeader className="space-y-3 pb-4 border-b">
+      <DialogContent className="max-h-[95vh] overflow-y-auto border-2 border-gray-300 bg-white shadow-2xl sm:max-w-[600px]">
+        <DialogHeader className="space-y-3 border-b pb-4">
           <DialogTitle className="text-2xl font-bold text-gray-900">Apply for Leave</DialogTitle>
           <DialogDescription className="text-base text-gray-600">
-            Submit a leave application for your timesheet. Approved leaves will be automatically marked
-            in your attendance.
+            Submit a leave application for your timesheet. Approved leaves will be automatically
+            marked in your attendance.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5 py-6">
           {/* Leave Type Selection */}
           <div className="space-y-3">
-            <Label htmlFor="leave-type" className="text-base font-semibold text-gray-900">Leave Type *</Label>
+            <Label htmlFor="leave-type" className="text-base font-semibold text-gray-900">
+              Leave Type *
+            </Label>
             {loadingBalances ? (
-              <div className="flex items-center justify-center p-6 bg-gray-50 rounded-lg border-2 border-gray-200">
+              <div className="flex items-center justify-center rounded-lg border-2 border-gray-200 bg-gray-50 p-6">
                 <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
                 <span className="ml-3 text-gray-600">Loading leave types...</span>
               </div>
             ) : leaveBalances.length === 0 ? (
               <Alert className="border-2 border-orange-400 bg-orange-50">
-                <AlertDescription className="text-orange-900 font-semibold text-base">
-                  ⚠ No leave balances available. Please contact your administrator to set up your leave allocations.
+                <AlertDescription className="text-base font-semibold text-orange-900">
+                  ⚠ No leave balances available. Please contact your administrator to set up your
+                  leave allocations.
                 </AlertDescription>
               </Alert>
             ) : (
               <Select value={leaveBalanceId} onValueChange={setLeaveBalanceId}>
-                <SelectTrigger id="leave-type" className="h-12 text-base border-2 border-gray-300 focus:border-blue-500">
+                <SelectTrigger
+                  id="leave-type"
+                  className="h-12 border-2 border-gray-300 text-base focus:border-blue-500"
+                >
                   <SelectValue placeholder="Select leave type" />
                 </SelectTrigger>
                 <SelectContent>
                   {leaveBalances.map((balance) => (
-                    <SelectItem key={balance.public_id} value={balance.public_id} className="text-base py-3">
+                    <SelectItem
+                      key={balance.public_id}
+                      value={balance.public_id}
+                      className="py-3 text-base"
+                    >
                       {balance.leave_type_name} - Available: {balance.available_balance} days
                     </SelectItem>
                   ))}
@@ -205,13 +290,19 @@ export function LeaveRequestDialog({
             <Alert className="border-2 border-blue-400 bg-blue-50">
               <AlertDescription>
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-blue-900 font-semibold text-base">Available Balance:</span>
-                    <span className="font-bold text-xl text-blue-900">{selectedBalance.available_balance} days</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-base font-semibold text-blue-900">
+                      Available Balance:
+                    </span>
+                    <span className="text-xl font-bold text-blue-900">
+                      {selectedBalance.available_balance} days
+                    </span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-blue-800 font-medium">Used:</span>
-                    <span className="font-semibold text-lg text-blue-800">{selectedBalance.used_balance} days</span>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-blue-800">Used:</span>
+                    <span className="text-lg font-semibold text-blue-800">
+                      {selectedBalance.used_balance} days
+                    </span>
                   </div>
                 </div>
               </AlertDescription>
@@ -221,7 +312,9 @@ export function LeaveRequestDialog({
           {/* Date Selection */}
           <div className="grid grid-cols-2 gap-5">
             <div className="space-y-3">
-              <Label htmlFor="start-date" className="text-base font-semibold text-gray-900">Start Date *</Label>
+              <Label htmlFor="start-date" className="text-base font-semibold text-gray-900">
+                Start Date *
+              </Label>
               <DatePicker
                 value={startDate}
                 onChange={setStartDate}
@@ -230,7 +323,9 @@ export function LeaveRequestDialog({
               />
             </div>
             <div className="space-y-3">
-              <Label htmlFor="end-date" className="text-base font-semibold text-gray-900">End Date *</Label>
+              <Label htmlFor="end-date" className="text-base font-semibold text-gray-900">
+                End Date *
+              </Label>
               <DatePicker
                 value={endDate}
                 onChange={setEndDate}
@@ -240,26 +335,70 @@ export function LeaveRequestDialog({
             </div>
           </div>
 
+          {/* Timesheet Conflict Alerts */}
+          {timesheetConflict.status === 'all_blocked' && (
+            <Alert className="border-2 border-red-400 bg-red-50">
+              <ShieldAlert className="h-5 w-5 text-red-600" />
+              <AlertDescription className="text-sm font-medium text-red-900">
+                <strong>Cannot apply leave:</strong> All the selected dates fall within a timesheet
+                that has already been submitted or approved. You cannot apply for leave on dates
+                with a submitted/approved timesheet.
+                <div className="mt-2 text-xs text-red-700">
+                  Blocked dates:{' '}
+                  {timesheetConflict.blockedDates
+                    .map((d) => format(parseISO(d), 'MMM dd'))
+                    .join(', ')}
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {timesheetConflict.status === 'partial' && (
+            <Alert className="border-2 border-amber-400 bg-amber-50">
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              <AlertDescription className="text-sm font-medium text-amber-900">
+                <strong>Some dates are blocked:</strong> {timesheetConflict.blockedDates.length} of
+                your selected dates fall within a submitted/approved timesheet and cannot be
+                included in a leave request. Please adjust your leave dates to exclude them.
+                <div className="mt-2 text-xs text-amber-800">
+                  Blocked dates:{' '}
+                  {timesheetConflict.blockedDates
+                    .map((d) => format(parseISO(d), 'MMM dd'))
+                    .join(', ')}
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Working Days Display */}
           {calculatingDays ? (
             <Alert className="border-2 border-gray-400 bg-gray-50">
               <div className="flex items-center">
-                <Loader2 className="h-5 w-5 animate-spin mr-3 text-blue-600" />
-                <AlertDescription className="text-gray-700 font-medium text-base">Calculating working days...</AlertDescription>
+                <Loader2 className="mr-3 h-5 w-5 animate-spin text-blue-600" />
+                <AlertDescription className="text-base font-medium text-gray-700">
+                  Calculating working days...
+                </AlertDescription>
               </div>
             </Alert>
           ) : workingDays !== null && workingDays > 0 ? (
-            <Alert className={selectedBalance && workingDays > selectedBalance.available_balance ? "border-2 border-red-400 bg-red-50" : "border-2 border-green-400 bg-green-50"}>
+            <Alert
+              className={
+                selectedBalance && workingDays > selectedBalance.available_balance
+                  ? 'border-2 border-red-400 bg-red-50'
+                  : 'border-2 border-green-400 bg-green-50'
+              }
+            >
               <div className="flex items-start">
-                <CalendarDays className="h-6 w-6 mt-1 mr-3 text-green-700" />
+                <CalendarDays className="mt-1 mr-3 h-6 w-6 text-green-700" />
                 <AlertDescription className="flex-1">
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold text-green-900 text-base">Working Days:</span>
-                    <span className="font-bold text-2xl text-green-900">{workingDays} days</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-base font-semibold text-green-900">Working Days:</span>
+                    <span className="text-2xl font-bold text-green-900">{workingDays} days</span>
                   </div>
                   {selectedBalance && workingDays > selectedBalance.available_balance && (
-                    <div className="text-red-800 font-semibold text-base mt-3 bg-red-100 p-3 rounded border border-red-300">
-                      ⚠ Insufficient balance! You only have {selectedBalance.available_balance} days available.
+                    <div className="mt-3 rounded border border-red-300 bg-red-100 p-3 text-base font-semibold text-red-800">
+                      ⚠ Insufficient balance! You only have {selectedBalance.available_balance} days
+                      available.
                     </div>
                   )}
                 </AlertDescription>
@@ -269,7 +408,9 @@ export function LeaveRequestDialog({
 
           {/* Reason */}
           <div className="space-y-3">
-            <Label htmlFor="reason" className="text-base font-semibold text-gray-900">Reason *</Label>
+            <Label htmlFor="reason" className="text-base font-semibold text-gray-900">
+              Reason *
+            </Label>
             <Textarea
               id="reason"
               placeholder="Please provide a reason for your leave request"
@@ -277,27 +418,27 @@ export function LeaveRequestDialog({
               onChange={(e) => setReason(e.target.value)}
               rows={4}
               maxLength={500}
-              className="text-base border-2 border-gray-300 focus:border-blue-500 resize-none"
+              className="resize-none border-2 border-gray-300 text-base focus:border-blue-500"
             />
-            <div className="text-sm text-gray-600 text-right font-medium">
+            <div className="text-right text-sm font-medium text-gray-600">
               {reason.length}/500 characters
             </div>
           </div>
         </div>
 
-        <DialogFooter className="gap-3 pt-6 border-t">
-          <Button 
-            variant="outline" 
-            size="lg" 
-            onClick={handleClose} 
+        <DialogFooter className="gap-3 border-t pt-6">
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={handleClose}
             disabled={createMutation.isPending}
-            className="h-12 px-8 text-base font-semibold border-2"
+            className="h-12 border-2 px-8 text-base font-semibold"
           >
             Cancel
           </Button>
           <Button
             size="lg"
-            className="h-12 px-8 bg-blue-600 hover:bg-blue-700 font-bold text-base shadow-lg"
+            className="h-12 bg-blue-600 px-8 text-base font-bold shadow-lg hover:bg-blue-700"
             onClick={handleSubmit}
             disabled={
               createMutation.isPending ||
@@ -307,6 +448,7 @@ export function LeaveRequestDialog({
               !reason.trim() ||
               workingDays === null ||
               workingDays <= 0 ||
+              timesheetConflict.status !== 'none' ||
               (selectedBalance && workingDays > selectedBalance.available_balance)
             }
           >

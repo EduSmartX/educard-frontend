@@ -6,22 +6,31 @@ const nameRegex = /^[a-zA-Z\s'-]+$/;
 const alphanumericWithSymbolsRegex = /^[a-zA-Z0-9-_]+$/;
 
 const phoneTransform = (val: string | undefined) => {
-  if (!val) return '';
-  return val.trim();
+  if (!val) {
+    return '';
+  }
+  // Strip all non-digit characters (dashes, spaces, parens) to get clean 10 digits
+  return val.replace(/\D/g, '');
 };
 
 const uppercaseTransform = (val: string | undefined) => {
-  if (!val) return '';
+  if (!val) {
+    return '';
+  }
   return val.trim().toUpperCase();
 };
 
 const trimTransform = (val: string | undefined) => {
-  if (!val) return '';
+  if (!val) {
+    return '';
+  }
   return val.trim();
 };
 
 const lowercaseTransform = (val: string | undefined) => {
-  if (!val) return '';
+  if (!val) {
+    return '';
+  }
   return val.trim().toLowerCase();
 };
 
@@ -85,7 +94,9 @@ export const studentFormSchema = z
       .string()
       .refine(
         (val) => {
-          if (!val) return true;
+          if (!val) {
+            return true;
+          }
           const date = new Date(val);
           const today = new Date();
           today.setHours(0, 0, 0, 0);
@@ -105,7 +116,9 @@ export const studentFormSchema = z
       .string()
       .refine(
         (val) => {
-          if (!val) return true;
+          if (!val) {
+            return true;
+          }
           const dob = new Date(val);
           const today = new Date();
           const age = today.getFullYear() - dob.getFullYear();

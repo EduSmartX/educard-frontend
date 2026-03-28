@@ -70,6 +70,7 @@ export interface LeaveRequest {
   supervisor_public_id: string;
   leave_balance_public_id: string;
   leave_type_code: string;
+  leave_type_name: string;
   leave_name: string;
   start_date: string;
   end_date: string;
