@@ -100,11 +100,14 @@ export function useDeleteSubject(options?: MutationOptions) {
 
   return useMutation({
     mutationFn: deleteSubject,
-    onSuccess: () => {
-      // Invalidate all subjects queries (with any params) to refresh the list
+    onSuccess: (_data, publicId) => {
+      // Remove the deleted subject's detail query from cache to prevent 404 refetch
+      queryClient.removeQueries({
+        queryKey: ['subjects', publicId],
+      });
+      // Invalidate list queries to refresh the list
       queryClient.invalidateQueries({
         queryKey: ['subjects'],
-        refetchType: 'all',
       });
       toast.success(SuccessMessages.SUBJECT.DELETE_SUCCESS);
       options?.onSuccess?.();
@@ -130,10 +133,9 @@ export function useReactivateSubject(options?: MutationOptions) {
 
   return useMutation({
     mutationFn: reactivateSubject,
-    onSuccess: () => {  
+    onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['subjects'],
-        refetchType: 'all',
       });
       toast.success(SuccessMessages.SUBJECT.REACTIVATE_SUCCESS);
       options?.onSuccess?.();

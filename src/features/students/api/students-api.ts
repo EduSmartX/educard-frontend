@@ -14,7 +14,7 @@ import type { ApiListResponse, ApiDetailResponse } from '@/lib/utils/api-respons
 // Base URLs for students API (all users use same endpoints, backend handles permissions)
 const STUDENTS_BASE = '/students'; // Organization-level list
 const STUDENTS_BULK_BASE = '/students/bulk-operations'; // Bulk operations
-const CLASS_STUDENTS_BASE = (classId: string) => `/students/classes/${classId}/students`; // Class-level CRUD
+const CLASS_STUDENTS_BASE = (classId: string) => `/students/classes/${classId}/students/`; // Class-level CRUD
 
 // API Response types for transformation
 interface StudentApiResponse {
@@ -94,7 +94,7 @@ export async function createStudent(
   forceCreate?: boolean
 ): Promise<Student> {
   const params = forceCreate ? { force_create: 'true' } : {};
-  
+
   const response = await api.post<ApiDetailResponse<Student>>(
     CLASS_STUDENTS_BASE(classId),
     payload,
@@ -109,19 +109,19 @@ export async function updateStudent(
   payload: UpdateStudentPayload
 ): Promise<Student> {
   const response = await api.patch<ApiDetailResponse<Student>>(
-    `${CLASS_STUDENTS_BASE(classId)}/${publicId}/`,
+    `${CLASS_STUDENTS_BASE(classId)}${publicId}/`,
     payload
   );
   return response.data.data;
 }
 
 export async function deleteStudent(classId: string, publicId: string): Promise<void> {
-  await api.delete(`${CLASS_STUDENTS_BASE(classId)}/${publicId}/`);
+  await api.delete(`${CLASS_STUDENTS_BASE(classId)}${publicId}/`);
 }
 
 export async function reactivateStudent(classId: string, publicId: string): Promise<Student> {
   const response = await api.post<ApiDetailResponse<Student>>(
-    `${CLASS_STUDENTS_BASE(classId)}/${publicId}/activate/`
+    `${CLASS_STUDENTS_BASE(classId)}${publicId}/activate/`
   );
   return response.data.data;
 }
@@ -139,7 +139,7 @@ export async function downloadStudentTemplate(minimalFields = false): Promise<Bl
 export async function bulkUploadStudents(file: File): Promise<BulkUploadResult> {
   const formData = new FormData();
   formData.append('file', file);
-  
+
   const response = await api.post<BulkUploadResult>(
     `${STUDENTS_BULK_BASE}/bulk_upload/`,
     formData,

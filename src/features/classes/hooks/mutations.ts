@@ -5,7 +5,11 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getErrorMessage, getFieldErrors, isDeletedDuplicateError } from '@/lib/utils/error-handler';
+import {
+  getErrorMessage,
+  getFieldErrors,
+  isDeletedDuplicateError,
+} from '@/lib/utils/error-handler';
 import { ErrorMessages, QueryKeys, SuccessMessages, ToastTitles } from '@/constants';
 import type { CreateClassPayload, UpdateClassPayload } from '../types';
 import {
@@ -49,7 +53,7 @@ export function useCreateClass(options?: MutationOptions) {
     onError: (error: Error) => {
       const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.CREATE_FAILED);
       const fieldErrors = getFieldErrors(error) as ClassFieldErrors | undefined;
-      
+
       // Don't show toast for deleted duplicate errors - the dialog will handle it
       if (!isDeletedDuplicateError(error)) {
         toast.error(ToastTitles.ERROR, {
@@ -57,7 +61,7 @@ export function useCreateClass(options?: MutationOptions) {
           duration: 5000,
         });
       }
-      
+
       options?.onError?.(error, fieldErrors);
     },
   });
@@ -71,7 +75,6 @@ export function useReactivateClass(options?: MutationOptions) {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: QueryKeys.CLASSES.ALL,
-        refetchType: 'all',
       });
       toast.success(SuccessMessages.CLASS.REACTIVATE_SUCCESS);
       options?.onSuccess?.();
@@ -101,7 +104,7 @@ export function useUpdateClass(options?: MutationOptions) {
     onError: (error: Error) => {
       const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.UPDATE_FAILED);
       const fieldErrors = getFieldErrors(error) as ClassFieldErrors | undefined;
-      
+
       // Don't show toast for deleted duplicate errors - the dialog will handle it
       if (!isDeletedDuplicateError(error)) {
         toast.error(ToastTitles.ERROR, {
@@ -109,7 +112,7 @@ export function useUpdateClass(options?: MutationOptions) {
           duration: 5000,
         });
       }
-      
+
       options?.onError?.(error, fieldErrors);
     },
   });
@@ -120,11 +123,14 @@ export function useDeleteClass(options?: MutationOptions) {
 
   return useMutation({
     mutationFn: (publicId: string) => deleteClass(publicId),
-    onSuccess: () => {
-      // Invalidate all classes queries (with any params) to refresh the list
+    onSuccess: (_data, publicId) => {
+      // Remove the deleted class's detail query from cache to prevent 404 refetch
+      queryClient.removeQueries({
+        queryKey: ['classes', publicId],
+      });
+      // Invalidate list queries only (active ones) to refresh the list
       queryClient.invalidateQueries({
         queryKey: QueryKeys.CLASSES.ALL,
-        refetchType: 'all',
       });
       toast.success(SuccessMessages.CLASS.DELETE_SUCCESS);
       options?.onSuccess?.();

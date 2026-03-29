@@ -93,14 +93,17 @@ export function useDeleteStudent(
     mutationFn: ({ classId, publicId }: { classId: string; publicId: string }) =>
       deleteStudent(classId, publicId),
     onSuccess: (...args) => {
-      // Invalidate all students queries (with any params) to refresh the list
-      queryClient.invalidateQueries({ 
-        queryKey: ['students'],
-        refetchType: 'all',
+      const [, { publicId }] = args;
+      // Remove the deleted student's detail query from cache to prevent 404 refetch
+      queryClient.removeQueries({
+        queryKey: ['students', publicId],
       });
-      queryClient.invalidateQueries({ 
+      // Invalidate list queries to refresh the list
+      queryClient.invalidateQueries({
+        queryKey: ['students'],
+      });
+      queryClient.invalidateQueries({
         queryKey: ['classes'],
-        refetchType: 'all',
       });
       // Call custom onSuccess if provided
       onSuccess?.(...args);
@@ -121,14 +124,12 @@ export function useReactivateStudent(
     ...restOptions,
     mutationFn: ({ classId, publicId }: { classId: string; publicId: string }) =>
       reactivateStudent(classId, publicId),
-    onSuccess: (...args) => {  
+    onSuccess: (...args) => {
       queryClient.invalidateQueries({
         queryKey: ['students'],
-        refetchType: 'all',
       });
       queryClient.invalidateQueries({
         queryKey: ['classes'],
-        refetchType: 'all',
       });
       // Call custom onSuccess if provided
       onSuccess?.(...args);

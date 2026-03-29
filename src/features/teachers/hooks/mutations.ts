@@ -5,7 +5,11 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getErrorMessage, getFieldErrors, isDeletedDuplicateError } from '@/lib/utils/error-handler';
+import {
+  getErrorMessage,
+  getFieldErrors,
+  isDeletedDuplicateError,
+} from '@/lib/utils/error-handler';
 import { ErrorMessages, QueryKeys, SuccessMessages, ToastTitles } from '@/constants';
 import type { CreateTeacherPayload, UpdateTeacherPayload } from '../types';
 import {
@@ -107,7 +111,6 @@ export function useReactivateTeacher(options?: MutationOptions) {
       // Invalidate all teacher queries to refresh both active and deleted lists
       queryClient.invalidateQueries({
         queryKey: QueryKeys.TEACHERS.ALL,
-        refetchType: 'all',
       });
 
       toast.success(SuccessMessages.TEACHER.REACTIVATE_SUCCESS);
@@ -167,11 +170,14 @@ export function useDeleteTeacher(options?: MutationOptions) {
 
   return useMutation({
     mutationFn: (publicId: string) => deleteTeacher(publicId),
-    onSuccess: () => {
-      // Invalidate all teachers queries (with any params) to refresh the list
+    onSuccess: (_data, publicId) => {
+      // Remove the deleted teacher's detail query from cache to prevent 404 refetch
+      queryClient.removeQueries({
+        queryKey: ['teachers', publicId],
+      });
+      // Invalidate list queries to refresh the list
       queryClient.invalidateQueries({
         queryKey: QueryKeys.TEACHERS.ALL,
-        refetchType: 'all',
       });
 
       toast.success(SuccessMessages.TEACHER.DELETE_SUCCESS);
