@@ -494,3 +494,31 @@ export const updateCalendarException = async (
 export const deleteCalendarException = async (exceptionId: string): Promise<void> => {
   await apiClient.delete(`/attendance/employee-attendance/calendar-exceptions/${exceptionId}/`);
 };
+
+/**
+ * Dashboard attendance stats (admin only)
+ * Returns today's student & employee attendance summary.
+ */
+export interface DashboardAttendanceStats {
+  date: string;
+  students: {
+    total_registered: number;
+    marked: number;
+    present: number;
+    absent: number;
+    halfday: number;
+    attendance_percentage: number;
+  };
+  employees: {
+    total_registered: number;
+    marked: number;
+    present: number;
+    absent: number;
+    attendance_percentage: number;
+  };
+}
+
+export const getDashboardAttendanceStats = async (): Promise<DashboardAttendanceStats> => {
+  const response = await apiClient.get('/attendance/admin/dashboard-stats/');
+  return response.data.data || response.data;
+};
