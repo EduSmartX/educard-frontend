@@ -402,41 +402,61 @@ export function MarkAttendanceForm() {
 
               {/* Bulk Actions */}
               {!isViewMode && (
-                <div className="flex items-center justify-between">
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleMarkAllPresent}
-                      className="border-green-300 bg-green-50 text-green-700 hover:bg-green-100"
-                    >
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                      {AttendanceUiText.MARK_ALL_PRESENT}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleMarkAllAbsent}
-                      className="border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
-                    >
-                      <XCircle className="mr-2 h-4 w-4" />
-                      {AttendanceUiText.MARK_ALL_ABSENT}
-                    </Button>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm font-medium text-gray-700">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleMarkAllPresent}
+                    className="border-green-300 bg-green-50 text-green-700 hover:bg-green-100"
+                  >
+                    <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                    <span className="leading-tight">
+                      <span className="sm:hidden">
+                        Mark All
+                        <br />
+                        Present
+                      </span>
+                      <span className="hidden sm:inline">{AttendanceUiText.MARK_ALL_PRESENT}</span>
+                    </span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleMarkAllAbsent}
+                    className="border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
+                  >
+                    <XCircle className="mr-1.5 h-4 w-4" />
+                    <span className="leading-tight">
+                      <span className="sm:hidden">
+                        Mark All
+                        <br />
+                        Absent
+                      </span>
+                      <span className="hidden sm:inline">{AttendanceUiText.MARK_ALL_ABSENT}</span>
+                    </span>
+                  </Button>
+                  <div className="flex items-center gap-3 text-sm font-medium text-gray-700">
                     <span className="flex items-center gap-1">
                       <Users className="h-4 w-4 text-blue-600" />
-                      <span className="hidden md:inline">
-                        {AttendanceUiText.TOTAL_STUDENTS}:
-                      </span>{' '}
-                      {students.length}
+                      {(() => {
+                        const editableStudents = students.filter((s) => s.canEdit);
+                        const presentCount = editableStudents.filter(
+                          (s) => s.morning_present && s.afternoon_present
+                        ).length;
+                        return presentCount;
+                      })()}
                     </span>
                     <span className="flex items-center gap-1">
                       <UserX className="h-4 w-4 text-orange-600" />
-                      <span className="hidden md:inline">{AttendanceUiText.ON_LEAVE}:</span>{' '}
-                      {students.filter((s) => s.leave_status).length}
+                      {(() => {
+                        const editableStudents = students.filter((s) => s.canEdit);
+                        const absentCount = editableStudents.filter(
+                          (s) => !s.morning_present && !s.afternoon_present
+                        ).length;
+                        return absentCount;
+                      })()}
                     </span>
                   </div>
                 </div>

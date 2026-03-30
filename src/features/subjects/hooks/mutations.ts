@@ -6,36 +6,29 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
-  getErrorMessage,
-  getFieldErrors,
-  isDeletedDuplicateError,
-} from '@/lib/utils/error-handler';
+  handleMutationError,
+  type FieldErrors,
+  type MutationOptions,
+} from '@/lib/utils/mutation-utils';
 import {
   createSubject,
   updateSubject,
   deleteSubject,
   reactivateSubject,
 } from '../api/subjects-api';
-import { ErrorMessages, SuccessMessages, ToastTitles } from '@/constants';
+import { ErrorMessages, SuccessMessages } from '@/constants';
 import type { SubjectCreatePayload, SubjectUpdatePayload } from '../types/subject';
 
-export interface SubjectFieldErrors {
+export interface SubjectFieldErrors extends FieldErrors {
   class_id?: string;
   subject_id?: string;
   teacher_id?: string;
   description?: string;
-  [key: string]: string | undefined;
 }
 
-export interface MutationOptions {
-  onSuccess?: () => void;
-  onError?: (error: Error, fieldErrors?: SubjectFieldErrors) => void;
-}
+export type { MutationOptions };
 
-/**
- * Create subject mutation
- */
-export function useCreateSubject(options?: MutationOptions) {
+export function useCreateSubject(options?: MutationOptions<SubjectFieldErrors>) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -46,26 +39,12 @@ export function useCreateSubject(options?: MutationOptions) {
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, ErrorMessages.SUBJECT.CREATE_FAILED);
-      const fieldErrors = getFieldErrors(error) as SubjectFieldErrors | undefined;
-
-      // Don't show toast for deleted duplicates (dialog will be shown by page)
-      if (!isDeletedDuplicateError(error)) {
-        toast.error(ToastTitles.ERROR, {
-          description: errorMessage,
-          duration: 5000,
-        });
-      }
-
-      options?.onError?.(error, fieldErrors);
+      handleMutationError(error, ErrorMessages.SUBJECT.CREATE_FAILED, options?.onError);
     },
   });
 }
 
-/**
- * Update subject mutation
- */
-export function useUpdateSubject(options?: MutationOptions) {
+export function useUpdateSubject(options?: MutationOptions<SubjectFieldErrors>) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -76,79 +55,40 @@ export function useUpdateSubject(options?: MutationOptions) {
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, ErrorMessages.SUBJECT.UPDATE_FAILED);
-      const fieldErrors = getFieldErrors(error) as SubjectFieldErrors | undefined;
-
-      // Don't show toast for deleted duplicates (dialog will be shown by page)
-      if (!isDeletedDuplicateError(error)) {
-        toast.error(ToastTitles.ERROR, {
-          description: errorMessage,
-          duration: 5000,
-        });
-      }
-
-      options?.onError?.(error, fieldErrors);
+      handleMutationError(error, ErrorMessages.SUBJECT.UPDATE_FAILED, options?.onError);
     },
   });
 }
 
-/**
- * Delete subject mutation (soft delete)
- */
-export function useDeleteSubject(options?: MutationOptions) {
+export function useDeleteSubject(options?: MutationOptions<SubjectFieldErrors>) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: deleteSubject,
     onSuccess: (_data, publicId) => {
-      // Remove the deleted subject's detail query from cache to prevent 404 refetch
-      queryClient.removeQueries({
-        queryKey: ['subjects', publicId],
-      });
-      // Invalidate list queries to refresh the list
-      queryClient.invalidateQueries({
-        queryKey: ['subjects'],
-      });
+      queryClient.removeQueries({ queryKey: ['subjects', publicId] });
+      queryClient.invalidateQueries({ queryKey: ['subjects'] });
       toast.success(SuccessMessages.SUBJECT.DELETE_SUCCESS);
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, ErrorMessages.SUBJECT.DELETE_FAILED);
-
-      toast.error(ToastTitles.ERROR, {
-        description: errorMessage,
-        duration: 5000,
-      });
-
-      options?.onError?.(error);
+      handleMutationError(error, ErrorMessages.SUBJECT.DELETE_FAILED, options?.onError);
     },
   });
 }
 
-/**
- * Reactivate subject mutation
- */
-export function useReactivateSubject(options?: MutationOptions) {
+export function useReactivateSubject(options?: MutationOptions<SubjectFieldErrors>) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: reactivateSubject,
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['subjects'],
-      });
+      queryClient.invalidateQueries({ queryKey: ['subjects'] });
       toast.success(SuccessMessages.SUBJECT.REACTIVATE_SUCCESS);
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, ErrorMessages.SUBJECT.REACTIVATE_FAILED);
-
-      toast.error(ToastTitles.ERROR, {
-        description: errorMessage,
-        duration: 5000,
-      });
-
-      options?.onError?.(error);
+      handleMutationError(error, ErrorMessages.SUBJECT.REACTIVATE_FAILED, options?.onError);
     },
   });
 }

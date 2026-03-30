@@ -76,7 +76,7 @@ interface BulkUploadDialogProps {
 
   // Optional callback after successful upload
   onUploadSuccess?: (result: BulkUploadResult) => void;
-  
+
   // Optional custom alert/info message to display
   customInfoMessage?: string;
 }
@@ -360,18 +360,20 @@ export function BulkUploadDialog({
       <DialogTrigger asChild>
         <Button
           variant={triggerVariant}
-          className={`gap-2 shadow-md hover:shadow-lg transition-all duration-200 ${triggerClassName}`}
+          size="sm"
+          className={`gap-1.5 shadow-md transition-all duration-200 hover:shadow-lg ${triggerClassName}`}
         >
           <Upload className="h-4 w-4" />
-          {triggerLabel}
+          <span className="sm:hidden">Upload</span>
+          <span className="hidden sm:inline">{triggerLabel}</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] max-w-4xl overflow-hidden border-0 p-0 bg-gradient-to-br from-purple-50 via-white to-pink-50">
+      <DialogContent className="max-h-[90vh] w-[95vw] max-w-4xl overflow-hidden border-0 bg-gradient-to-br from-purple-50 via-white to-pink-50 p-0 sm:w-auto">
         {/* Header with gradient background */}
         <div className="relative overflow-hidden bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 px-6 py-8">
           {/* Decorative circles */}
-          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl"></div>
-          <div className="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-white/10 blur-2xl"></div>
+          <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-white/10 blur-2xl"></div>
+          <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-white/10 blur-2xl"></div>
 
           <DialogHeader className="relative">
             <div className="flex items-center gap-3">
@@ -380,20 +382,20 @@ export function BulkUploadDialog({
               </div>
               <div>
                 <DialogTitle className="text-2xl font-bold text-white">{title}</DialogTitle>
-                <DialogDescription className="text-purple-50 mt-1">{description}</DialogDescription>
+                <DialogDescription className="mt-1 text-purple-50">{description}</DialogDescription>
               </div>
             </div>
           </DialogHeader>
         </div>
 
         {/* Content area */}
-        <div className="overflow-y-auto max-h-[calc(90vh-280px)] px-6 py-6">
+        <div className="max-h-[calc(90vh-280px)] overflow-y-auto px-6 py-6">
           <div className="space-y-4">
             {/* Custom Info Message */}
             {customInfoMessage && (
               <Alert className="border-blue-200 bg-blue-50">
                 <AlertCircle className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-blue-800 text-sm">
+                <AlertDescription className="text-sm text-blue-800">
                   {customInfoMessage}
                 </AlertDescription>
               </Alert>
@@ -404,7 +406,7 @@ export function BulkUploadDialog({
               <div className="flex items-center justify-between rounded-lg border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 p-4 shadow-sm">
                 <Label
                   htmlFor="minimal-fields-toggle"
-                  className="cursor-pointer text-sm font-semibold leading-none text-purple-900"
+                  className="cursor-pointer text-sm leading-none font-semibold text-purple-900"
                 >
                   {minimalFieldsLabel}
                 </Label>
@@ -418,15 +420,15 @@ export function BulkUploadDialog({
             )}
 
             {/* Download Template */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-xl border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-white p-5 shadow-sm transition-all hover:shadow-md">
+            <div className="flex flex-col gap-4 rounded-xl border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-white p-5 shadow-sm transition-all hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600 text-white font-bold text-sm flex-shrink-0">
+                <div className="mb-1 flex items-center gap-2">
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-purple-600 text-sm font-bold text-white">
                     1
                   </div>
                   <h3 className="text-base font-bold text-purple-900">Download Template</h3>
                 </div>
-                <p className="mt-1 text-sm text-purple-700 ml-10">
+                <p className="mt-1 ml-10 text-sm text-purple-700">
                   Get the Excel template with the correct format
                 </p>
               </div>
@@ -434,7 +436,7 @@ export function BulkUploadDialog({
                 variant="outline"
                 onClick={handleDownloadTemplate}
                 disabled={isDownloading}
-                className="w-full sm:w-auto gap-2 border-purple-300 bg-white hover:bg-purple-50 hover:border-purple-400 transition-all flex-shrink-0"
+                className="w-full flex-shrink-0 gap-2 border-purple-300 bg-white transition-all hover:border-purple-400 hover:bg-purple-50 sm:w-auto"
               >
                 {isDownloading ? (
                   <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
@@ -447,35 +449,35 @@ export function BulkUploadDialog({
 
             {/* Upload File */}
             <div className="space-y-3 rounded-xl border-2 border-purple-200 bg-gradient-to-br from-pink-50 to-white p-5 shadow-sm">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-pink-600 text-white font-bold text-sm">
+              <div className="mb-2 flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-pink-600 text-sm font-bold text-white">
                   2
                 </div>
                 <h3 className="text-base font-bold text-purple-900">Upload Filled Template</h3>
               </div>
-              <p className="text-sm text-purple-700 ml-10 mb-3">Select the Excel file with data</p>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 ml-10">
+              <p className="mb-3 ml-10 text-sm text-purple-700">Select the Excel file with data</p>
+              <div className="ml-10 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept={acceptedFileTypes}
                   onChange={handleFileChange}
                   onClick={handleFileInputClick}
-                  className="w-full sm:flex-1 cursor-pointer rounded-lg border-2 border-dashed border-purple-300 bg-white p-3 text-sm transition-all hover:border-purple-400 hover:bg-purple-50 file:mr-2 sm:file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-gradient-to-r file:from-purple-600 file:to-pink-600 file:px-3 sm:file:px-4 file:py-2 file:text-xs sm:file:text-sm file:font-semibold file:text-white file:transition-all hover:file:from-purple-700 hover:file:to-pink-700 break-all"
+                  className="w-full cursor-pointer rounded-lg border-2 border-dashed border-purple-300 bg-white p-3 text-sm break-all transition-all file:mr-2 file:cursor-pointer file:rounded-lg file:border-0 file:bg-gradient-to-r file:from-purple-600 file:to-pink-600 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white file:transition-all hover:border-purple-400 hover:bg-purple-50 hover:file:from-purple-700 hover:file:to-pink-700 sm:flex-1 sm:file:mr-4 sm:file:px-4 sm:file:text-sm"
                 />
                 {selectedFile && (
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={resetFileInput}
-                    className="hover:bg-red-100 hover:text-red-600 self-center sm:self-auto"
+                    className="self-center hover:bg-red-100 hover:text-red-600 sm:self-auto"
                   >
                     <X className="h-4 w-4" />
                   </Button>
                 )}
               </div>
               {selectedFile && (
-                <div className="ml-10 mt-2 rounded-lg bg-purple-100 px-3 py-2 text-sm text-purple-900">
+                <div className="mt-2 ml-10 rounded-lg bg-purple-100 px-3 py-2 text-sm text-purple-900">
                   <span className="font-semibold">Selected:</span> {selectedFile.name}
                 </div>
               )}
@@ -500,14 +502,14 @@ export function BulkUploadDialog({
                   Upload Result
                 </AlertTitle>
                 <AlertDescription>
-                  <div className="mt-3 flex items-center gap-2 flex-wrap">
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     <Badge
                       variant="secondary"
-                      className="bg-gray-100 text-gray-900 border border-gray-300"
+                      className="border border-gray-300 bg-gray-100 text-gray-900"
                     >
                       Total: {uploadResult.total_rows}
                     </Badge>
-                    <Badge className="bg-green-500 hover:bg-green-600 text-white border-0">
+                    <Badge className="border-0 bg-green-500 text-white hover:bg-green-600">
                       Created: {uploadResult.created_count}
                     </Badge>
                     {hasErrors && (
@@ -523,7 +525,7 @@ export function BulkUploadDialog({
             {/* Error Details */}
             {uploadResult?.errors && uploadResult.errors.length > 0 && (
               <div className="space-y-3 rounded-xl border-2 border-red-200 bg-gradient-to-br from-red-50 to-white p-5 shadow-sm">
-                <h3 className="text-base font-bold text-red-900 flex items-center gap-2">
+                <h3 className="flex items-center gap-2 text-base font-bold text-red-900">
                   <AlertCircle className="h-5 w-5" />
                   Errors ({uploadResult.errors.length})
                 </h3>
@@ -544,7 +546,7 @@ export function BulkUploadDialog({
                           {error.data &&
                             typeof error.data === 'object' &&
                             Object.keys(error.data).length > 0 && (
-                              <div className="space-y-0.5 text-xs text-red-700 bg-red-50 rounded p-2 mt-2">
+                              <div className="mt-2 space-y-0.5 rounded bg-red-50 p-2 text-xs text-red-700">
                                 {Object.entries(error.data).map(([key, value]) => (
                                   <div key={key}>
                                     <span className="font-semibold capitalize">
@@ -566,18 +568,15 @@ export function BulkUploadDialog({
         </div>
 
         {/* Footer with gradient */}
-        <DialogFooter className="border-t bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 gap-3">
-          <Button
-            variant="brandOutline"
-            onClick={handleClose}
-          >
+        <DialogFooter className="gap-3 border-t bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4">
+          <Button variant="brandOutline" onClick={handleClose}>
             Close
           </Button>
           <Button
             variant="brand"
             onClick={handleUpload}
             disabled={!selectedFile || isUploading}
-            className="gap-2 shadow-lg hover:shadow-xl transition-all duration-200 min-w-[120px]"
+            className="min-w-[120px] gap-2 shadow-lg transition-all duration-200 hover:shadow-xl"
           >
             {isUploading ? (
               <>

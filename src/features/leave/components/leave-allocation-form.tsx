@@ -260,9 +260,9 @@ export function LeaveAllocationForm({
     (allocationId && loadingAllocation)
   ) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="space-y-4 text-center">
+          <Loader2 className="text-primary mx-auto h-8 w-8 animate-spin" />
           <p className="text-sm text-gray-500">Loading form data...</p>
         </div>
       </div>
@@ -272,7 +272,7 @@ export function LeaveAllocationForm({
   // Error state - Failed to load leave types or roles
   if (leaveTypesError || rolesError) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex min-h-[400px] items-center justify-center">
         <Alert variant="destructive" className="max-w-md">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Failed to load form data</AlertTitle>
@@ -308,7 +308,7 @@ export function LeaveAllocationForm({
   // Error state - Failed to load existing allocation
   if (allocationError && (isEditMode || isViewMode)) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex min-h-[400px] items-center justify-center">
         <Alert variant="destructive" className="max-w-md">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Failed to load allocation</AlertTitle>
@@ -328,7 +328,7 @@ export function LeaveAllocationForm({
   // Empty state - No leave types available
   if (!leaveTypes || leaveTypes.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex min-h-[400px] items-center justify-center">
         <Alert className="max-w-md">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>No Leave Types Available</AlertTitle>
@@ -351,7 +351,7 @@ export function LeaveAllocationForm({
   // Empty state - No organization roles available
   if (!organizationRoles || organizationRoles.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex min-h-[400px] items-center justify-center">
         <Alert className="max-w-md">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>No Organization Roles Available</AlertTitle>
@@ -386,7 +386,7 @@ export function LeaveAllocationForm({
             {mode === 'edit' && 'Edit Leave Allocation Policy'}
             {mode === 'view' && 'Leave Allocation Policy Details'}
           </h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="mt-1 text-sm text-gray-500">
             {mode === 'create' && 'Define leave entitlements for your organization'}
             {mode === 'edit' && 'Update the leave allocation policy settings'}
             {mode === 'view' && 'Review the leave allocation policy'}
@@ -403,11 +403,11 @@ export function LeaveAllocationForm({
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <fieldset disabled={isViewMode}>
             {/* Two Column Layout: 3 Cards on Left + Summary on Right */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
               {/* LEFT COLUMN - 3 Cards Stacked */}
-              <div className="lg:col-span-2 space-y-6">
+              <div className="space-y-6 lg:col-span-2">
                 {/* Card 1: Policy Type */}
-                <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200">
+                <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg font-semibold text-blue-900">
                       Policy Type
@@ -478,7 +478,7 @@ export function LeaveAllocationForm({
                           <FormControl>
                             <Textarea
                               placeholder={FormPlaceholders.LEAVE_POLICY_DETAILS}
-                              className="bg-white resize-none"
+                              className="resize-none bg-white"
                               rows={3}
                               {...field}
                             />
@@ -491,14 +491,14 @@ export function LeaveAllocationForm({
                 </Card>
 
                 {/* Card 2: Allowance Rules */}
-                <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+                <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg font-semibold text-green-900">
                       Allowance Rules
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       {/* Number of Days */}
                       <FormField
                         control={form.control}
@@ -527,7 +527,7 @@ export function LeaveAllocationForm({
                                   step="1"
                                   min="0"
                                   max="365"
-                                  className="text-center font-semibold text-lg bg-white"
+                                  className="bg-white text-center text-lg font-semibold"
                                   {...field}
                                 />
                               </FormControl>
@@ -560,7 +560,7 @@ export function LeaveAllocationForm({
                               <div className="flex items-center space-x-2">
                                 <Checkbox
                                   id="allow-carry-forward"
-                                  checked={parseFloat(field.value || '0') > 0}
+                                  checked={field.value !== '0'}
                                   onCheckedChange={(checked) => {
                                     if (!checked) {
                                       field.onChange('0');
@@ -572,14 +572,14 @@ export function LeaveAllocationForm({
                                 />
                                 <FormLabel
                                   htmlFor="allow-carry-forward"
-                                  className="text-sm font-medium cursor-pointer"
+                                  className="cursor-pointer text-sm font-medium"
                                 >
                                   Allow Carry Forward
                                 </FormLabel>
                               </div>
 
                               {/* Carry Forward Days Input - Shows when enabled */}
-                              {parseFloat(field.value || '0') > 0 && (
+                              {field.value !== '0' && (
                                 <FormControl>
                                   <Input
                                     type="number"
@@ -589,12 +589,7 @@ export function LeaveAllocationForm({
                                     className="bg-white"
                                     {...field}
                                     onChange={(e) => {
-                                      const value = e.target.value;
-                                      if (parseFloat(value) <= 0) {
-                                        field.onChange('0.5');
-                                      } else {
-                                        field.onChange(value);
-                                      }
+                                      field.onChange(e.target.value);
                                     }}
                                   />
                                 </FormControl>
@@ -609,7 +604,7 @@ export function LeaveAllocationForm({
                 </Card>
 
                 {/* Card 3: Target Roles */}
-                <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
+                <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg font-semibold text-purple-900">
                       Target Roles
@@ -651,11 +646,11 @@ export function LeaveAllocationForm({
                         name="roles"
                         render={() => (
                           <FormItem>
-                            <FormLabel className="text-sm font-medium mb-2 block">
+                            <FormLabel className="mb-2 block text-sm font-medium">
                               Select Roles
                             </FormLabel>
-                            <div className="max-h-[400px] overflow-y-auto border rounded-lg p-3 bg-white">
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="max-h-[400px] overflow-y-auto rounded-lg border bg-white p-3">
+                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 {organizationRoles?.map((role) => (
                                   <FormField
                                     key={role.id}
@@ -664,7 +659,7 @@ export function LeaveAllocationForm({
                                     render={({ field }) => (
                                       <FormItem
                                         key={role.id}
-                                        className="flex flex-row items-center space-x-2 space-y-0 p-2 rounded-lg hover:bg-purple-50/50 transition-colors border border-transparent hover:border-purple-200"
+                                        className="flex flex-row items-center space-y-0 space-x-2 rounded-lg border border-transparent p-2 transition-colors hover:border-purple-200 hover:bg-purple-50/50"
                                       >
                                         <FormControl>
                                           <Checkbox
@@ -677,12 +672,12 @@ export function LeaveAllocationForm({
                                             }}
                                           />
                                         </FormControl>
-                                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                                          <div className="h-7 w-7 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                                          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-pink-400 text-xs font-semibold text-white">
                                             {role.name.charAt(0)}
                                           </div>
-                                          <div className="flex-1 min-w-0">
-                                            <FormLabel className="font-medium text-sm cursor-pointer truncate block">
+                                          <div className="min-w-0 flex-1">
+                                            <FormLabel className="block cursor-pointer truncate text-sm font-medium">
                                               {role.name}
                                             </FormLabel>
                                           </div>
@@ -702,14 +697,14 @@ export function LeaveAllocationForm({
                 </Card>
 
                 {/* Card 4: Effective Period */}
-                <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200">
+                <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg font-semibold text-orange-900">
                       Effective Period
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       {/* Effective From Date */}
                       <FormField
                         control={form.control}
@@ -755,7 +750,7 @@ export function LeaveAllocationForm({
 
                     {/* Academic Year Info */}
                     {academicYearData?.data && mode === 'create' && (
-                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
                         <p className="text-xs text-blue-700">
                           <strong>Academic Year:</strong> {academicYearData.data.name}
                           <br />
@@ -769,7 +764,7 @@ export function LeaveAllocationForm({
 
               {/* RIGHT COLUMN - Policy Summary (Sticky) */}
               <div className="lg:col-span-1">
-                <Card className="bg-gradient-to-br from-teal-50 to-green-50 border-teal-200 sticky top-6">
+                <Card className="sticky top-6 border-teal-200 bg-gradient-to-br from-teal-50 to-green-50">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg font-semibold text-teal-900">
                       Policy Summary
@@ -779,21 +774,21 @@ export function LeaveAllocationForm({
                     {selectedLeaveType ? (
                       <div className="space-y-3">
                         {/* Policy Type */}
-                        <div className="flex items-center justify-between p-2 bg-white/60 rounded-lg">
+                        <div className="flex items-center justify-between rounded-lg bg-white/60 p-2">
                           <span className="text-sm text-gray-600">Policy Type</span>
                           <CheckCircle2 className="h-5 w-5 text-green-600" />
                         </div>
 
                         {/* Leave Type Display */}
-                        <div className="p-3 bg-white rounded-lg">
-                          <p className="text-xs text-gray-500 mb-1">Selected Leave Type</p>
+                        <div className="rounded-lg bg-white p-3">
+                          <p className="mb-1 text-xs text-gray-500">Selected Leave Type</p>
                           <p className="font-semibold text-gray-900">{selectedLeaveType.name}</p>
                         </div>
 
                         {/* Total Days */}
                         {form.watch('total_days') && parseFloat(form.watch('total_days')) > 0 && (
-                          <div className="p-3 bg-white rounded-lg">
-                            <p className="text-xs text-gray-500 mb-1">Total Days</p>
+                          <div className="rounded-lg bg-white p-3">
+                            <p className="mb-1 text-xs text-gray-500">Total Days</p>
                             <p className="text-2xl font-bold text-green-600">
                               {form.watch('total_days')}
                             </p>
@@ -802,8 +797,8 @@ export function LeaveAllocationForm({
 
                         {/* Carry Forward */}
                         {parseFloat(form.watch('max_carry_forward_days') || '0') > 0 && (
-                          <div className="p-3 bg-white rounded-lg">
-                            <p className="text-xs text-gray-500 mb-1">Carry Forward Days</p>
+                          <div className="rounded-lg bg-white p-3">
+                            <p className="mb-1 text-xs text-gray-500">Carry Forward Days</p>
                             <p className="text-xl font-bold text-blue-600">
                               {form.watch('max_carry_forward_days')}
                             </p>
@@ -812,31 +807,31 @@ export function LeaveAllocationForm({
 
                         {/* Applicable To */}
                         {applies_to_all_roles ? (
-                          <div className="p-3 bg-white rounded-lg">
-                            <p className="text-xs text-gray-500 mb-1">Applicable To</p>
+                          <div className="rounded-lg bg-white p-3">
+                            <p className="mb-1 text-xs text-gray-500">Applicable To</p>
                             <p className="font-semibold text-purple-600">All Roles</p>
                           </div>
                         ) : selectedRoles.length > 0 ? (
-                          <div className="p-3 bg-white rounded-lg">
-                            <p className="text-xs text-gray-500 mb-2">
+                          <div className="rounded-lg bg-white p-3">
+                            <p className="mb-2 text-xs text-gray-500">
                               Selected Roles ({selectedRoles.length})
                             </p>
                             <div className="flex flex-wrap gap-2">
                               {selectedRoles.map((role) => (
                                 <div
                                   key={role.id}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium"
+                                  className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700"
                                 >
-                                  <div className="h-5 w-5 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-[10px] font-semibold">
+                                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-pink-400 text-[10px] font-semibold text-white">
                                     {role.name.charAt(0)}
                                   </div>
-                                  <span className="truncate max-w-[120px]">{role.name}</span>
+                                  <span className="max-w-[120px] truncate">{role.name}</span>
                                 </div>
                               ))}
                             </div>
                           </div>
                         ) : (
-                          <div className="p-3 bg-white/60 rounded-lg">
+                          <div className="rounded-lg bg-white/60 p-3">
                             <p className="text-xs text-gray-400">No roles selected</p>
                           </div>
                         )}
@@ -853,12 +848,12 @@ export function LeaveAllocationForm({
 
                     {/* Form Actions - Inside Policy Summary */}
                     {!isViewMode && (
-                      <div className="flex flex-col gap-3 pt-4 border-t border-teal-200">
+                      <div className="flex flex-col gap-3 border-t border-teal-200 pt-4">
                         <Button
                           type="submit"
                           size="lg"
                           variant="brand"
-                          className="w-full shadow-md hover:shadow-lg transition-all font-semibold"
+                          className="w-full font-semibold shadow-md transition-all hover:shadow-lg"
                           disabled={createMutation.isPending || updateMutation.isPending}
                         >
                           {(createMutation.isPending || updateMutation.isPending) && (

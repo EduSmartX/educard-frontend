@@ -15,49 +15,22 @@ import {
   bulkUploadHolidays,
 } from '../api/holidays-api';
 import { getErrorMessage, getFieldErrors } from '@/lib/utils/error-handler';
+import {
+  handleMutationError,
+  type FieldErrors,
+  type MutationOptions,
+} from '@/lib/utils/mutation-utils';
 
-// ============================================================================
-// Shared Types
-// ============================================================================
-
-/**
- * Field errors object for form validation
- */
-export interface FieldErrors {
+export interface HolidayFieldErrors extends FieldErrors {
   start_date?: string;
   end_date?: string;
   holiday_type?: string;
   description?: string;
-  [key: string]: string | undefined;
 }
 
-/**
- * Options that can be passed to any mutation hook
- */
-export interface MutationOptions {
-  /**
-   * Callback executed after successful mutation
-   * Called after toast notification and query invalidation
-   */
-  onSuccess?: () => void;
+export type { MutationOptions };
 
-  /**
-   * Callback executed when mutation fails
-   * Called after error toast notification
-   * @param error - The error that occurred
-   * @param fieldErrors - Field-specific validation errors (if any)
-   */
-  onError?: (error: Error, fieldErrors?: FieldErrors) => void;
-}
-
-// ============================================================================
-// Create Holiday Mutations
-// ============================================================================
-
-/**
- * Hook to create a single holiday
- */
-export function useCreateHoliday(options?: MutationOptions) {
+export function useCreateHoliday(options?: MutationOptions<HolidayFieldErrors>) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -74,15 +47,13 @@ export function useCreateHoliday(options?: MutationOptions) {
     },
     onError: (error: Error) => {
       const errorMessage = getErrorMessage(error, 'Failed to create holiday. Please try again.');
-      const fieldErrors = getFieldErrors(error) as FieldErrors | undefined;
+      const fieldErrors = getFieldErrors(error) as HolidayFieldErrors | undefined;
 
-      // Only show toast if there are no field errors (generic errors)
       if (!fieldErrors || Object.keys(fieldErrors).length === 0) {
         toast.error(ToastTitles.ERROR, {
           description: errorMessage,
         });
       } else {
-        // If there are field errors, show a generic validation message
         toast.error(ToastTitles.VALIDATION_ERROR, {
           description: 'Please check the form fields and try again.',
         });
@@ -93,10 +64,7 @@ export function useCreateHoliday(options?: MutationOptions) {
   });
 }
 
-/**
- * Hook to create multiple holidays at once
- */
-export function useCreateHolidaysBulk(options?: MutationOptions) {
+export function useCreateHolidaysBulk(options?: MutationOptions<HolidayFieldErrors>) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -111,23 +79,12 @@ export function useCreateHolidaysBulk(options?: MutationOptions) {
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      toast.error(ToastTitles.ERROR, {
-        description: error.message || ErrorMessages.HOLIDAY.CREATE_FAILED,
-      });
-
-      options?.onError?.(error);
+      handleMutationError(error, ErrorMessages.HOLIDAY.CREATE_FAILED, options?.onError);
     },
   });
 }
 
-// ============================================================================
-// Update Holiday Mutation
-// ============================================================================
-
-/**
- * Hook to update an existing holiday
- */
-export function useUpdateHoliday(options?: MutationOptions) {
+export function useUpdateHoliday(options?: MutationOptions<HolidayFieldErrors>) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -144,15 +101,13 @@ export function useUpdateHoliday(options?: MutationOptions) {
     },
     onError: (error: Error) => {
       const errorMessage = getErrorMessage(error, 'Failed to update holiday. Please try again.');
-      const fieldErrors = getFieldErrors(error) as FieldErrors | undefined;
+      const fieldErrors = getFieldErrors(error) as HolidayFieldErrors | undefined;
 
-      // Only show toast if there are no field errors (generic errors)
       if (!fieldErrors || Object.keys(fieldErrors).length === 0) {
         toast.error(ToastTitles.ERROR, {
           description: errorMessage,
         });
       } else {
-        // If there are field errors, show a generic validation message
         toast.error(ToastTitles.VALIDATION_ERROR, {
           description: 'Please check the form fields and try again.',
         });
@@ -163,14 +118,7 @@ export function useUpdateHoliday(options?: MutationOptions) {
   });
 }
 
-// ============================================================================
-// Delete Holiday Mutation
-// ============================================================================
-
-/**
- * Hook to delete a holiday
- */
-export function useDeleteHoliday(options?: MutationOptions) {
+export function useDeleteHoliday(options?: MutationOptions<HolidayFieldErrors>) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -185,23 +133,12 @@ export function useDeleteHoliday(options?: MutationOptions) {
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      toast.error(ToastTitles.ERROR, {
-        description: error.message || ErrorMessages.HOLIDAY.DELETE_FAILED,
-      });
-
-      options?.onError?.(error);
+      handleMutationError(error, ErrorMessages.HOLIDAY.DELETE_FAILED, options?.onError);
     },
   });
 }
 
-// ============================================================================
-// Bulk Upload Mutation
-// ============================================================================
-
-/**
- * Hook to bulk upload holidays from Excel file
- */
-export function useBulkUploadHolidays(options?: MutationOptions) {
+export function useBulkUploadHolidays(options?: MutationOptions<HolidayFieldErrors>) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -222,11 +159,7 @@ export function useBulkUploadHolidays(options?: MutationOptions) {
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      toast.error(ToastTitles.ERROR, {
-        description: error.message || ErrorMessages.HOLIDAY.BULK_UPLOAD_FAILED,
-      });
-
-      options?.onError?.(error);
+      handleMutationError(error, ErrorMessages.HOLIDAY.BULK_UPLOAD_FAILED, options?.onError);
     },
   });
 }

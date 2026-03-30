@@ -1,10 +1,46 @@
 /**
  * Authentication utility functions
- * Helper functions for working with user authentication and authorization
  */
 
 import type { UserRole } from '@/hooks/use-role';
-import { USER_ROLES_UPPER } from '@/constants/user-constants';
+import { USER_ROLES, USER_ROLES_UPPER } from '@/constants/user-constants';
+import { ROUTES } from '@/constants/app-config';
+
+const ROLE_DISPLAY_NAMES: Record<string, string> = {
+  [USER_ROLES.ADMIN]: 'Administrator',
+  [USER_ROLES.TEACHER]: 'Teacher',
+  [USER_ROLES.STAFF]: 'Staff',
+  [USER_ROLES.STUDENT]: 'Student',
+  [USER_ROLES.PARENT]: 'Parent',
+};
+
+/**
+ * Format a role string for display (e.g., "admin" → "Administrator", "teacher" → "Teacher")
+ */
+export function formatRole(role?: string | null): string {
+  if (!role) {
+    return 'User';
+  }
+  return ROLE_DISPLAY_NAMES[role.toLowerCase()] ?? role.charAt(0).toUpperCase() + role.slice(1);
+}
+
+/**
+ * Get the dashboard route for a given role
+ */
+export function getDashboardRoute(role?: string | null): string {
+  const normalizedRole = role?.toLowerCase();
+  switch (normalizedRole) {
+    case USER_ROLES.ADMIN:
+      return ROUTES.ADMIN.DASHBOARD;
+    case USER_ROLES.TEACHER:
+    case USER_ROLES.STAFF:
+      return ROUTES.EMPLOYEE.DASHBOARD;
+    case USER_ROLES.PARENT:
+      return ROUTES.PARENT.DASHBOARD;
+    default:
+      return '/';
+  }
+}
 
 /**
  * Get the current user's role from localStorage
@@ -19,7 +55,7 @@ export function getUserRole(): UserRole | null {
 
     const authData = JSON.parse(authDataStr);
     const role = authData?.user?.role;
-    
+
     if (!role) {
       return null;
     }
@@ -68,19 +104,19 @@ export function getRoleBasedPath(
   parentPath?: string
 ): string {
   const role = getUserRole();
-  
+
   if (role === USER_ROLES_UPPER.ADMIN) {
     return adminPath;
   }
-  
+
   if (role === USER_ROLES_UPPER.TEACHER || role === USER_ROLES_UPPER.STAFF) {
     return employeePath;
   }
-  
+
   if (role === USER_ROLES_UPPER.PARENT && parentPath) {
     return parentPath;
   }
-  
+
   // Default to employee path if role is unknown
   return employeePath;
 }

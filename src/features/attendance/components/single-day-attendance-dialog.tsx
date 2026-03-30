@@ -221,10 +221,6 @@ export function SingleDayAttendanceDialog({
       }
 
       const submission = {
-        timesheet: {
-          week_start_date: dateStr,
-          week_end_date: dateStr,
-        },
         attendance_records: [
           {
             date: dateStr,

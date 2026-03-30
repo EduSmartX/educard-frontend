@@ -6,11 +6,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
-  getErrorMessage,
-  getFieldErrors,
-  isDeletedDuplicateError,
-} from '@/lib/utils/error-handler';
-import { ErrorMessages, QueryKeys, SuccessMessages, ToastTitles } from '@/constants';
+  handleMutationError,
+  type FieldErrors,
+  type MutationOptions,
+} from '@/lib/utils/mutation-utils';
+import { ErrorMessages, QueryKeys, SuccessMessages } from '@/constants';
 import type { CreateClassPayload, UpdateClassPayload } from '../types';
 import {
   createClass,
@@ -20,21 +20,17 @@ import {
   bulkUploadClasses,
 } from '../api/classes-api';
 
-export interface ClassFieldErrors {
+export interface ClassFieldErrors extends FieldErrors {
   standard?: string;
   section?: string;
   class_teacher?: string;
   academic_year?: string;
   capacity?: string;
-  [key: string]: string | undefined;
 }
 
-export interface MutationOptions {
-  onSuccess?: () => void;
-  onError?: (error: Error, fieldErrors?: ClassFieldErrors) => void;
-}
+export type { MutationOptions };
 
-export function useCreateClass(options?: MutationOptions) {
+export function useCreateClass(options?: MutationOptions<ClassFieldErrors>) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -51,23 +47,12 @@ export function useCreateClass(options?: MutationOptions) {
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.CREATE_FAILED);
-      const fieldErrors = getFieldErrors(error) as ClassFieldErrors | undefined;
-
-      // Don't show toast for deleted duplicate errors - the dialog will handle it
-      if (!isDeletedDuplicateError(error)) {
-        toast.error(ToastTitles.ERROR, {
-          description: errorMessage,
-          duration: 5000,
-        });
-      }
-
-      options?.onError?.(error, fieldErrors);
+      handleMutationError(error, ErrorMessages.CLASS.CREATE_FAILED, options?.onError);
     },
   });
 }
 
-export function useReactivateClass(options?: MutationOptions) {
+export function useReactivateClass(options?: MutationOptions<ClassFieldErrors>) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -80,17 +65,12 @@ export function useReactivateClass(options?: MutationOptions) {
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.REACTIVATE_FAILED);
-      toast.error(ToastTitles.ERROR, {
-        description: errorMessage,
-        duration: 5000,
-      });
-      options?.onError?.(error);
+      handleMutationError(error, ErrorMessages.CLASS.REACTIVATE_FAILED, options?.onError);
     },
   });
 }
 
-export function useUpdateClass(options?: MutationOptions) {
+export function useUpdateClass(options?: MutationOptions<ClassFieldErrors>) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -102,51 +82,29 @@ export function useUpdateClass(options?: MutationOptions) {
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.UPDATE_FAILED);
-      const fieldErrors = getFieldErrors(error) as ClassFieldErrors | undefined;
-
-      // Don't show toast for deleted duplicate errors - the dialog will handle it
-      if (!isDeletedDuplicateError(error)) {
-        toast.error(ToastTitles.ERROR, {
-          description: errorMessage,
-          duration: 5000,
-        });
-      }
-
-      options?.onError?.(error, fieldErrors);
+      handleMutationError(error, ErrorMessages.CLASS.UPDATE_FAILED, options?.onError);
     },
   });
 }
 
-export function useDeleteClass(options?: MutationOptions) {
+export function useDeleteClass(options?: MutationOptions<ClassFieldErrors>) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (publicId: string) => deleteClass(publicId),
     onSuccess: (_data, publicId) => {
-      // Remove the deleted class's detail query from cache to prevent 404 refetch
-      queryClient.removeQueries({
-        queryKey: ['classes', publicId],
-      });
-      // Invalidate list queries only (active ones) to refresh the list
-      queryClient.invalidateQueries({
-        queryKey: QueryKeys.CLASSES.ALL,
-      });
+      queryClient.removeQueries({ queryKey: ['classes', publicId] });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.CLASSES.ALL });
       toast.success(SuccessMessages.CLASS.DELETE_SUCCESS);
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.DELETE_FAILED);
-      toast.error(ToastTitles.ERROR, {
-        description: errorMessage,
-        duration: 5000,
-      });
-      options?.onError?.(error, {});
+      handleMutationError(error, ErrorMessages.CLASS.DELETE_FAILED, options?.onError);
     },
   });
 }
 
-export function useBulkUploadClasses(options?: MutationOptions) {
+export function useBulkUploadClasses(options?: MutationOptions<ClassFieldErrors>) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -164,12 +122,7 @@ export function useBulkUploadClasses(options?: MutationOptions) {
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      const errorMessage = getErrorMessage(error, ErrorMessages.CLASS.BULK_UPLOAD_FAILED);
-      toast.error(ToastTitles.ERROR, {
-        description: errorMessage,
-        duration: 5000,
-      });
-      options?.onError?.(error, {});
+      handleMutationError(error, ErrorMessages.CLASS.BULK_UPLOAD_FAILED, options?.onError);
     },
   });
 }

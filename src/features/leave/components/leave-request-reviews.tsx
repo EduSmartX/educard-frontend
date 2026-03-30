@@ -441,6 +441,9 @@ export function LeaveRequestReviews() {
           <div>
             {formatDate(row.start_date)} - {formatDate(row.end_date)}
           </div>
+          <div className="text-muted-foreground text-xs">
+            {row.number_of_days} day{Number(row.number_of_days) !== 1 ? 's' : ''}
+          </div>
         </div>
       ),
     },

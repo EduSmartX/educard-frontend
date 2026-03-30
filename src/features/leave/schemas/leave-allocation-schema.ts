@@ -48,14 +48,19 @@ export const createLeaveAllocationSchema = (mode: 'create' | 'view' | 'edit' = '
         .string({
           message: 'Maximum carry forward days is required',
         })
-        .min(1, 'Maximum carry forward days is required')
         .refine(
           (val) => {
+            if (val === '0') {
+              return true;
+            } // carry forward disabled
+            if (!val || val.trim() === '') {
+              return false;
+            } // empty when enabled
             const num = parseFloat(val);
-            return !isNaN(num) && num >= 0 && num <= 365;
+            return !isNaN(num) && num > 0 && num <= 365;
           },
           {
-            message: 'Maximum carry forward days must be between 0 and 365',
+            message: 'Maximum carry forward days must be between 0.5 and 365',
           }
         ),
 

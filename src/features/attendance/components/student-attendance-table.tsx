@@ -65,12 +65,12 @@ export function StudentAttendanceTable({
     disabled: boolean;
     onChange: (value: boolean) => void;
   }) => (
-    <div className="flex gap-2 justify-center">
+    <div className="flex justify-center gap-2">
       <Button
         type="button"
         size="sm"
         variant={present ? 'default' : 'outline'}
-        className={cn('h-8 w-8 p-0', present && 'bg-green-500 hover:bg-green-600 text-white')}
+        className={cn('h-8 w-8 p-0', present && 'bg-green-500 text-white hover:bg-green-600')}
         onClick={() => onChange(true)}
         disabled={disabled}
       >
@@ -80,7 +80,7 @@ export function StudentAttendanceTable({
         type="button"
         size="sm"
         variant={!present ? 'default' : 'outline'}
-        className={cn('h-8 w-8 p-0', !present && 'bg-red-500 hover:bg-red-600 text-white')}
+        className={cn('h-8 w-8 p-0', !present && 'bg-red-500 text-white hover:bg-red-600')}
         onClick={() => onChange(false)}
         disabled={disabled}
       >
@@ -91,27 +91,29 @@ export function StudentAttendanceTable({
 
   return (
     <div className="space-y-4">
-      <div className="border rounded-lg overflow-hidden shadow-sm">
+      <div className="overflow-x-auto rounded-lg border shadow-sm">
         <Table>
           <TableHeader>
             <TableRow style={{ backgroundColor: '#E8F5E9' }}>
-              <TableHead className="w-[100px] font-bold text-gray-900">
+              <TableHead className="w-[60px] px-2 text-xs font-bold text-gray-900 sm:w-[100px] sm:px-4 sm:text-sm">
                 {AttendanceUiText.ROLL_NO}
               </TableHead>
-              <TableHead className="font-bold text-gray-900">
+              <TableHead className="px-2 text-xs font-bold text-gray-900 sm:px-4 sm:text-sm">
                 {AttendanceUiText.STUDENT_NAME}
               </TableHead>
               {showMorning && (
-                <TableHead className="text-center w-[150px] font-bold text-gray-900">
-                  {AttendanceUiText.PERIOD_MORNING}
+                <TableHead className="w-[80px] px-1 text-center text-xs font-bold text-gray-900 sm:w-[150px] sm:px-4 sm:text-sm">
+                  <span className="sm:hidden">AM</span>
+                  <span className="hidden sm:inline">{AttendanceUiText.PERIOD_MORNING}</span>
                 </TableHead>
               )}
               {showAfternoon && (
-                <TableHead className="text-center w-[150px] font-bold text-gray-900">
-                  {AttendanceUiText.PERIOD_AFTERNOON}
+                <TableHead className="w-[80px] px-1 text-center text-xs font-bold text-gray-900 sm:w-[150px] sm:px-4 sm:text-sm">
+                  <span className="sm:hidden">PM</span>
+                  <span className="hidden sm:inline">{AttendanceUiText.PERIOD_AFTERNOON}</span>
                 </TableHead>
               )}
-              <TableHead className="w-[200px] font-bold text-gray-900">
+              <TableHead className="hidden w-[200px] font-bold text-gray-900 sm:table-cell">
                 {AttendanceUiText.REMARKS}
               </TableHead>
             </TableRow>
@@ -119,7 +121,7 @@ export function StudentAttendanceTable({
           <TableBody>
             {students.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={6} className="text-muted-foreground py-8 text-center">
                   {AttendanceUiText.NO_STUDENTS}
                 </TableCell>
               </TableRow>
@@ -130,12 +132,14 @@ export function StudentAttendanceTable({
                 return (
                   <TableRow
                     key={student.public_id}
-                    className="border-b hover:bg-muted/30 transition-colors"
+                    className="hover:bg-muted/30 border-b transition-colors"
                   >
-                    <TableCell className="font-medium">{student.roll_number}</TableCell>
-                    <TableCell>
+                    <TableCell className="px-2 py-1.5 text-xs font-medium sm:px-4 sm:py-2 sm:text-sm">
+                      {student.roll_number}
+                    </TableCell>
+                    <TableCell className="px-2 py-1.5 sm:px-4 sm:py-2">
                       <div>
-                        <div className="font-medium">
+                        <div className="text-xs font-medium sm:text-sm">
                           {student.user.first_name} {student.user.last_name}
                         </div>
                         {/* email removed intentionally - show only student name */}
@@ -144,20 +148,20 @@ export function StudentAttendanceTable({
                             {student.leave_info.leave_status === 'approved' ? (
                               <Badge
                                 variant="outline"
-                                className="bg-blue-50 text-blue-700 border-blue-200"
+                                className="border-blue-200 bg-blue-50 text-blue-700"
                               >
                                 {AttendanceUiText.ON_LEAVE}
                               </Badge>
                             ) : (
                               <Badge
                                 variant="outline"
-                                className="bg-yellow-50 text-yellow-700 border-yellow-200"
+                                className="border-yellow-200 bg-yellow-50 text-yellow-700"
                               >
                                 {AttendanceUiText.LEAVE_PENDING}
                               </Badge>
                             )}
                             {student.leave_info.leave_type && (
-                              <span className="text-xs text-muted-foreground ml-2">
+                              <span className="text-muted-foreground ml-2 text-xs">
                                 ({student.leave_info.leave_type})
                               </span>
                             )}
@@ -166,7 +170,7 @@ export function StudentAttendanceTable({
                       </div>
                     </TableCell>
                     {showMorning && (
-                      <TableCell className="text-center">
+                      <TableCell className="px-1 py-1.5 text-center sm:px-4 sm:py-2">
                         <AttendanceToggle
                           present={student.morning_present}
                           disabled={!canEdit}
@@ -177,7 +181,7 @@ export function StudentAttendanceTable({
                       </TableCell>
                     )}
                     {showAfternoon && (
-                      <TableCell className="text-center">
+                      <TableCell className="px-1 py-1.5 text-center sm:px-4 sm:py-2">
                         <AttendanceToggle
                           present={student.afternoon_present}
                           disabled={!canEdit}
@@ -187,7 +191,7 @@ export function StudentAttendanceTable({
                         />
                       </TableCell>
                     )}
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <Input
                         type="text"
                         value={student.remarks}

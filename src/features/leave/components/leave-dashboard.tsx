@@ -210,7 +210,7 @@ export function LeaveDashboard() {
   // Modern UI: summary cards and per-type cards
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f8fcff] to-[#f3f7fa] p-0">
-      <div className="mx-auto max-w-6xl space-y-8 px-4 py-8">
+      <div className="mx-auto max-w-6xl space-y-6 px-2 py-4 sm:space-y-8 sm:px-4 sm:py-8">
         {/* User Info Banner - Only show when viewing another user's dashboard */}
         {isViewingOtherUser && userInfo && (
           <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
@@ -299,7 +299,9 @@ export function LeaveDashboard() {
         </PageHeader>
 
         <div>
-          <h2 className="text-primary mb-4 text-2xl font-bold">Leave Balances</h2>
+          <h2 className="text-primary mb-3 text-xl font-bold sm:mb-4 sm:text-2xl">
+            Leave Balances
+          </h2>
           {isLoadingBalances && !balancesData ? (
             <div className="mb-4 flex gap-4">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -323,16 +325,16 @@ export function LeaveDashboard() {
             </Card>
           ) : (
             <>
-              {/* Summary Cards: Available, Used, Pending - Reduced Width */}
-              <div className="mb-6 flex gap-4">
+              {/* Summary Cards: Available, Used, Pending */}
+              <div className="mb-6 grid grid-cols-3 gap-3 sm:gap-4">
                 {(() => {
                   const totalAvailable = balances.reduce((sum, b) => sum + (b.available || 0), 0);
                   return (
-                    <div className="flex w-44 flex-col items-center justify-center rounded-xl border-2 border-green-300 bg-green-50 px-6 py-5 shadow-sm">
-                      <div className="text-4xl font-extrabold text-green-700">
+                    <div className="flex flex-col items-center justify-center rounded-xl border-2 border-green-300 bg-green-50 px-2 py-4 shadow-sm sm:px-6 sm:py-5">
+                      <div className="text-2xl font-extrabold text-green-700 sm:text-4xl">
                         {totalAvailable.toFixed(1)}
                       </div>
-                      <div className="mt-2 text-sm font-semibold text-green-900">
+                      <div className="mt-1 text-center text-xs font-semibold text-green-900 sm:mt-2 sm:text-sm">
                         Total Available
                       </div>
                     </div>
@@ -341,18 +343,24 @@ export function LeaveDashboard() {
                 {(() => {
                   const totalUsed = balances.reduce((sum, b) => sum + (b.used || 0), 0);
                   return (
-                    <div className="flex w-44 flex-col items-center justify-center rounded-xl border-2 border-red-300 bg-red-50 px-6 py-5 shadow-sm">
-                      <div className="text-4xl font-extrabold text-red-700">{totalUsed}</div>
-                      <div className="mt-2 text-sm font-semibold text-red-900">Total Used</div>
+                    <div className="flex flex-col items-center justify-center rounded-xl border-2 border-red-300 bg-red-50 px-2 py-4 shadow-sm sm:px-6 sm:py-5">
+                      <div className="text-2xl font-extrabold text-red-700 sm:text-4xl">
+                        {totalUsed}
+                      </div>
+                      <div className="mt-1 text-center text-xs font-semibold text-red-900 sm:mt-2 sm:text-sm">
+                        Total Used
+                      </div>
                     </div>
                   );
                 })()}
                 {(() => {
                   const totalPending = balances.reduce((sum, b) => sum + (b.pending || 0), 0);
                   return (
-                    <div className="flex w-44 flex-col items-center justify-center rounded-xl border-2 border-yellow-300 bg-yellow-50 px-6 py-5 shadow-sm">
-                      <div className="text-4xl font-extrabold text-yellow-700">{totalPending}</div>
-                      <div className="mt-2 text-sm font-semibold text-yellow-900">
+                    <div className="flex flex-col items-center justify-center rounded-xl border-2 border-yellow-300 bg-yellow-50 px-2 py-4 shadow-sm sm:px-6 sm:py-5">
+                      <div className="text-2xl font-extrabold text-yellow-700 sm:text-4xl">
+                        {totalPending}
+                      </div>
+                      <div className="mt-1 text-center text-xs font-semibold text-yellow-900 sm:mt-2 sm:text-sm">
                         Pending Leaves
                       </div>
                     </div>
@@ -360,81 +368,81 @@ export function LeaveDashboard() {
                 })()}
               </div>
 
-              {/* Per-Leave-Type Cards Row with Horizontal Scroll */}
-              <div className="overflow-x-auto">
-                <div className="mb-6 flex min-w-min gap-6 pb-2">
-                  {balances.map((balance, index) => {
-                    const total = balance.total_allocated || 0;
-                    const available = balance.available || 0;
-                    const used = balance.used || 0;
-                    const pending = balance.pending || 0;
+              {/* Per-Leave-Type Cards */}
+              <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                {balances.map((balance, index) => {
+                  const total = balance.total_allocated || 0;
+                  const available = balance.available || 0;
+                  const used = balance.used || 0;
+                  const pending = balance.pending || 0;
 
-                    // Color palette cycling
-                    const cardStyles = [
-                      {
-                        border: 'border-green-300',
-                        bg: 'bg-green-50',
-                        text: 'text-green-700',
-                        code: 'border-green-400',
-                      },
-                      {
-                        border: 'border-blue-300',
-                        bg: 'bg-blue-50',
-                        text: 'text-blue-700',
-                        code: 'border-blue-400',
-                      },
-                      {
-                        border: 'border-purple-300',
-                        bg: 'bg-purple-50',
-                        text: 'text-purple-700',
-                        code: 'border-purple-400',
-                      },
-                      {
-                        border: 'border-orange-300',
-                        bg: 'bg-orange-50',
-                        text: 'text-orange-700',
-                        code: 'border-orange-400',
-                      },
-                      {
-                        border: 'border-green-300',
-                        bg: 'bg-green-50',
-                        text: 'text-green-700',
-                        code: 'border-green-400',
-                      },
-                    ];
-                    const style = cardStyles[index % cardStyles.length];
+                  // Color palette cycling
+                  const cardStyles = [
+                    {
+                      border: 'border-green-300',
+                      bg: 'bg-green-50',
+                      text: 'text-green-700',
+                      code: 'border-green-400',
+                    },
+                    {
+                      border: 'border-blue-300',
+                      bg: 'bg-blue-50',
+                      text: 'text-blue-700',
+                      code: 'border-blue-400',
+                    },
+                    {
+                      border: 'border-purple-300',
+                      bg: 'bg-purple-50',
+                      text: 'text-purple-700',
+                      code: 'border-purple-400',
+                    },
+                    {
+                      border: 'border-orange-300',
+                      bg: 'bg-orange-50',
+                      text: 'text-orange-700',
+                      code: 'border-orange-400',
+                    },
+                    {
+                      border: 'border-green-300',
+                      bg: 'bg-green-50',
+                      text: 'text-green-700',
+                      code: 'border-green-400',
+                    },
+                  ];
+                  const style = cardStyles[index % cardStyles.length];
 
-                    return (
+                  return (
+                    <div
+                      key={balance.public_id}
+                      className={`rounded-xl border-2 ${style.border} ${style.bg} flex flex-col items-center justify-center px-3 py-4 shadow-sm transition-shadow hover:shadow-md sm:px-6 sm:py-5`}
+                    >
                       <div
-                        key={balance.public_id}
-                        className={`rounded-xl border-2 ${style.border} ${style.bg} flex min-w-[240px] flex-col items-center justify-center px-6 py-5 shadow-sm transition-shadow hover:shadow-md`}
+                        className={`mb-2 text-xs font-bold sm:text-base ${style.text} text-center`}
                       >
-                        <div className={`mb-2 text-base font-bold ${style.text} text-center`}>
-                          {getLeaveTypeName(balance)}
-                        </div>
-                        <div className="mb-2 flex flex-wrap items-center justify-center gap-2">
-                          <div className={`text-3xl font-extrabold ${style.text}`}>
-                            {parseFloat(total.toString()).toFixed(1)}
-                          </div>
-                        </div>
-                        <div className="flex w-full flex-col gap-2 text-xs font-semibold">
-                          <div className="flex justify-between">
-                            <span className="text-gray-700">Available:</span>
-                            <span className="font-bold text-green-700">{available}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-700">Used:</span>
-                            <span className="font-bold text-red-700">{used}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-700">Pending:</span>
-                            <span className="font-bold text-yellow-700">{pending}</span>
-                          </div>
+                        {getLeaveTypeName(balance)}
+                      </div>
+                      <div className="mb-2 flex flex-wrap items-center justify-center gap-2">
+                        <div className={`text-xl font-extrabold sm:text-3xl ${style.text}`}>
+                          {parseFloat(total.toString()).toFixed(1)}
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                      <div className="flex w-full flex-col gap-1.5 text-[10px] font-semibold sm:gap-2 sm:text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-gray-700">Available:</span>
+                          <span className="font-bold text-green-700">{available}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-700">Used:</span>
+                          <span className="font-bold text-red-700">{used}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-700">Pending:</span>
+                          <span className="font-bold text-yellow-700">{pending}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </>
           )}

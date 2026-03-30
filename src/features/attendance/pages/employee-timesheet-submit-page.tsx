@@ -90,12 +90,12 @@ const AttendanceIndicator = ({
   onAfternoonClick?: () => void;
 }) => {
   return (
-    <div className="flex justify-center gap-2">
+    <div className="flex justify-center gap-1.5 sm:gap-2">
       {/* Morning Session */}
       <Button
         variant={morningPresent ? 'default' : 'outline'}
         size="sm"
-        className={`h-10 min-w-[120px] px-6 ${
+        className={`h-8 min-w-[60px] px-2 sm:h-10 sm:min-w-[120px] sm:px-6 ${
           morningPresent
             ? `border-green-600 bg-green-600 text-white shadow-sm ${disabled ? 'cursor-not-allowed opacity-75' : 'hover:bg-green-700'}`
             : `border-2 border-red-400 bg-red-50 text-red-700 ${disabled ? 'cursor-not-allowed opacity-75' : 'hover:border-red-500 hover:bg-red-100'}`
@@ -103,14 +103,17 @@ const AttendanceIndicator = ({
         onClick={disabled ? undefined : onMorningClick}
         disabled={disabled}
       >
-        <span className="text-sm font-semibold">Morning</span>
+        <span className="text-xs font-semibold sm:text-sm">
+          <span className="sm:hidden">AM</span>
+          <span className="hidden sm:inline">Morning</span>
+        </span>
       </Button>
 
       {/* Afternoon Session */}
       <Button
         variant={afternoonPresent ? 'default' : 'outline'}
         size="sm"
-        className={`h-10 min-w-[120px] px-6 ${
+        className={`h-8 min-w-[60px] px-2 sm:h-10 sm:min-w-[120px] sm:px-6 ${
           afternoonPresent
             ? `border-green-600 bg-green-600 text-white shadow-sm ${disabled ? 'cursor-not-allowed opacity-75' : 'hover:bg-green-700'}`
             : `border-2 border-red-400 bg-red-50 text-red-700 ${disabled ? 'cursor-not-allowed opacity-75' : 'hover:border-red-500 hover:bg-red-100'}`
@@ -118,7 +121,10 @@ const AttendanceIndicator = ({
         onClick={disabled ? undefined : onAfternoonClick}
         disabled={disabled}
       >
-        <span className="text-sm font-semibold">Afternoon</span>
+        <span className="text-xs font-semibold sm:text-sm">
+          <span className="sm:hidden">PM</span>
+          <span className="hidden sm:inline">Afternoon</span>
+        </span>
       </Button>
     </div>
   );
@@ -537,7 +543,7 @@ export function EmployeeTimesheetSubmitPage() {
 
   return (
     <TooltipProvider>
-      <div className="container mx-auto space-y-6 py-6">
+      <div className="container mx-auto space-y-4 px-2 py-3 sm:space-y-6 sm:px-4 sm:py-6">
         <PageHeader
           title="Submit New Attendance"
           actions={[
@@ -551,10 +557,10 @@ export function EmployeeTimesheetSubmitPage() {
         />
 
         <Card className="border-2 border-slate-200">
-          <CardHeader className="bg-slate-50">
-            <CardTitle className="text-lg font-semibold">Select Week to Add</CardTitle>
+          <CardHeader className="bg-slate-50 px-4 py-3 sm:px-6 sm:py-4">
+            <CardTitle className="text-base font-semibold sm:text-lg">Select Week</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4 pt-6 md:flex-row md:items-center">
+          <CardContent className="flex flex-col gap-3 px-4 pt-4 sm:gap-4 sm:px-6 sm:pt-6 md:flex-row md:items-center">
             <div className="w-full md:max-w-xs">
               <DatePicker
                 value={selectedDate}
@@ -567,55 +573,60 @@ export function EmployeeTimesheetSubmitPage() {
             <Button
               onClick={addWeek}
               disabled={addingWeek}
-              size="lg"
-              className="bg-green-600 hover:bg-green-700"
+              size="sm"
+              className="sm:size-default bg-green-600 hover:bg-green-700"
             >
               {addingWeek ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
               ) : (
-                <PlusCircle className="mr-2 h-4 w-4" />
+                <PlusCircle className="mr-1.5 h-4 w-4" />
               )}
               Add Week
             </Button>
-            <div className="text-muted-foreground rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm">
-              <span className="font-medium text-blue-700">Default:</span>{' '}
-              {defaultPresent ? '✓ Present' : '✗ Absent'}
-            </div>
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-700">
-              <span className="font-medium">Note:</span> Only dates up to today are shown
+            <div className="flex flex-wrap gap-2 sm:gap-3">
+              <div className="text-muted-foreground rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm">
+                <span className="font-medium text-blue-700">Default:</span>{' '}
+                {defaultPresent ? '✓ Present' : '✗ Absent'}
+              </div>
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-700 sm:px-4 sm:py-2 sm:text-sm">
+                <span className="font-medium">Note:</span> Only dates up to today are shown
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {weeks.map((week) => (
           <Card key={week.id} className="border-2">
-            <CardHeader className="flex-row items-center justify-between bg-slate-50">
-              <div className="flex items-center gap-3">
+            <CardHeader className="flex-row items-center justify-between gap-2 bg-slate-50 px-3 py-2 sm:px-6 sm:py-4">
+              <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => toggleWeekCollapse(week.id)}
-                  className="p-2"
+                  className="h-7 w-7 flex-shrink-0 p-0 sm:h-8 sm:w-8"
                 >
                   {week.collapsed ? (
-                    <ChevronDown className="h-5 w-5" />
+                    <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />
                   ) : (
-                    <ChevronUp className="h-5 w-5" />
+                    <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5" />
                   )}
                 </Button>
-                <CardTitle className="text-base font-semibold">
-                  Week: {format(parseISO(week.start), 'dd MMM yyyy')} -{' '}
-                  {format(parseISO(week.end), 'dd MMM yyyy')}
-                  <span className="ml-3 text-sm font-normal text-gray-600">
-                    ({week.rows.length} days)
-                  </span>
+                <div className="min-w-0">
+                  <CardTitle className="text-sm font-semibold sm:text-base">
+                    <span className="hidden sm:inline">Week: </span>
+                    {format(parseISO(week.start), 'dd MMM yyyy')} -{' '}
+                    {format(parseISO(week.end), 'dd MMM yyyy')}
+                    <span className="ml-2 text-xs font-normal text-gray-600 sm:ml-3 sm:text-sm">
+                      ({week.rows.length}d)
+                    </span>
+                  </CardTitle>
                   {week.submissionStatus && week.submissionStatusLabel && (
-                    <TimesheetStatusBadge status={week.submissionStatus} className="ml-3" />
+                    <TimesheetStatusBadge status={week.submissionStatus} className="mt-1" />
                   )}
-                </CardTitle>
+                </div>
                 {/* Show rejection reason prominently */}
                 {week.submissionStatus === TimesheetStatus.REJECTED && week.reviewComments && (
-                  <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3">
+                  <div className="mt-3 hidden rounded-lg border border-red-200 bg-red-50 p-3 sm:block">
                     <p className="mb-1 flex items-center text-sm font-semibold text-red-800">
                       <XCircle className="mr-2 h-4 w-4" />
                       Rejection Reason:
@@ -627,28 +638,38 @@ export function EmployeeTimesheetSubmitPage() {
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => removeWeek(week.id)}
-                  className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+              <div className="flex flex-shrink-0 items-center gap-1.5 sm:gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeWeek(week.id)}
+                      className="h-8 w-8 border-red-300 p-0 text-red-600 hover:bg-red-50 hover:text-red-700 sm:h-9 sm:w-auto sm:px-3"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Remove week</TooltipContent>
+                </Tooltip>
                 {week.submissionStatus === TimesheetStatus.SUBMITTED && (
-                  <Button
-                    variant="outline"
-                    size="default"
-                    onClick={() => returnToDraft(week)}
-                    className="border-orange-300 font-semibold text-orange-600 hover:bg-orange-50 hover:text-orange-700"
-                  >
-                    <RotateCcw className="mr-2 h-4 w-4" />
-                    Return to Draft
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => returnToDraft(week)}
+                        className="h-8 border-orange-300 px-2 font-semibold text-orange-600 hover:bg-orange-50 hover:text-orange-700 sm:h-9 sm:px-3"
+                      >
+                        <RotateCcw className="h-4 w-4 sm:mr-1.5" />
+                        <span className="hidden sm:inline">Return to Draft</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Return to Draft</TooltipContent>
+                  </Tooltip>
                 )}
                 <Button
-                  size="default"
+                  size="sm"
                   onClick={() => submitWeek(week)}
                   disabled={
                     submitMutation.isPending ||
@@ -656,7 +677,7 @@ export function EmployeeTimesheetSubmitPage() {
                     week.submissionStatus === TimesheetStatus.SUBMITTED ||
                     week.submissionStatus === TimesheetStatus.APPROVED
                   }
-                  className={`px-6 font-semibold ${
+                  className={`h-8 px-2 text-xs font-semibold sm:h-9 sm:px-4 sm:text-sm ${
                     week.submissionStatus === TimesheetStatus.SUBMITTED ||
                     week.submissionStatus === TimesheetStatus.APPROVED
                       ? 'cursor-not-allowed bg-gray-400'
@@ -668,26 +689,32 @@ export function EmployeeTimesheetSubmitPage() {
                   }`}
                 >
                   {submitMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Submitting...
-                    </>
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : week.submissionStatus === TimesheetStatus.SUBMITTED ? (
-                    'Already Submitted'
+                    <>
+                      <Check className="h-4 w-4 sm:mr-1.5" />
+                      <span className="hidden sm:inline">Submitted</span>
+                    </>
                   ) : week.submissionStatus === TimesheetStatus.APPROVED ? (
                     <>
-                      <Check className="mr-2 h-4 w-4" />
-                      Approved
+                      <Check className="h-4 w-4 sm:mr-1.5" />
+                      <span className="hidden sm:inline">Approved</span>
                     </>
                   ) : week.submissionStatus === TimesheetStatus.RETURNED ? (
-                    'Resubmit Week'
+                    <>
+                      <RotateCcw className="h-4 w-4 sm:mr-1.5" />
+                      <span className="hidden sm:inline">Resubmit</span>
+                    </>
                   ) : week.submissionStatus === TimesheetStatus.REJECTED ? (
                     <>
-                      <RotateCcw className="mr-2 h-4 w-4" />
-                      Resubmit After Fix
+                      <RotateCcw className="h-4 w-4 sm:mr-1.5" />
+                      <span className="hidden sm:inline">Resubmit</span>
                     </>
                   ) : (
-                    'Submit Week'
+                    <>
+                      <FileText className="h-4 w-4 sm:mr-1.5" />
+                      <span className="hidden sm:inline">Submit</span>
+                    </>
                   )}
                 </Button>
               </div>
@@ -697,9 +724,13 @@ export function EmployeeTimesheetSubmitPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-100">
-                      <TableHead className="font-semibold">Date</TableHead>
-                      <TableHead className="text-center font-semibold">Attendance Status</TableHead>
-                      <TableHead className="text-center font-semibold">Actions</TableHead>
+                      <TableHead className="text-xs font-semibold sm:text-sm">Date</TableHead>
+                      <TableHead className="text-center text-xs font-semibold sm:text-sm">
+                        Attendance
+                      </TableHead>
+                      <TableHead className="hidden text-center text-xs font-semibold sm:table-cell sm:text-sm">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -708,25 +739,26 @@ export function EmployeeTimesheetSubmitPage() {
 
                       return (
                         <TableRow key={row.date} className={rowBgClass}>
-                          <TableCell>
-                            <div className="flex flex-col gap-1">
-                              <span className="text-base font-semibold">
+                          <TableCell className="px-2 py-2 sm:px-4 sm:py-4">
+                            <div className="flex flex-col gap-0.5 sm:gap-1">
+                              <span className="text-xs font-semibold sm:text-base">
                                 {format(parseISO(row.date), 'EEE, dd MMM')}
                               </span>
                               {row.locked_reason === 'holiday' && row.holiday_description && (
                                 <Badge
                                   variant="outline"
-                                  className="w-fit border-purple-300 bg-purple-100 font-medium text-purple-700"
+                                  className="w-fit border-purple-300 bg-purple-100 text-[10px] font-medium text-purple-700 sm:text-xs"
                                 >
                                   <Calendar className="mr-1 h-3 w-3" />
-                                  Organization Holiday: {row.holiday_description}
+                                  <span className="hidden sm:inline">Organization Holiday: </span>
+                                  {row.holiday_description}
                                 </Badge>
                               )}
                               {row.locked_reason === 'exception_holiday' &&
                                 row.holiday_description && (
                                   <Badge
                                     variant="outline"
-                                    className="w-fit border-orange-300 bg-orange-100 font-medium text-orange-700"
+                                    className="w-fit border-orange-300 bg-orange-100 text-[10px] font-medium text-orange-700 sm:text-xs"
                                   >
                                     <Calendar className="mr-1 h-3 w-3" />
                                     {row.holiday_description}
@@ -736,16 +768,20 @@ export function EmployeeTimesheetSubmitPage() {
                                 row.exception_reason && (
                                   <Badge
                                     variant="outline"
-                                    className="w-fit border-green-300 bg-green-100 font-medium text-green-700"
+                                    className="w-fit border-green-300 bg-green-100 text-[10px] font-medium text-green-700 sm:text-xs"
                                   >
                                     <Calendar className="mr-1 h-3 w-3" />
-                                    Exceptional Working Day: {row.exception_reason}
+                                    <span className="hidden sm:inline">
+                                      Exceptional Working Day:{' '}
+                                    </span>
+                                    <span className="sm:hidden">Exception</span>
+                                    <span className="hidden sm:inline">{row.exception_reason}</span>
                                   </Badge>
                                 )}
                               {row.locked_reason === 'leave' && (
                                 <Badge
                                   variant="outline"
-                                  className="w-fit border-blue-300 bg-blue-100 font-medium text-blue-700"
+                                  className="w-fit border-blue-300 bg-blue-100 text-[10px] font-medium text-blue-700 sm:text-xs"
                                 >
                                   <FileText className="mr-1 h-3 w-3" />
                                   On Leave
@@ -754,15 +790,16 @@ export function EmployeeTimesheetSubmitPage() {
                               {row.locked_reason === 'non_working_day' && (
                                 <Badge
                                   variant="outline"
-                                  className="w-fit border-gray-300 bg-gray-100 font-medium text-gray-700"
+                                  className="w-fit border-gray-300 bg-gray-100 text-[10px] font-medium text-gray-700 sm:text-xs"
                                 >
                                   <Calendar className="mr-1 h-3 w-3" />
-                                  Non-working Day
+                                  <span className="sm:hidden">Off</span>
+                                  <span className="hidden sm:inline">Non-working Day</span>
                                 </Badge>
                               )}
                             </div>
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="px-1 py-2 text-center sm:px-4 sm:py-4">
                             <AttendanceIndicator
                               morningPresent={
                                 row.locked_reason === 'leave' ? false : row.morning_present
@@ -796,7 +833,7 @@ export function EmployeeTimesheetSubmitPage() {
                               }
                             />
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="hidden px-2 py-2 text-center sm:table-cell sm:px-4 sm:py-4">
                             {row.locked_reason === 'leave' &&
                             row.leave_type_name &&
                             row.leave_status ? (

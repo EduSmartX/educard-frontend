@@ -18,21 +18,24 @@ export function DeletedViewToggle({
     <Button
       onClick={onToggle}
       variant={showDeleted ? 'default' : 'outline'}
+      size="sm"
       className={
         showDeleted
-          ? `bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 border-0 [&>*]:!text-white ${className || ''}`
+          ? `border-0 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 [&>*]:!text-white ${className || ''}`
           : className
       }
     >
       {showDeleted ? (
         <>
-          <RotateCcw className="h-4 w-4 mr-2" />
-          View Active
+          <RotateCcw className="mr-1.5 h-4 w-4" />
+          <span className="sm:hidden">Active</span>
+          <span className="hidden sm:inline">View Active</span>
         </>
       ) : (
         <>
-          <Trash2 className="h-4 w-4 mr-2" />
-          View Deleted
+          <Trash2 className="mr-1.5 h-4 w-4" />
+          <span className="sm:hidden">Deleted</span>
+          <span className="hidden sm:inline">View Deleted</span>
         </>
       )}
     </Button>

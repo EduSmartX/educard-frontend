@@ -21,11 +21,15 @@ import {
  */
 export function formatDate(
   date: Date | string | null | undefined,
-  formatStr: string = 'MMM dd, yyyy'
+  formatStr: string = 'dd MMM yyyy'
 ): string {
-  if (!date) return '';
+  if (!date) {
+    return '';
+  }
   const dateObj = typeof date === 'string' ? parseISO(date) : date;
-  if (!isValid(dateObj)) return '';
+  if (!isValid(dateObj)) {
+    return '';
+  }
   return format(dateObj, formatStr);
 }
 
@@ -34,7 +38,7 @@ export function formatDate(
  */
 export function formatDateTime(
   date: Date | string | null | undefined,
-  formatStr: string = 'MMM dd, yyyy hh:mm a'
+  formatStr: string = 'dd MMM yyyy hh:mm a'
 ): string {
   return formatDate(date, formatStr);
 }
@@ -53,9 +57,13 @@ export function formatTime(
  * Format relative time (e.g., "2 hours ago")
  */
 export function formatRelativeTime(date: Date | string | null | undefined): string {
-  if (!date) return '';
+  if (!date) {
+    return '';
+  }
   const dateObj = typeof date === 'string' ? parseISO(date) : date;
-  if (!isValid(dateObj)) return '';
+  if (!isValid(dateObj)) {
+    return '';
+  }
   return formatDistance(dateObj, new Date(), { addSuffix: true });
 }
 
@@ -63,9 +71,13 @@ export function formatRelativeTime(date: Date | string | null | undefined): stri
  * Format relative date (e.g., "yesterday at 3:00 PM")
  */
 export function formatRelativeDate(date: Date | string | null | undefined): string {
-  if (!date) return '';
+  if (!date) {
+    return '';
+  }
   const dateObj = typeof date === 'string' ? parseISO(date) : date;
-  if (!isValid(dateObj)) return '';
+  if (!isValid(dateObj)) {
+    return '';
+  }
   return formatRelative(dateObj, new Date());
 }
 
@@ -74,7 +86,9 @@ export function formatRelativeDate(date: Date | string | null | undefined): stri
  */
 export function calculateAge(dateOfBirth: Date | string): number {
   const dob = typeof dateOfBirth === 'string' ? parseISO(dateOfBirth) : dateOfBirth;
-  if (!isValid(dob)) return 0;
+  if (!isValid(dob)) {
+    return 0;
+  }
   return differenceInYears(new Date(), dob);
 }
 
@@ -118,7 +132,9 @@ export function getCurrentWeekRange(): { start: Date; end: Date } {
  */
 export function isDateInPast(date: Date | string): boolean {
   const dateObj = typeof date === 'string' ? parseISO(date) : date;
-  if (!isValid(dateObj)) return false;
+  if (!isValid(dateObj)) {
+    return false;
+  }
   return isBefore(dateObj, new Date());
 }
 
@@ -127,7 +143,9 @@ export function isDateInPast(date: Date | string): boolean {
  */
 export function isDateInFuture(date: Date | string): boolean {
   const dateObj = typeof date === 'string' ? parseISO(date) : date;
-  if (!isValid(dateObj)) return false;
+  if (!isValid(dateObj)) {
+    return false;
+  }
   return isAfter(dateObj, new Date());
 }
 
@@ -136,7 +154,9 @@ export function isDateInFuture(date: Date | string): boolean {
  */
 export function isToday(date: Date | string): boolean {
   const dateObj = typeof date === 'string' ? parseISO(date) : date;
-  if (!isValid(dateObj)) return false;
+  if (!isValid(dateObj)) {
+    return false;
+  }
   return isSameDay(dateObj, new Date());
 }
 
@@ -163,7 +183,9 @@ export function getWorkingDays(startDate: Date, endDate: Date): number {
  * Parse date string safely
  */
 export function parseDate(dateStr: string | null | undefined): Date | null {
-  if (!dateStr) return null;
+  if (!dateStr) {
+    return null;
+  }
   const date = parseISO(dateStr);
   return isValid(date) ? date : null;
 }
@@ -172,9 +194,13 @@ export function parseDate(dateStr: string | null | undefined): Date | null {
  * Format date for API (ISO format)
  */
 export function formatDateForAPI(date: Date | string | null | undefined): string {
-  if (!date) return '';
+  if (!date) {
+    return '';
+  }
   const dateObj = typeof date === 'string' ? parseISO(date) : date;
-  if (!isValid(dateObj)) return '';
+  if (!isValid(dateObj)) {
+    return '';
+  }
   return format(dateObj, 'yyyy-MM-dd');
 }
 
@@ -192,9 +218,13 @@ export function formatLocalDate(d: Date): string {
  * Parse a YYYY-MM-DD string into a local Date object (returns undefined on invalid input)
  */
 export function parseLocalDate(dateStr?: string | null): Date | undefined {
-  if (!dateStr) return undefined;
+  if (!dateStr) {
+    return undefined;
+  }
   const parts = dateStr.split('-');
-  if (parts.length !== 3) return undefined;
+  if (parts.length !== 3) {
+    return undefined;
+  }
   const y = Number(parts[0]);
   const m = Number(parts[1]) - 1;
   const d = Number(parts[2]);
@@ -205,9 +235,13 @@ export function parseLocalDate(dateStr?: string | null): Date | undefined {
  * Format datetime for API (ISO format)
  */
 export function formatDateTimeForAPI(date: Date | string | null | undefined): string {
-  if (!date) return '';
+  if (!date) {
+    return '';
+  }
   const dateObj = typeof date === 'string' ? parseISO(date) : date;
-  if (!isValid(dateObj)) return '';
+  if (!isValid(dateObj)) {
+    return '';
+  }
   return dateObj.toISOString();
 }
 

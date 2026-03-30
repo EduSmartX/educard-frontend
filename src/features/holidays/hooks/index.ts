@@ -10,5 +10,5 @@ export {
   useDeleteHoliday,
   useBulkUploadHolidays,
   type MutationOptions,
-  type FieldErrors,
+  type HolidayFieldErrors,
 } from './mutations';

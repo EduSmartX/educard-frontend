@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format, eachDayOfInterval, startOfMonth, endOfMonth } from 'date-fns';
-import { CalendarDays, Loader2 } from 'lucide-react';
+import { CalendarDays, Loader2, Check, X } from 'lucide-react';
 
 import { PageHeader } from '@/components/common';
 import { Badge } from '@/components/ui/badge';
@@ -274,7 +274,7 @@ export function AttendanceReportPage() {
   }, [viewType, user, manageableUsers, selectedUser, monthlyDetailData]);
 
   return (
-    <div className="container mx-auto space-y-6 py-6">
+    <div className="container mx-auto space-y-4 px-2 py-3 sm:space-y-6 sm:px-4 sm:py-6">
       <PageHeader
         title="Attendance Report"
         description="View yearly and monthly attendance reports with comprehensive analytics"
@@ -282,11 +282,13 @@ export function AttendanceReportPage() {
 
       {/* Filter Section */}
       <Card className="border border-blue-200 shadow-sm" style={{ backgroundColor: '#E3F2FD' }}>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <CardContent className="px-3 pt-4 sm:px-6 sm:pt-6">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
             {/* Report Type */}
             <div>
-              <label className="mb-2 block text-sm font-semibold text-gray-700">Report Type</label>
+              <label className="mb-1 block text-xs font-semibold text-gray-700 sm:mb-2 sm:text-sm">
+                Report Type
+              </label>
               <Select
                 value={reportType}
                 onValueChange={(value) => setReportType(value as ReportType)}
@@ -303,7 +305,9 @@ export function AttendanceReportPage() {
 
             {/* View Type */}
             <div>
-              <label className="mb-2 block text-sm font-semibold text-gray-700">View</label>
+              <label className="mb-1 block text-xs font-semibold text-gray-700 sm:mb-2 sm:text-sm">
+                View
+              </label>
               <Select value={viewType} onValueChange={(value) => setViewType(value as ViewType)}>
                 <SelectTrigger className="bg-white">
                   <SelectValue />
@@ -318,7 +322,7 @@ export function AttendanceReportPage() {
             {/* Staff Selection */}
             {viewType === 'staff' && (
               <div>
-                <label className="mb-2 block text-sm font-semibold text-gray-700">
+                <label className="mb-1 block text-xs font-semibold text-gray-700 sm:mb-2 sm:text-sm">
                   Select Staff
                 </label>
                 <Combobox
@@ -339,7 +343,7 @@ export function AttendanceReportPage() {
 
             {/* Month/Year Selection */}
             <div>
-              <label className="mb-2 block text-sm font-semibold text-gray-700">
+              <label className="mb-1 block text-xs font-semibold text-gray-700 sm:mb-2 sm:text-sm">
                 {reportType === 'monthly' ? 'Select Month & Year' : 'Select Year'}
               </label>
               <MonthYearPicker
@@ -354,7 +358,7 @@ export function AttendanceReportPage() {
       {/* User Info Card with Monthly Report - Matching Timesheet Overview Design */}
       {selectedUserData && (
         <Card className="border border-[#bfd591] shadow-sm" style={{ backgroundColor: '#C5D89D' }}>
-          <CardContent className="grid grid-cols-1 gap-4 pt-6 lg:grid-cols-2">
+          <CardContent className="grid grid-cols-1 gap-3 px-3 pt-4 sm:gap-4 sm:px-6 sm:pt-6 lg:grid-cols-2">
             <EmployeeInfoCard
               user={selectedUserData}
               organization={
@@ -375,14 +379,15 @@ export function AttendanceReportPage() {
 
             {targetUserId && monthlyDetailData && reportType === 'monthly' && (
               <Card className="border-0 bg-white shadow-sm">
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-2 sm:pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2 text-xl font-bold">
-                      <CalendarDays className="h-6 w-6 text-blue-600" />
-                      Monthly Report
+                    <CardTitle className="flex items-center gap-2 text-base font-bold sm:text-xl">
+                      <CalendarDays className="h-5 w-5 text-blue-600 sm:h-6 sm:w-6" />
+                      <span className="sm:hidden">Report</span>
+                      <span className="hidden sm:inline">Monthly Report</span>
                     </CardTitle>
-                    <Badge variant="outline" className="text-sm">
-                      {format(new Date(selectedYear, selectedMonth), 'MMMM yyyy')}
+                    <Badge variant="outline" className="text-xs sm:text-sm">
+                      {format(new Date(selectedYear, selectedMonth), 'MMM yyyy')}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -560,74 +565,86 @@ export function AttendanceReportPage() {
       {/* Yearly Report Table */}
       {!loading && reportType === 'yearly' && yearlyData && !showCalendarView && (
         <Card className="shadow-sm">
-          <CardHeader>
+          <CardHeader className="px-3 py-2 sm:px-6 sm:py-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <CalendarDays className="h-5 w-5 text-blue-600" />
-                {academicYear
-                  ? `Academic Year Attendance Report - ${academicYear.name}`
-                  : `Yearly Attendance Report - ${selectedYear}`}
+              <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                <CalendarDays className="h-4 w-4 text-blue-600 sm:h-5 sm:w-5" />
+                <span className="sm:hidden">
+                  {academicYear ? academicYear.name : `${selectedYear}`}
+                </span>
+                <span className="hidden sm:inline">
+                  {academicYear
+                    ? `Academic Year Report - ${academicYear.name}`
+                    : `Yearly Report - ${selectedYear}`}
+                </span>
               </CardTitle>
-              <Badge variant="outline" className="text-base">
+              <Badge variant="outline" className="text-xs sm:text-base">
                 {academicYear ? academicYear.name : selectedYear}
               </Badge>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-2 sm:px-6">
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse border border-gray-300">
+              <table className="w-full border-collapse border border-gray-300 text-xs sm:text-sm">
                 <thead>
                   <tr className="bg-blue-100">
-                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">
+                    <th className="border border-gray-300 px-2 py-2 text-left font-semibold text-gray-700 sm:px-4 sm:py-3">
                       Month
                     </th>
-                    <th className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700">
-                      Total Working Days
+                    <th className="border border-gray-300 px-2 py-2 text-center font-semibold text-gray-700 sm:px-4 sm:py-3">
+                      <span className="sm:hidden">Work</span>
+                      <span className="hidden sm:inline">Total Working Days</span>
                     </th>
-                    <th className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700">
-                      Total Present
+                    <th className="border border-gray-300 px-2 py-2 text-center font-semibold text-gray-700 sm:px-4 sm:py-3">
+                      <span className="sm:hidden">Pres.</span>
+                      <span className="hidden sm:inline">Total Present</span>
                     </th>
-                    <th className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700">
-                      Total Absent
+                    <th className="border border-gray-300 px-2 py-2 text-center font-semibold text-gray-700 sm:px-4 sm:py-3">
+                      <span className="sm:hidden">Abs.</span>
+                      <span className="hidden sm:inline">Total Absent</span>
                     </th>
-                    <th className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700">
-                      Total Leaves
+                    <th className="border border-gray-300 px-2 py-2 text-center font-semibold text-gray-700 sm:px-4 sm:py-3">
+                      <span className="sm:hidden">Leave</span>
+                      <span className="hidden sm:inline">Total Leaves</span>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {yearlyData.monthlyStats.map((month, index) => (
                     <tr key={index} className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2 font-medium text-gray-800">
-                        {month.month}
+                      <td className="border border-gray-300 px-2 py-1.5 text-xs font-medium text-gray-800 sm:px-4 sm:py-2 sm:text-sm">
+                        <span className="sm:hidden">{month.month.substring(0, 3)}</span>
+                        <span className="hidden sm:inline">{month.month}</span>
                       </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center text-gray-700">
+                      <td className="border border-gray-300 px-2 py-1.5 text-center text-gray-700 sm:px-4 sm:py-2">
                         {month.totalWorkingDays}
                       </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center font-semibold text-green-700">
+                      <td className="border border-gray-300 px-2 py-1.5 text-center font-semibold text-green-700 sm:px-4 sm:py-2">
                         {month.present}
                       </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center font-semibold text-red-700">
+                      <td className="border border-gray-300 px-2 py-1.5 text-center font-semibold text-red-700 sm:px-4 sm:py-2">
                         {month.absent}
                       </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center font-semibold text-blue-700">
+                      <td className="border border-gray-300 px-2 py-1.5 text-center font-semibold text-blue-700 sm:px-4 sm:py-2">
                         {month.leaves}
                       </td>
                     </tr>
                   ))}
                   {/* Totals Row */}
                   <tr className="bg-green-100 font-bold">
-                    <td className="border border-gray-300 px-4 py-3 text-gray-800">TOTAL</td>
-                    <td className="border border-gray-300 px-4 py-3 text-center text-gray-800">
+                    <td className="border border-gray-300 px-2 py-2 text-gray-800 sm:px-4 sm:py-3">
+                      TOTAL
+                    </td>
+                    <td className="border border-gray-300 px-2 py-2 text-center text-gray-800 sm:px-4 sm:py-3">
                       {yearlyData.totals.total_working_days}
                     </td>
-                    <td className="border border-gray-300 px-4 py-3 text-center text-green-800">
+                    <td className="border border-gray-300 px-2 py-2 text-center text-green-800 sm:px-4 sm:py-3">
                       {yearlyData.totals.total_present}
                     </td>
-                    <td className="border border-gray-300 px-4 py-3 text-center text-red-800">
+                    <td className="border border-gray-300 px-2 py-2 text-center text-red-800 sm:px-4 sm:py-3">
                       {yearlyData.totals.total_absent}
                     </td>
-                    <td className="border border-gray-300 px-4 py-3 text-center text-blue-800">
+                    <td className="border border-gray-300 px-2 py-2 text-center text-blue-800 sm:px-4 sm:py-3">
                       {yearlyData.totals.total_leaves}
                     </td>
                   </tr>
@@ -652,14 +669,19 @@ export function AttendanceReportPage() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           {/* Calendar Section - Takes 2/3 width */}
           <Card className="lg:col-span-2">
-            <CardHeader className="pb-3">
+            <CardHeader className="px-3 pb-2 sm:px-6 sm:pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <CalendarDays className="h-5 w-5 text-blue-600" />
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <CalendarDays className="h-4 w-4 text-blue-600 sm:h-5 sm:w-5" />
                   {MONTHS[selectedMonth]} {selectedYear}
                 </CardTitle>
-                <Badge variant="outline" className="text-base">
-                  {MONTHS[selectedMonth]} {selectedYear}
+                <Badge variant="outline" className="text-xs sm:text-base">
+                  <span className="sm:hidden">
+                    {MONTHS[selectedMonth].substring(0, 3)} {selectedYear}
+                  </span>
+                  <span className="hidden sm:inline">
+                    {MONTHS[selectedMonth]} {selectedYear}
+                  </span>
                 </Badge>
               </div>
             </CardHeader>
@@ -708,6 +730,9 @@ export function AttendanceReportPage() {
                         let textColor = 'text-gray-900';
                         let icon = null;
                         let statusLabel = '';
+                        let mobileCircleColor = 'bg-gray-100 text-gray-700';
+                        let isHolidayState = false;
+                        let isLeaveState = false;
 
                         // Check for force working day exception (overrides holiday/weekend)
                         if (exception?.override_type === 'FORCE_WORKING') {
@@ -715,17 +740,19 @@ export function AttendanceReportPage() {
                           if (attendance?.morning_present && attendance?.afternoon_present) {
                             bgColor = 'bg-green-50 border-green-300';
                             textColor = 'text-green-900';
+                            mobileCircleColor = 'bg-green-500 text-white';
                             icon = (
-                              <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-[10px] font-bold text-white">
-                                ✓
+                              <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-green-500">
+                                <Check className="h-3 w-3 stroke-[2.5] text-white" />
                               </div>
                             );
                           } else if (!isFuture) {
                             bgColor = 'bg-red-50 border-red-300';
                             textColor = 'text-red-900';
+                            mobileCircleColor = 'bg-red-500 text-white';
                             icon = (
-                              <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                                ✕
+                              <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-500">
+                                <X className="h-3 w-3 stroke-[2.5] text-white" />
                               </div>
                             );
                           }
@@ -734,6 +761,8 @@ export function AttendanceReportPage() {
                         else if (exception?.override_type === 'FORCE_HOLIDAY' || isHoliday) {
                           bgColor = 'bg-purple-50 border-purple-300';
                           textColor = 'text-purple-900';
+                          mobileCircleColor = 'bg-purple-500 text-white';
+                          isHolidayState = true;
                           icon = (
                             <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-purple-500 text-[10px] font-bold text-white">
                               H
@@ -775,6 +804,8 @@ export function AttendanceReportPage() {
                           if (isWeekend) {
                             bgColor = 'bg-purple-50 border-purple-300';
                             textColor = 'text-purple-900';
+                            mobileCircleColor = 'bg-purple-500 text-white';
+                            isHolidayState = true;
                             icon = (
                               <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-purple-500 text-[10px] font-bold text-white">
                                 H
@@ -788,9 +819,11 @@ export function AttendanceReportPage() {
                         if (!icon && leave?.status === 'approved') {
                           bgColor = 'bg-orange-50 border-orange-300';
                           textColor = 'text-orange-900';
+                          mobileCircleColor = 'bg-orange-500 text-white';
+                          isLeaveState = true;
                           icon = (
-                            <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white">
-                              ✕
+                            <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-orange-500">
+                              <X className="h-3 w-3 stroke-[2.5] text-white" />
                             </div>
                           );
                         }
@@ -798,9 +831,11 @@ export function AttendanceReportPage() {
                         else if (!icon && leave?.status === 'pending') {
                           bgColor = 'bg-orange-50 border-orange-300';
                           textColor = 'text-orange-900';
+                          mobileCircleColor = 'bg-yellow-500 text-white';
+                          isLeaveState = true;
                           icon = (
-                            <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white">
-                              ✕
+                            <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-orange-500">
+                              <X className="h-3 w-3 stroke-[2.5] text-white" />
                             </div>
                           );
                         }
@@ -812,9 +847,10 @@ export function AttendanceReportPage() {
                         ) {
                           bgColor = 'bg-green-50 border-green-300';
                           textColor = 'text-green-900';
+                          mobileCircleColor = 'bg-green-500 text-white';
                           icon = (
-                            <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-[10px] font-bold text-white">
-                              ✓
+                            <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-green-500">
+                              <Check className="h-3 w-3 stroke-[2.5] text-white" />
                             </div>
                           );
                         }
@@ -827,9 +863,10 @@ export function AttendanceReportPage() {
                         ) {
                           bgColor = 'bg-red-50 border-red-300';
                           textColor = 'text-red-900';
+                          mobileCircleColor = 'bg-red-500 text-white';
                           icon = (
-                            <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                              ✕
+                            <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-500">
+                              <X className="h-3 w-3 stroke-[2.5] text-white" />
                             </div>
                           );
                         }
@@ -837,6 +874,7 @@ export function AttendanceReportPage() {
                         else if (isFuture) {
                           bgColor = 'bg-gray-50 border-gray-200';
                           textColor = 'text-gray-400';
+                          mobileCircleColor = 'bg-gray-100 text-gray-400';
                         }
 
                         return (
@@ -844,7 +882,8 @@ export function AttendanceReportPage() {
                             key={dateKey}
                             className={`flex aspect-square flex-col items-center justify-between rounded border p-1 transition ${bgColor}`}
                           >
-                            <div className="w-full text-center">
+                            {/* Desktop view: day name + day number + icon */}
+                            <div className="hidden w-full text-center sm:block">
                               <div className="text-[7px] font-medium text-gray-500">
                                 {format(date, 'EEE')}
                               </div>
@@ -852,13 +891,78 @@ export function AttendanceReportPage() {
                                 {format(date, 'd')}
                               </div>
                             </div>
-                            <div className="flex w-full flex-1 flex-col items-center justify-center">
+                            <div className="hidden w-full flex-1 flex-col items-center justify-center sm:flex">
                               {icon}
                               {statusLabel && (
                                 <div className="mt-0.5 text-[7px] font-medium text-purple-600">
                                   {statusLabel}
                                 </div>
                               )}
+                            </div>
+
+                            {/* Mobile view: compact color-coded circle with day number */}
+                            <div className="flex h-full w-full items-center justify-center sm:hidden">
+                              {(() => {
+                                if (isHolidayState) {
+                                  return (
+                                    <div
+                                      className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold ${mobileCircleColor}`}
+                                    >
+                                      H
+                                    </div>
+                                  );
+                                }
+
+                                if (isLeaveState) {
+                                  return (
+                                    <div
+                                      className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold ${mobileCircleColor}`}
+                                    >
+                                      {format(date, 'd')}
+                                    </div>
+                                  );
+                                }
+
+                                // Half-day: split circle
+                                if (
+                                  attendance &&
+                                  !leave &&
+                                  attendance.morning_present !== undefined &&
+                                  attendance.afternoon_present !== undefined &&
+                                  attendance.morning_present !== attendance.afternoon_present
+                                ) {
+                                  return (
+                                    <div className="relative flex h-7 w-7 items-center justify-center">
+                                      <svg
+                                        viewBox="0 0 28 28"
+                                        className="absolute inset-0 h-full w-full"
+                                      >
+                                        <path
+                                          d="M 0 14 A 14 14 0 0 1 28 14 Z"
+                                          fill={attendance.morning_present ? '#22c55e' : '#ef4444'}
+                                        />
+                                        <path
+                                          d="M 0 14 A 14 14 0 0 0 28 14 Z"
+                                          fill={
+                                            attendance.afternoon_present ? '#22c55e' : '#ef4444'
+                                          }
+                                        />
+                                      </svg>
+                                      <span className="relative text-[10px] font-bold text-white">
+                                        {format(date, 'd')}
+                                      </span>
+                                    </div>
+                                  );
+                                }
+
+                                return (
+                                  <div
+                                    className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold ${mobileCircleColor}`}
+                                  >
+                                    {format(date, 'd')}
+                                  </div>
+                                );
+                              })()}
                             </div>
                           </div>
                         );
@@ -895,7 +999,8 @@ export function AttendanceReportPage() {
                       const present = monthlyDetailData?.stats?.total_present || 0;
                       const absent = monthlyDetailData?.stats?.total_absent || 0;
                       const leaves = monthlyDetailData?.stats?.total_leaves || 0;
-                      const total = present + absent + leaves;
+                      const holidays = monthlyDetailData?.stats?.total_holidays || 0;
+                      const total = present + absent + leaves + holidays;
 
                       if (total === 0) {
                         return (
@@ -914,10 +1019,12 @@ export function AttendanceReportPage() {
                       const presentPercent = (present / total) * 100;
                       const absentPercent = (absent / total) * 100;
                       const leavePercent = (leaves / total) * 100;
+                      const holidayPercent = (holidays / total) * 100;
 
                       const presentLength = (presentPercent / 100) * circumference;
                       const absentLength = (absentPercent / 100) * circumference;
                       const leaveLength = (leavePercent / 100) * circumference;
+                      const holidayLength = (holidayPercent / 100) * circumference;
 
                       let offset = 0;
 
@@ -972,6 +1079,24 @@ export function AttendanceReportPage() {
                                 />
                               );
                             })()}
+
+                          {/* Holiday segment */}
+                          {holidayPercent > 0 &&
+                            (() => {
+                              offset += leaveLength;
+                              return (
+                                <circle
+                                  cx="50"
+                                  cy="50"
+                                  r="40"
+                                  fill="none"
+                                  stroke="#a855f7"
+                                  strokeWidth="20"
+                                  strokeDasharray={`${holidayLength} ${circumference - holidayLength}`}
+                                  strokeDashoffset={-offset}
+                                />
+                              );
+                            })()}
                         </>
                       );
                     })()}
@@ -1017,6 +1142,15 @@ export function AttendanceReportPage() {
                       {monthlyDetailData?.stats?.total_leaves}
                     </span>
                   </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="h-3 w-3 rounded-full bg-purple-500"></div>
+                      <span className="text-xs text-gray-700">Holiday</span>
+                    </div>
+                    <span className="text-xs font-semibold text-gray-900">
+                      {monthlyDetailData?.stats?.total_holidays}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Summary Cards */}
@@ -1055,25 +1189,27 @@ export function AttendanceReportPage() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex items-center gap-2 text-xs">
-                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-green-500 text-[10px] text-white">
-                    ✓
+                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-green-500">
+                    <Check className="h-2.5 w-2.5 text-white" />
                   </div>
                   <span className="text-gray-700">Present</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
-                    ✕
+                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-red-500">
+                    <X className="h-2.5 w-2.5 text-white" />
                   </div>
                   <span className="text-gray-700">Absent</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] text-white">
-                    ✕
+                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-orange-500">
+                    <X className="h-2.5 w-2.5 text-white" />
                   </div>
                   <span className="text-gray-700">Leave (Approved)</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <div className="h-4 w-4 rounded border border-purple-300 bg-purple-100"></div>
+                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-purple-500 text-[10px] font-bold text-white">
+                    H
+                  </div>
                   <span className="text-gray-700">Holiday</span>
                 </div>
               </CardContent>

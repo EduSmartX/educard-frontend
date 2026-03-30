@@ -17,6 +17,7 @@ interface DashboardHeaderProps {
   organizationName?: string;
   organizationLogo?: string;
   userName?: string;
+  username?: string;
   userAvatar?: string;
   userRole?: string;
   notificationCount?: number;
@@ -26,6 +27,7 @@ export function DashboardHeader({
   organizationName = 'Your Organization',
   organizationLogo,
   userName = 'User',
+  username,
   userAvatar,
   userRole = 'Administrator',
   notificationCount = 0,
@@ -45,7 +47,7 @@ export function DashboardHeader({
   return (
     <header className="sticky top-0 z-30 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 shadow-lg">
       <div className="flex h-16 items-center sm:h-20">
-        {/* Left: EduCard Logo - Fixed width matching sidebar (Hidden on mobile, shown on desktop) */}
+        {/* Logo (desktop only) */}
         <div className="hidden w-64 flex-shrink-0 items-center gap-3 px-6 lg:flex">
           <LogoWithText
             size="md"
@@ -54,9 +56,8 @@ export function DashboardHeader({
           />
         </div>
 
-        {/* Middle: Organization Info - Starts after sidebar on desktop */}
+        {/* Organization Info */}
         <div className="flex items-center gap-2 px-3 sm:gap-3 sm:px-6 lg:px-8">
-          {/* Organization Logo */}
           {organizationLogo ? (
             <img
               src={organizationLogo}
@@ -80,9 +81,9 @@ export function DashboardHeader({
           </div>
         </div>
 
-        {/* Right: Search + Notifications + User Profile */}
+        {/* Actions */}
         <div className="ml-auto flex items-center gap-1.5 px-3 sm:gap-3 sm:px-6">
-          {/* Search - Hidden on mobile and tablet, shown on large screens */}
+          {/* Search (large screens only) */}
           <div className="relative hidden xl:block">
             <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-emerald-600" />
             <input
@@ -92,7 +93,7 @@ export function DashboardHeader({
             />
           </div>
 
-          {/* Notifications - Compact on mobile */}
+          {/* Notifications */}
           <Button
             variant="ghost"
             size="icon"
@@ -106,7 +107,7 @@ export function DashboardHeader({
             )}
           </Button>
 
-          {/* User Profile - Show only avatar on mobile */}
+          {/* User Profile */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 rounded-xl px-2 py-1.5 backdrop-blur-sm transition-all hover:bg-white/20 sm:gap-3 sm:px-3 sm:py-2">
@@ -123,7 +124,6 @@ export function DashboardHeader({
                     </span>
                   </div>
                 )}
-                {/* User info - Hidden on mobile, shown on desktop */}
                 <div className="hidden text-left lg:block">
                   <p className="text-sm font-semibold text-white drop-shadow-sm">{userName}</p>
                   <p className="text-xs text-emerald-100">{userRole}</p>
@@ -138,6 +138,7 @@ export function DashboardHeader({
               <DropdownMenuLabel className="pb-2">
                 <div>
                   <p className="text-sm font-medium text-gray-900">{userName}</p>
+                  {username && <p className="font-mono text-xs text-gray-400">@{username}</p>}
                   <p className="text-xs text-gray-500">{userRole}</p>
                 </div>
               </DropdownMenuLabel>

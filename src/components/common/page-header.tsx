@@ -5,8 +5,8 @@
  */
 
 import type { ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
 import {
+  type LucideIcon,
   Calendar,
   CalendarDays,
   Settings,
@@ -139,20 +139,22 @@ export function PageHeader({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         {/* Title and Description Section */}
         <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="mb-2 flex items-center gap-2 sm:gap-3">
             {Icon && (
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 shadow-md">
-                <Icon className="h-5 w-5 text-white" />
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 shadow-md sm:h-10 sm:w-10">
+                <Icon className="h-4 w-4 text-white sm:h-5 sm:w-5" />
               </div>
             )}
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{title}</h1>
+            <h1 className="text-xl font-bold tracking-tight text-gray-900 sm:text-3xl">{title}</h1>
           </div>
-          {description && <p className="text-base text-gray-600 mt-1 max-w-2xl">{description}</p>}
+          {description && (
+            <p className="mt-1 max-w-2xl text-sm text-gray-600 sm:text-base">{description}</p>
+          )}
         </div>
 
         {/* Actions and Children Section - Right Side */}
         {(actions.length > 0 || children) && (
-          <div className="flex flex-wrap items-center gap-3 flex-shrink-0">
+          <div className="flex flex-shrink-0 flex-wrap items-center gap-2 sm:gap-3">
             {/* Render action buttons */}
             {actions.length > 0 &&
               actions.map((action, index) => {
@@ -163,8 +165,9 @@ export function PageHeader({
                     onClick={action.onClick}
                     variant={action.variant || 'default'}
                     disabled={action.disabled}
+                    size="sm"
                     className={cn(
-                      'shadow-md hover:shadow-lg transition-all duration-200',
+                      'shadow-md transition-all duration-200 hover:shadow-lg',
                       action.variant === 'default' &&
                         'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700',
                       action.variant === 'outline' &&
@@ -172,8 +175,15 @@ export function PageHeader({
                       action.className
                     )}
                   >
-                    {ActionIcon && <ActionIcon className="mr-2 h-4 w-4" />}
-                    {action.label}
+                    {ActionIcon && <ActionIcon className="h-4 w-4 sm:mr-2" />}
+                    {ActionIcon ? (
+                      <>
+                        <span className="ml-1 sm:hidden">{action.label.split(' ')[0]}</span>
+                        <span className="hidden sm:inline">{action.label}</span>
+                      </>
+                    ) : (
+                      <span>{action.label}</span>
+                    )}
                   </Button>
                 );
               })}

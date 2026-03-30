@@ -394,7 +394,7 @@ export default function TimesheetApprovalsPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 px-2 sm:space-y-6 sm:px-0">
       <PageHeader
         title="Timesheet Approvals"
         description="Review and approve staff timesheet submissions"
@@ -402,63 +402,77 @@ export default function TimesheetApprovalsPage() {
       />
 
       {/* Metrics Dashboard */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100 shadow-sm transition-shadow hover:shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-base font-semibold text-orange-900">
-              Pending Approvals
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 px-3 pt-3 pb-1 sm:px-6 sm:pt-6 sm:pb-3">
+            <CardTitle className="text-xs font-semibold text-orange-900 sm:text-base">
+              Pending
             </CardTitle>
-            <Clock className="h-5 w-5 text-orange-600" />
+            <Clock className="h-4 w-4 text-orange-600 sm:h-5 sm:w-5" />
           </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold text-orange-700">{metrics.pending}</div>
-            <p className="mt-2 text-sm font-medium text-orange-700">
-              {metrics.uniqueEmployees} employee{metrics.uniqueEmployees !== 1 ? 's' : ''}
+          <CardContent className="px-3 pb-3 sm:px-6 sm:pb-6">
+            <div className="text-2xl font-bold text-orange-700 sm:text-4xl">{metrics.pending}</div>
+            <p className="mt-1 text-xs font-medium text-orange-700 sm:mt-2 sm:text-sm">
+              {metrics.uniqueEmployees} staff
             </p>
           </CardContent>
         </Card>
 
         <Card className="border-green-200 bg-gradient-to-br from-green-50 to-green-100 shadow-sm transition-shadow hover:shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-base font-semibold text-green-900">Approved</CardTitle>
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 px-3 pt-3 pb-1 sm:px-6 sm:pt-6 sm:pb-3">
+            <CardTitle className="text-xs font-semibold text-green-900 sm:text-base">
+              Approved
+            </CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-green-600 sm:h-5 sm:w-5" />
           </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold text-green-700">{metrics.approved}</div>
-            <p className="mt-2 text-sm font-medium text-green-700">Total approved timesheets</p>
+          <CardContent className="px-3 pb-3 sm:px-6 sm:pb-6">
+            <div className="text-2xl font-bold text-green-700 sm:text-4xl">{metrics.approved}</div>
+            <p className="mt-1 hidden text-sm font-medium text-green-700 sm:mt-2 sm:block">
+              Total approved
+            </p>
           </CardContent>
         </Card>
 
         <Card className="border-red-200 bg-gradient-to-br from-red-50 to-red-100 shadow-sm transition-shadow hover:shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-base font-semibold text-red-900">Rejected</CardTitle>
-            <XCircle className="h-5 w-5 text-red-600" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 px-3 pt-3 pb-1 sm:px-6 sm:pt-6 sm:pb-3">
+            <CardTitle className="text-xs font-semibold text-red-900 sm:text-base">
+              Rejected
+            </CardTitle>
+            <XCircle className="h-4 w-4 text-red-600 sm:h-5 sm:w-5" />
           </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold text-red-700">{metrics.rejected}</div>
-            <p className="mt-2 text-sm font-medium text-red-700">Total rejected timesheets</p>
+          <CardContent className="px-3 pb-3 sm:px-6 sm:pb-6">
+            <div className="text-2xl font-bold text-red-700 sm:text-4xl">{metrics.rejected}</div>
+            <p className="mt-1 hidden text-sm font-medium text-red-700 sm:mt-2 sm:block">
+              Total rejected
+            </p>
           </CardContent>
         </Card>
 
         <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 shadow-sm transition-shadow hover:shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-base font-semibold text-blue-900">Staff Members</CardTitle>
-            <Users className="h-5 w-5 text-blue-600" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 px-3 pt-3 pb-1 sm:px-6 sm:pt-6 sm:pb-3">
+            <CardTitle className="text-xs font-semibold text-blue-900 sm:text-base">
+              Staff
+            </CardTitle>
+            <Users className="h-4 w-4 text-blue-600 sm:h-5 sm:w-5" />
           </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold text-blue-700">{manageableUsers.length}</div>
-            <p className="mt-2 text-sm font-medium text-blue-700">Total manageable staff</p>
+          <CardContent className="px-3 pb-3 sm:px-6 sm:pb-6">
+            <div className="text-2xl font-bold text-blue-700 sm:text-4xl">
+              {manageableUsers.length}
+            </div>
+            <p className="mt-1 hidden text-sm font-medium text-blue-700 sm:mt-2 sm:block">
+              Total manageable staff
+            </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold">Filters</CardTitle>
+        <CardHeader className="px-3 py-2 sm:px-6 sm:py-4">
+          <CardTitle className="text-sm font-semibold sm:text-lg">Filters</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
+        <CardContent className="px-3 pb-3 sm:px-6 sm:pb-6">
+          <div className="grid gap-3 sm:gap-4 md:grid-cols-3">
             {/* Month Picker */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Select Month</label>
@@ -495,17 +509,17 @@ export default function TimesheetApprovalsPage() {
 
       {/* Data Table */}
       <Card>
-        <CardHeader>
+        <CardHeader className="px-3 py-2 sm:px-6 sm:py-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold">
-              Timesheet Submissions ({groupedData.length})
+            <CardTitle className="text-sm font-semibold sm:text-lg">
+              Submissions ({groupedData.length})
             </CardTitle>
-            <Badge variant="outline" className="text-sm">
-              {format(selectedMonth, 'MMMM yyyy')}
+            <Badge variant="outline" className="text-xs sm:text-sm">
+              {format(selectedMonth, 'MMM yyyy')}
             </Badge>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 sm:px-6">
           <DataTable
             columns={columns}
             data={groupedData}
@@ -521,7 +535,7 @@ export default function TimesheetApprovalsPage() {
         open={isDetailDialogOpen}
         onOpenChange={(open) => !open && setIsDetailDialogOpen(false)}
       >
-        <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto bg-white">
+        <DialogContent className="max-h-[90vh] w-[95vw] max-w-4xl overflow-y-auto bg-white sm:max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>Timesheet Details</DialogTitle>
             <DialogDescription>Detailed weekly attendance report</DialogDescription>
@@ -530,7 +544,7 @@ export default function TimesheetApprovalsPage() {
           {selectedSubmission && (
             <div className="space-y-6">
               {/* Header Info */}
-              <div className="grid grid-cols-2 gap-4 rounded-lg bg-gray-50 p-4">
+              <div className="grid grid-cols-1 gap-3 rounded-lg bg-gray-50 p-3 sm:grid-cols-2 sm:gap-4 sm:p-4">
                 <div>
                   <p className="text-sm text-gray-600">Employee</p>
                   <p className="font-semibold">{selectedSubmission.employee_info.full_name}</p>
@@ -561,30 +575,30 @@ export default function TimesheetApprovalsPage() {
                   freshStats?.attendance_percentage ?? selectedSubmission.attendance_percentage;
 
                 return (
-                  <div className="grid grid-cols-2 gap-3 md:grid-cols-6">
-                    <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                      <p className="text-xs font-medium text-gray-600">Working Days</p>
-                      <p className="text-2xl font-bold text-blue-600">{workingDays}</p>
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 md:grid-cols-6">
+                    <div className="rounded-lg border border-blue-200 bg-blue-50 p-2 sm:p-4">
+                      <p className="text-[10px] font-medium text-gray-600 sm:text-xs">Working</p>
+                      <p className="text-lg font-bold text-blue-600 sm:text-2xl">{workingDays}</p>
                     </div>
-                    <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-                      <p className="text-xs font-medium text-gray-600">Present</p>
-                      <p className="text-2xl font-bold text-green-600">{present}</p>
+                    <div className="rounded-lg border border-green-200 bg-green-50 p-2 sm:p-4">
+                      <p className="text-[10px] font-medium text-gray-600 sm:text-xs">Present</p>
+                      <p className="text-lg font-bold text-green-600 sm:text-2xl">{present}</p>
                     </div>
-                    <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-                      <p className="text-xs font-medium text-gray-600">Absent</p>
-                      <p className="text-2xl font-bold text-red-600">{absent}</p>
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-2 sm:p-4">
+                      <p className="text-[10px] font-medium text-gray-600 sm:text-xs">Absent</p>
+                      <p className="text-lg font-bold text-red-600 sm:text-2xl">{absent}</p>
                     </div>
-                    <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-                      <p className="text-xs font-medium text-gray-600">Leave</p>
-                      <p className="text-2xl font-bold text-yellow-600">{leave}</p>
+                    <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-2 sm:p-4">
+                      <p className="text-[10px] font-medium text-gray-600 sm:text-xs">Leave</p>
+                      <p className="text-lg font-bold text-yellow-600 sm:text-2xl">{leave}</p>
                     </div>
-                    <div className="rounded-lg border border-purple-200 bg-purple-50 p-4">
-                      <p className="text-xs font-medium text-gray-600">Holidays</p>
-                      <p className="text-2xl font-bold text-purple-600">{holidays}</p>
+                    <div className="rounded-lg border border-purple-200 bg-purple-50 p-2 sm:p-4">
+                      <p className="text-[10px] font-medium text-gray-600 sm:text-xs">Holidays</p>
+                      <p className="text-lg font-bold text-purple-600 sm:text-2xl">{holidays}</p>
                     </div>
-                    <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
-                      <p className="text-xs font-medium text-gray-600">Attendance %</p>
-                      <p className="text-2xl font-bold text-indigo-600">{percentage}%</p>
+                    <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-2 sm:p-4">
+                      <p className="text-[10px] font-medium text-gray-600 sm:text-xs">Att. %</p>
+                      <p className="text-lg font-bold text-indigo-600 sm:text-2xl">{percentage}%</p>
                     </div>
                   </div>
                 );
@@ -598,16 +612,20 @@ export default function TimesheetApprovalsPage() {
               ) : attendanceData ? (
                 <div>
                   <h4 className="mb-3 text-sm font-semibold">Daily Attendance</h4>
-                  <div className="overflow-hidden rounded-lg border">
+                  <div className="overflow-hidden overflow-x-auto rounded-lg border">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="w-32">Date</TableHead>
-                          <TableHead className="w-28">Day</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="w-24 text-center">Morning</TableHead>
-                          <TableHead className="w-24 text-center">Afternoon</TableHead>
-                          <TableHead>Remarks</TableHead>
+                          <TableHead className="w-28 text-xs sm:w-32 sm:text-sm">Date</TableHead>
+                          <TableHead className="hidden w-28 sm:table-cell">Day</TableHead>
+                          <TableHead className="text-xs sm:text-sm">Status</TableHead>
+                          <TableHead className="w-16 text-center text-xs sm:w-24 sm:text-sm">
+                            AM
+                          </TableHead>
+                          <TableHead className="w-16 text-center text-xs sm:w-24 sm:text-sm">
+                            PM
+                          </TableHead>
+                          <TableHead className="hidden sm:table-cell">Remarks</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -709,36 +727,44 @@ export default function TimesheetApprovalsPage() {
 
                             return (
                               <TableRow key={dateKey} className={rowBg}>
-                                <TableCell className="font-medium">
-                                  {format(date, 'MMM dd, yyyy')}
+                                <TableCell className="px-2 py-1.5 text-xs font-medium sm:px-4 sm:py-2 sm:text-sm">
+                                  {format(date, 'dd MMM')}
+                                  <span className="ml-1 text-[10px] text-gray-400 sm:hidden">
+                                    {format(date, 'EEE')}
+                                  </span>
                                 </TableCell>
-                                <TableCell className="text-sm text-gray-600">
+                                <TableCell className="hidden text-sm text-gray-600 sm:table-cell">
                                   {format(date, 'EEEE')}
                                 </TableCell>
-                                <TableCell>
-                                  <Badge variant="outline" className={statusColor}>
+                                <TableCell className="px-2 py-1.5 sm:px-4 sm:py-2">
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-[10px] sm:text-xs ${statusColor}`}
+                                  >
                                     {statusText}
                                   </Badge>
                                 </TableCell>
-                                <TableCell className="text-center">
+                                <TableCell className="px-1 py-1.5 text-center sm:px-4 sm:py-2">
                                   {isHoliday || (!hasRecord && !isLeave) ? (
-                                    <Minus className="mx-auto h-4 w-4 text-gray-300" />
+                                    <Minus className="mx-auto h-3 w-3 text-gray-300 sm:h-4 sm:w-4" />
                                   ) : morningPresent ? (
-                                    <CheckCircle2 className="mx-auto h-5 w-5 text-green-600" />
+                                    <CheckCircle2 className="mx-auto h-4 w-4 text-green-600 sm:h-5 sm:w-5" />
                                   ) : (
-                                    <XCircle className="mx-auto h-5 w-5 text-red-400" />
+                                    <XCircle className="mx-auto h-4 w-4 text-red-400 sm:h-5 sm:w-5" />
                                   )}
                                 </TableCell>
-                                <TableCell className="text-center">
+                                <TableCell className="px-1 py-1.5 text-center sm:px-4 sm:py-2">
                                   {isHoliday || (!hasRecord && !isLeave) ? (
-                                    <Minus className="mx-auto h-4 w-4 text-gray-300" />
+                                    <Minus className="mx-auto h-3 w-3 text-gray-300 sm:h-4 sm:w-4" />
                                   ) : afternoonPresent ? (
-                                    <CheckCircle2 className="mx-auto h-5 w-5 text-green-600" />
+                                    <CheckCircle2 className="mx-auto h-4 w-4 text-green-600 sm:h-5 sm:w-5" />
                                   ) : (
-                                    <XCircle className="mx-auto h-5 w-5 text-red-400" />
+                                    <XCircle className="mx-auto h-4 w-4 text-red-400 sm:h-5 sm:w-5" />
                                   )}
                                 </TableCell>
-                                <TableCell className="text-sm text-gray-600">{remarks}</TableCell>
+                                <TableCell className="hidden text-sm text-gray-600 sm:table-cell">
+                                  {remarks}
+                                </TableCell>
                               </TableRow>
                             );
                           });

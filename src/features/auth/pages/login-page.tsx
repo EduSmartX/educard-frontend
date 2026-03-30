@@ -13,14 +13,13 @@ import {
   SuccessMessages,
 } from '@/constants/error-messages';
 import { ROUTES } from '@/constants/app-config';
-import { USER_ROLES } from '@/constants/user-constants';
 import { BRANDING } from '@/constants/branding';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/branding';
+import { getDashboardRoute } from '@/lib/utils/auth-utils';
 
-// Validation schema
 const loginSchema = z.object({
   username: z.string().min(1, 'Username or email is required'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
@@ -33,20 +32,15 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  // Redirect already-authenticated users to their dashboard
   useEffect(() => {
     const accessToken = localStorage.getItem('access_token');
     const storedUser = localStorage.getItem('user');
     if (accessToken && storedUser) {
       try {
         const user = JSON.parse(storedUser);
-        const role = user?.role?.toLowerCase();
-        if (role === USER_ROLES.ADMIN) {
-          navigate(ROUTES.ADMIN.DASHBOARD, { replace: true });
-        } else if (role === USER_ROLES.TEACHER || role === USER_ROLES.STAFF) {
-          navigate(ROUTES.EMPLOYEE.DASHBOARD, { replace: true });
-        } else if (role === USER_ROLES.PARENT) {
-          navigate(ROUTES.PARENT.DASHBOARD, { replace: true });
+        const route = getDashboardRoute(user?.role);
+        if (route !== '/') {
+          navigate(route, { replace: true });
         }
       } catch {
         // Invalid stored user, continue to login
@@ -64,11 +58,10 @@ export default function LoginPage() {
 
   const onSubmit = async (formData: LoginFormData) => {
     setIsLoading(true);
-    setLoginError(null); // Clear previous errors
+    setLoginError(null);
     try {
       const response = await authApi.login(formData as LoginCredentials);
 
-      // Check if organization is rejected or not approved
       if (
         response.organization &&
         (!response.organization.is_approved || response.organization.is_rejected)
@@ -92,20 +85,8 @@ export default function LoginPage() {
       }
 
       toast.success(SuccessMessages.LOGIN_SUCCESS);
-
-      // Redirect to role-specific dashboard
-      const userRole = response.user.role.toLowerCase();
-      if (userRole === USER_ROLES.ADMIN) {
-        navigate(ROUTES.ADMIN.DASHBOARD);
-      } else if (userRole === USER_ROLES.TEACHER || userRole === USER_ROLES.STAFF) {
-        navigate(ROUTES.EMPLOYEE.DASHBOARD);
-      } else if (userRole === USER_ROLES.PARENT) {
-        navigate(ROUTES.PARENT.DASHBOARD);
-      } else {
-        navigate('/'); // Fallback to home
-      }
+      navigate(getDashboardRoute(response.user.role));
     } catch (error) {
-      // Extract error message from API response
       const apiError = error as { response?: { data?: { message?: string; detail?: string } } };
       const errorMessage =
         apiError?.response?.data?.message ||

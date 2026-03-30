@@ -184,11 +184,11 @@ export default function AdminDashboardPage() {
   const totalClasses = classesData?.pagination?.count;
 
   return (
-    <div className="container mx-auto max-w-5xl space-y-8 p-6">
+    <div className="container mx-auto max-w-5xl space-y-6 px-3 py-4 sm:space-y-8 sm:p-6">
       {/* Welcome Header */}
-      <div className="rounded-2xl bg-gradient-to-r from-teal-600 to-teal-500 p-6 text-white md:p-8">
-        <h1 className="text-2xl font-bold md:text-3xl">Welcome back, {firstName}! 👋</h1>
-        <p className="mt-1.5 text-sm text-teal-100 md:text-base">
+      <div className="rounded-2xl bg-gradient-to-r from-teal-600 to-teal-500 p-4 text-white sm:p-6 md:p-8">
+        <h1 className="text-xl font-bold sm:text-2xl md:text-3xl">Welcome back, {firstName}! 👋</h1>
+        <p className="mt-1 text-xs text-teal-100 sm:mt-1.5 sm:text-sm md:text-base">
           {organization?.name ? `Managing ${organization.name}` : "Here's your school overview"}
         </p>
       </div>

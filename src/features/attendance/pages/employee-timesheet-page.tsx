@@ -433,7 +433,10 @@ export function EmployeeTimesheetPage() {
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </Button>
-                <div className="text-base font-semibold">{format(currentDate, 'MMMM yyyy')}</div>
+                <div className="text-base font-semibold">
+                  <span className="sm:hidden">{format(currentDate, 'MM-yyyy')}</span>
+                  <span className="hidden sm:inline">{format(currentDate, 'MMMM yyyy')}</span>
+                </div>
                 <Button
                   variant="outline"
                   size="sm"
@@ -441,7 +444,12 @@ export function EmployeeTimesheetPage() {
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date())}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCurrentDate(new Date())}
+                  className="hidden sm:inline-flex"
+                >
                   Today
                 </Button>
               </div>
@@ -450,7 +458,9 @@ export function EmployeeTimesheetPage() {
                 onClick={() => navigate(submitTimesheetRoute)}
                 className="bg-indigo-600 font-semibold text-white shadow-lg transition-all duration-200 hover:bg-indigo-700 hover:shadow-xl"
               >
-                <PlusCircle className="mr-1.5 h-4 w-4" /> Submit Timesheet
+                <PlusCircle className="mr-1.5 h-4 w-4" />
+                <span className="sm:hidden">Submit</span>
+                <span className="hidden sm:inline">Submit Timesheet</span>
               </Button>
             </div>
           </CardHeader>
@@ -672,14 +682,83 @@ export function EmployeeTimesheetPage() {
                             : 'cursor-default'
                         }`}
                       >
-                        <div className="w-full text-center">
+                        {/* Desktop view: month label + day number + icon */}
+                        <div className="hidden w-full text-center sm:block">
                           <div className="text-[7px] font-medium text-gray-500">
                             {format(date, 'MMM')}
                           </div>
                           <div className="text-xs font-bold">{format(date, 'd')}</div>
                         </div>
-                        <div className="flex w-full flex-1 flex-col items-center justify-center">
+                        <div className="hidden w-full flex-1 flex-col items-center justify-center sm:flex">
                           {renderIcon()}
+                        </div>
+
+                        {/* Mobile view: day number inside color-coded circle */}
+                        <div className="flex h-full w-full items-center justify-center sm:hidden">
+                          {(() => {
+                            const mobileState = state;
+                            const bgColor =
+                              mobileState === 'present'
+                                ? 'bg-green-500 text-white'
+                                : mobileState === 'absent'
+                                  ? 'bg-red-500 text-white'
+                                  : mobileState === 'leave-approved'
+                                    ? 'bg-orange-500 text-white'
+                                    : mobileState === 'leave-pending'
+                                      ? 'bg-yellow-500 text-white'
+                                      : mobileState === 'holiday'
+                                        ? 'bg-purple-500 text-white'
+                                        : 'bg-gray-100 text-gray-700';
+
+                            if (mobileState === 'holiday') {
+                              return (
+                                <div
+                                  className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold ${bgColor}`}
+                                >
+                                  H
+                                </div>
+                              );
+                            }
+
+                            // For half-day: show split circle with day number overlay
+                            const record = attendanceByDate.get(dateKey);
+                            if (
+                              record &&
+                              !record.is_leave &&
+                              record.morning_present !== undefined &&
+                              record.afternoon_present !== undefined &&
+                              record.morning_present !== record.afternoon_present
+                            ) {
+                              return (
+                                <div className="relative flex h-7 w-7 items-center justify-center">
+                                  <svg
+                                    viewBox="0 0 28 28"
+                                    className="absolute inset-0 h-full w-full"
+                                  >
+                                    <path
+                                      d="M 0 14 A 14 14 0 0 1 28 14 Z"
+                                      fill={record.morning_present ? '#22c55e' : '#ef4444'}
+                                    />
+                                    <path
+                                      d="M 0 14 A 14 14 0 0 0 28 14 Z"
+                                      fill={record.afternoon_present ? '#22c55e' : '#ef4444'}
+                                    />
+                                  </svg>
+                                  <span className="relative text-[10px] font-bold text-white">
+                                    {format(date, 'd')}
+                                  </span>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div
+                                className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold ${bgColor}`}
+                              >
+                                {format(date, 'd')}
+                              </div>
+                            );
+                          })()}
                         </div>
                       </button>
                     );
