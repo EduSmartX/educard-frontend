@@ -12,9 +12,15 @@ export const formatPhoneNumber = (input: string): string => {
   // Take only first 10 digits
   const cleaned = digits.slice(0, 10);
 
-  if (cleaned.length === 0) return '';
-  if (cleaned.length <= 3) return cleaned;
-  if (cleaned.length <= 6) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+  if (cleaned.length === 0) {
+    return '';
+  }
+  if (cleaned.length <= 3) {
+    return cleaned;
+  }
+  if (cleaned.length <= 6) {
+    return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+  }
   return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
 };
 
@@ -33,4 +39,13 @@ export const getTenDigitPhoneNumber = (formatted: string): string => {
 export const isValidIndianPhone = (phone: string): boolean => {
   const cleaned = phone.replace(/\D/g, '');
   return cleaned.length === 10 && /^[6-9]\d{9}$/.test(cleaned);
+};
+
+/**
+ * Validate a generic 10-digit phone number.
+ * The backend applies the configured country code before sending SMS.
+ */
+export const isValidTenDigitPhone = (phone: string): boolean => {
+  const cleaned = phone.replace(/\D/g, '');
+  return /^\d{10}$/.test(cleaned);
 };

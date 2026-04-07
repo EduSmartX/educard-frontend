@@ -3,6 +3,7 @@
  * React Query mutation hooks for profile updates
  */
 
+import type { AxiosError } from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -24,6 +25,16 @@ import type {
   UpdateProfilePayload,
 } from '../types/profile.types';
 
+interface ApiErrorPayload {
+  message?: string;
+  detail?: string;
+}
+
+function getApiErrorMessage(error: Error): string | undefined {
+  const axiosError = error as AxiosError<ApiErrorPayload>;
+  return axiosError.response?.data?.message || axiosError.response?.data?.detail || error.message;
+}
+
 /**
  * Hook to update profile information (including address)
  */
@@ -37,7 +48,7 @@ export function useUpdateProfile() {
       toast.success(SuccessMessages.PROFILE.UPDATED);
     },
     onError: (error: Error) => {
-      toast.error(error.message || ErrorMessages.PROFILE.UPDATE_FAILED);
+      toast.error(getApiErrorMessage(error) || ErrorMessages.PROFILE.UPDATE_FAILED);
     },
   });
 }
@@ -70,7 +81,7 @@ export function useChangePassword() {
       window.location.reload();
     },
     onError: (error: Error) => {
-      toast.error(error.message || ErrorMessages.PROFILE.CHANGE_PASSWORD_FAILED);
+      toast.error(getApiErrorMessage(error) || ErrorMessages.PROFILE.CHANGE_PASSWORD_FAILED);
     },
   });
 }
@@ -82,10 +93,10 @@ export function useSendOTP() {
   return useMutation({
     mutationFn: (payload: SendOTPPayload) => sendOTP(payload),
     onSuccess: (data) => {
-      toast.success(data.data?.message || SuccessMessages.PROFILE.OTP_SENT);
+      toast.success(data.message || SuccessMessages.PROFILE.OTP_SENT);
     },
     onError: (error: Error) => {
-      toast.error(error.message || ErrorMessages.PROFILE.SEND_OTP_FAILED);
+      toast.error(getApiErrorMessage(error) || ErrorMessages.PROFILE.SEND_OTP_FAILED);
     },
   });
 }
@@ -103,7 +114,7 @@ export function useUpdateEmail() {
       toast.success(SuccessMessages.PROFILE.EMAIL_UPDATED);
     },
     onError: (error: Error) => {
-      toast.error(error.message || ErrorMessages.PROFILE.UPDATE_EMAIL_FAILED);
+      toast.error(getApiErrorMessage(error) || ErrorMessages.PROFILE.UPDATE_EMAIL_FAILED);
     },
   });
 }
@@ -121,7 +132,7 @@ export function useUpdatePhone() {
       toast.success(SuccessMessages.PROFILE.PHONE_UPDATED);
     },
     onError: (error: Error) => {
-      toast.error(error.message || ErrorMessages.PROFILE.UPDATE_PHONE_FAILED);
+      toast.error(getApiErrorMessage(error) || ErrorMessages.PROFILE.UPDATE_PHONE_FAILED);
     },
   });
 }
