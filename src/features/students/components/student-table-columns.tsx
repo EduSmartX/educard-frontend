@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Column } from '@/components/ui/data-table';
 import { formatPhoneNumber } from '@/lib/phone-utils';
+import { UserAvatar } from '@/components/common/user-avatar';
 import type { StudentListItem } from '../types';
 
 interface GetColumnsOptions {
@@ -25,6 +26,18 @@ export function getStudentColumns({
   isDeletedView = false,
 }: GetColumnsOptions): Column<StudentListItem>[] {
   return [
+    {
+      header: 'Photo',
+      accessor: (row) => (
+        <UserAvatar
+          thumbnailUrl={row.profile_photo_thumbnail}
+          gender={row.gender}
+          name={row.full_name}
+          className="h-9 w-9"
+        />
+      ),
+      width: 70,
+    },
     {
       header: 'Class',
       accessor: (row) => (

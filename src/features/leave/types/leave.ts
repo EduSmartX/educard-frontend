@@ -78,6 +78,8 @@ export interface LeaveRequest {
   reason: string;
   status: LeaveRequestStatus;
   applied_at: string;
+  attachment_url: string | null;
+  attachment_name: string;
   reviewed_by_name: string | null;
   reviewed_at: string | null;
   review_comments: string;
@@ -138,6 +140,7 @@ export interface CreateLeaveRequestPayload {
   end_date: string;
   number_of_days: number;
   reason: string;
+  attachment?: File | null;
 }
 
 export interface UpdateLeaveRequestPayload {
@@ -145,6 +148,8 @@ export interface UpdateLeaveRequestPayload {
   end_date?: string;
   number_of_days?: number;
   reason?: string;
+  attachment?: File | null;
+  remove_attachment?: boolean;
 }
 
 export interface CalculateWorkingDaysPayload {

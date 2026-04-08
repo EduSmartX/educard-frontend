@@ -118,23 +118,66 @@ export async function fetchLeaveRequest(
 }
 
 /**
- * Create a new leave request
+ * Build FormData from leave request payload when an attachment is present.
+ */
+function buildFormData(data: CreateLeaveRequestPayload | UpdateLeaveRequestPayload): FormData {
+  const formData = new FormData();
+
+  for (const [key, value] of Object.entries(data)) {
+    if (key === 'attachment') {
+      if (value instanceof File) {
+        formData.append('attachment', value);
+      }
+    } else if (value !== undefined && value !== null) {
+      formData.append(key, String(value));
+    }
+  }
+
+  return formData;
+}
+
+/**
+ * Create a new leave request (supports optional file attachment via FormData)
  */
 export async function createLeaveRequest(
   data: CreateLeaveRequestPayload
 ): Promise<ApiSingleResponse<LeaveRequest>> {
-  const response = await apiClient.post('/leave/user/requests/', data);
+  const hasAttachment = data.attachment instanceof File;
+
+  if (hasAttachment) {
+    const formData = buildFormData(data);
+    const response = await apiClient.post('/leave/user/requests/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  }
+
+  // No attachment — send as plain JSON (strip undefined attachment field)
+  const { attachment: _attachment, ...jsonData } = data;
+  const response = await apiClient.post('/leave/user/requests/', jsonData);
   return response.data;
 }
 
 /**
- * Update an existing leave request (only pending requests)
+ * Update an existing leave request (supports optional file attachment via FormData)
  */
 export async function updateLeaveRequest(
   publicId: string,
   data: UpdateLeaveRequestPayload
 ): Promise<ApiSingleResponse<LeaveRequest>> {
-  const response = await apiClient.patch(`/leave/user/requests/${publicId}/`, data);
+  const hasAttachment = data.attachment instanceof File;
+
+  if (hasAttachment || data.remove_attachment) {
+    const formData = buildFormData(data);
+    const response = await apiClient.patch(`/leave/user/requests/${publicId}/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  }
+
+  // No attachment changes — send as plain JSON
+  const { attachment: _attachment, remove_attachment: _remove, ...jsonData } = data;
+  const response = await apiClient.patch(`/leave/user/requests/${publicId}/`, jsonData);
   return response.data;
 }
 

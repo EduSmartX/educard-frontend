@@ -7,6 +7,7 @@ import { User, Lock, Mail, Phone, MapPin } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHeader } from '@/components/common';
+import { ProfilePhotoUpload } from '../components/profile-photo-upload';
 import { ProfileInformationForm } from '../components/profile-information-form';
 import { PasswordChangeForm } from '../components/password-change-form';
 import { EmailUpdateForm } from '../components/email-update-form';
@@ -23,7 +24,7 @@ export default function ProfilePage() {
 
       <Card>
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 h-auto">
+          <TabsList className="grid h-auto w-full grid-cols-5">
             <TabsTrigger value="profile" className="flex items-center gap-2 py-3">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Profile</span>
@@ -46,7 +47,8 @@ export default function ProfilePage() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="profile" className="mt-6">
+          <TabsContent value="profile" className="mt-6 space-y-6">
+            <ProfilePhotoUpload />
             <ProfileInformationForm />
           </TabsContent>
 

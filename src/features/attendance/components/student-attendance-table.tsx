@@ -11,8 +11,9 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { UserAvatar } from '@/components/common/user-avatar';
 import { AttendanceUiText } from '@/constants';
-import type { AttendancePeriod } from '../types';
+import type { AttendancePeriod } from '../types/index';
 
 interface StudentAttendanceRow {
   public_id: string;
@@ -23,6 +24,8 @@ interface StudentAttendanceRow {
     email: string;
   };
   roll_number: string | null;
+  gender?: string;
+  profile_photo_thumbnail?: string | null;
   morning_present: boolean;
   afternoon_present: boolean;
   remarks: string;
@@ -98,6 +101,9 @@ export function StudentAttendanceTable({
               <TableHead className="w-[60px] px-2 text-xs font-bold text-gray-900 sm:w-[100px] sm:px-4 sm:text-sm">
                 {AttendanceUiText.ROLL_NO}
               </TableHead>
+              <TableHead className="hidden w-[50px] px-1 text-center text-xs font-bold text-gray-900 sm:table-cell sm:px-2 sm:text-sm">
+                Photo
+              </TableHead>
               <TableHead className="px-2 text-xs font-bold text-gray-900 sm:px-4 sm:text-sm">
                 {AttendanceUiText.STUDENT_NAME}
               </TableHead>
@@ -121,7 +127,7 @@ export function StudentAttendanceTable({
           <TableBody>
             {students.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-muted-foreground py-8 text-center">
+                <TableCell colSpan={7} className="text-muted-foreground py-8 text-center">
                   {AttendanceUiText.NO_STUDENTS}
                 </TableCell>
               </TableRow>
@@ -137,36 +143,56 @@ export function StudentAttendanceTable({
                     <TableCell className="px-2 py-1.5 text-xs font-medium sm:px-4 sm:py-2 sm:text-sm">
                       {student.roll_number}
                     </TableCell>
+                    {/* Photo — visible on sm+ screens as a separate column */}
+                    <TableCell className="hidden px-1 py-1.5 sm:table-cell sm:px-2 sm:py-2">
+                      <UserAvatar
+                        thumbnailUrl={student.profile_photo_thumbnail}
+                        gender={student.gender}
+                        name={`${student.user.first_name} ${student.user.last_name}`}
+                        className="h-8 w-8"
+                      />
+                    </TableCell>
                     <TableCell className="px-2 py-1.5 sm:px-4 sm:py-2">
-                      <div>
-                        <div className="text-xs font-medium sm:text-sm">
-                          {student.user.first_name} {student.user.last_name}
+                      <div className="flex items-center gap-2">
+                        {/* Avatar inline on mobile only */}
+                        <div className="shrink-0 sm:hidden">
+                          <UserAvatar
+                            thumbnailUrl={student.profile_photo_thumbnail}
+                            gender={student.gender}
+                            name={`${student.user.first_name} ${student.user.last_name}`}
+                            className="h-7 w-7"
+                          />
                         </div>
-                        {/* email removed intentionally - show only student name */}
-                        {student.leave_info && student.leave_info.leave_status && (
-                          <div className="mt-1">
-                            {student.leave_info.leave_status === 'approved' ? (
-                              <Badge
-                                variant="outline"
-                                className="border-blue-200 bg-blue-50 text-blue-700"
-                              >
-                                {AttendanceUiText.ON_LEAVE}
-                              </Badge>
-                            ) : (
-                              <Badge
-                                variant="outline"
-                                className="border-yellow-200 bg-yellow-50 text-yellow-700"
-                              >
-                                {AttendanceUiText.LEAVE_PENDING}
-                              </Badge>
-                            )}
-                            {student.leave_info.leave_type && (
-                              <span className="text-muted-foreground ml-2 text-xs">
-                                ({student.leave_info.leave_type})
-                              </span>
-                            )}
+                        <div className="min-w-0">
+                          <div className="truncate text-xs font-medium sm:text-sm">
+                            {student.user.first_name} {student.user.last_name}
                           </div>
-                        )}
+                          {/* email removed intentionally - show only student name */}
+                          {student.leave_info && student.leave_info.leave_status && (
+                            <div className="mt-1">
+                              {student.leave_info.leave_status === 'approved' ? (
+                                <Badge
+                                  variant="outline"
+                                  className="border-blue-200 bg-blue-50 text-blue-700"
+                                >
+                                  {AttendanceUiText.ON_LEAVE}
+                                </Badge>
+                              ) : (
+                                <Badge
+                                  variant="outline"
+                                  className="border-yellow-200 bg-yellow-50 text-yellow-700"
+                                >
+                                  {AttendanceUiText.LEAVE_PENDING}
+                                </Badge>
+                              )}
+                              {student.leave_info.leave_type && (
+                                <span className="text-muted-foreground ml-2 text-xs">
+                                  ({student.leave_info.leave_type})
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     {showMorning && (

@@ -37,6 +37,8 @@ import {
 } from '../utils/form-utils';
 import { SubjectsMultiSelectField } from '@/components/form/subjects-multi-select-field';
 import { FormActions } from '@/components/form/form-actions';
+import { FormProfilePhoto } from '@/components/form/form-profile-photo';
+import { uploadProfilePhotoForUser } from '@/lib/utils/upload-profile-photo';
 import { STANDARD_FORM_VALIDATION_CONFIG } from '@/lib/utils/form-validation';
 import { FormMetadata } from '@/components/form/form-metadata';
 import { DeletedDuplicateDialog } from '@/components/common';
@@ -111,6 +113,7 @@ export function TeacherForm({
 }: TeacherFormProps) {
   const [useQuickAdd, setUseQuickAdd] = useState(false);
   const [isAddressExpanded, setIsAddressExpanded] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
 
   // Duplicate handler for deleted duplicate detection
   const duplicateHandler = useDeletedDuplicateHandler<{
@@ -301,7 +304,19 @@ export function TeacherForm({
   const onSubmit = (data: TeacherFormValues) => {
     if (mode === 'create') {
       const payload = transformFormToCreatePayload(data);
-      createMutation.mutate({ payload });
+      createMutation.mutate(
+        { payload },
+        {
+          onSuccess: (createdTeacher) => {
+            // Upload photo if one was selected during form fill
+            if (photoFile && createdTeacher?.user?.public_id) {
+              uploadProfilePhotoForUser(createdTeacher.user.public_id, photoFile).catch(() => {
+                toast.error('Teacher created but photo upload failed. You can upload it later.');
+              });
+            }
+          },
+        }
+      );
     } else if (mode === 'edit' && teacherId) {
       const payload = transformFormToUpdatePayload(data);
       updateMutation.mutate({ publicId: teacherId, payload });
@@ -344,78 +359,95 @@ export function TeacherForm({
             <CardHeader>
               <CardTitle>Basic Information</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <TextInputField
-                control={form.control}
-                name="employee_id"
-                label="Employee ID"
-                placeholder={FormPlaceholders.ENTER_EMPLOYEE_ID}
-                disabled={isViewMode}
-                required
-                validationType="employeeId"
+            <CardContent className="space-y-6">
+              {/* Profile Photo */}
+              <FormProfilePhoto
+                mode={mode}
+                userPublicId={initialData?.user?.public_id}
+                currentThumbnailUrl={initialData?.user?.public_id ? undefined : undefined}
+                name={
+                  initialData
+                    ? `${initialData.user?.first_name || ''} ${initialData.user?.last_name || ''}`.trim()
+                    : undefined
+                }
+                gender={initialData?.user?.gender}
+                onFileSelected={setPhotoFile}
+                disabled={isLoading}
               />
-              <TextInputField
-                control={form.control}
-                name="email"
-                label="Email"
-                type="email"
-                placeholder={FormPlaceholders.ENTER_EMAIL}
-                disabled={isViewMode}
-                required
-                validationType="email"
-              />
-              <TextInputField
-                control={form.control}
-                name="first_name"
-                label="First Name"
-                placeholder={FormPlaceholders.ENTER_FIRST_NAME}
-                disabled={isViewMode}
-                required
-                validationType="name"
-                validationOptions={{ fieldName: 'First name' }}
-              />
-              <TextInputField
-                control={form.control}
-                name="last_name"
-                label="Last Name"
-                placeholder={FormPlaceholders.ENTER_LAST_NAME}
-                disabled={isViewMode}
-                required
-                validationType="name"
-                validationOptions={{ fieldName: 'Last name' }}
-              />
-              <GenderField control={form.control} name="gender" disabled={isViewMode} required />
-              <OrganizationRoleField
-                control={form.control}
-                name="organization_role"
-                disabled={isViewMode}
-                required
-                viewValue={initialData?.user?.organization_role?.name}
-              />
-              {!useQuickAdd && (
-                <>
-                  <TextInputField
-                    control={form.control}
-                    name="phone"
-                    label="Phone"
-                    placeholder={FormPlaceholders.ENTER_PHONE_NUMBER}
-                    disabled={isViewMode}
-                    required
-                    validationType="phone"
-                  />
-                  <BloodGroupField
-                    control={form.control}
-                    name="blood_group"
-                    disabled={isViewMode}
-                  />
-                  <DateInputField
-                    control={form.control}
-                    name="date_of_birth"
-                    label="Date of Birth"
-                    disabled={isViewMode}
-                  />
-                </>
-              )}
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <TextInputField
+                  control={form.control}
+                  name="employee_id"
+                  label="Employee ID"
+                  placeholder={FormPlaceholders.ENTER_EMPLOYEE_ID}
+                  disabled={isViewMode}
+                  required
+                  validationType="employeeId"
+                />
+                <TextInputField
+                  control={form.control}
+                  name="email"
+                  label="Email"
+                  type="email"
+                  placeholder={FormPlaceholders.ENTER_EMAIL}
+                  disabled={isViewMode}
+                  required
+                  validationType="email"
+                />
+                <TextInputField
+                  control={form.control}
+                  name="first_name"
+                  label="First Name"
+                  placeholder={FormPlaceholders.ENTER_FIRST_NAME}
+                  disabled={isViewMode}
+                  required
+                  validationType="name"
+                  validationOptions={{ fieldName: 'First name' }}
+                />
+                <TextInputField
+                  control={form.control}
+                  name="last_name"
+                  label="Last Name"
+                  placeholder={FormPlaceholders.ENTER_LAST_NAME}
+                  disabled={isViewMode}
+                  required
+                  validationType="name"
+                  validationOptions={{ fieldName: 'Last name' }}
+                />
+                <GenderField control={form.control} name="gender" disabled={isViewMode} required />
+                <OrganizationRoleField
+                  control={form.control}
+                  name="organization_role"
+                  disabled={isViewMode}
+                  required
+                  viewValue={initialData?.user?.organization_role?.name}
+                />
+                {!useQuickAdd && (
+                  <>
+                    <TextInputField
+                      control={form.control}
+                      name="phone"
+                      label="Phone"
+                      placeholder={FormPlaceholders.ENTER_PHONE_NUMBER}
+                      disabled={isViewMode}
+                      required
+                      validationType="phone"
+                    />
+                    <BloodGroupField
+                      control={form.control}
+                      name="blood_group"
+                      disabled={isViewMode}
+                    />
+                    <DateInputField
+                      control={form.control}
+                      name="date_of_birth"
+                      label="Date of Birth"
+                      disabled={isViewMode}
+                    />
+                  </>
+                )}
+              </div>
             </CardContent>
           </Card>
 

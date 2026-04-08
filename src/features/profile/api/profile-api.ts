@@ -4,9 +4,11 @@
  */
 
 import api from '@/lib/api';
+import { API_ENDPOINTS } from '@/constants/api-endpoints';
 import type {
   ApiResponse,
   ChangePasswordPayload,
+  ProfileImage,
   SendOTPPayload,
   UpdateEmailPayload,
   UpdatePhonePayload,
@@ -71,5 +73,43 @@ export async function updateEmail(payload: UpdateEmailPayload): Promise<ApiRespo
  */
 export async function updatePhone(payload: UpdatePhonePayload): Promise<ApiResponse<UserProfile>> {
   const response = await api.post<ApiResponse<UserProfile>>('/users/update-phone/', payload);
+  return response.data;
+}
+
+// ──────────────────────────────────────────────────────────────
+// Profile Photo APIs
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * Get current user's profile photo
+ */
+export async function getMyProfilePhoto(): Promise<ApiResponse<ProfileImage | null>> {
+  const response = await api.get<ApiResponse<ProfileImage | null>>(
+    API_ENDPOINTS.ATTACHMENTS.MY_PHOTO
+  );
+  return response.data;
+}
+
+/**
+ * Upload own profile photo
+ */
+export async function uploadMyProfilePhoto(file: File): Promise<ApiResponse<ProfileImage>> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('image_type', 'profile_photo');
+
+  const response = await api.post<ApiResponse<ProfileImage>>(
+    API_ENDPOINTS.ATTACHMENTS.MY_PHOTO_UPLOAD,
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  );
+  return response.data;
+}
+
+/**
+ * Delete own profile photo
+ */
+export async function deleteMyProfilePhoto(): Promise<ApiResponse<null>> {
+  const response = await api.delete<ApiResponse<null>>(API_ENDPOINTS.ATTACHMENTS.MY_PHOTO);
   return response.data;
 }

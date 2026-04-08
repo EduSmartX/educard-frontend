@@ -98,5 +98,21 @@ export interface UpdateAddressPayload {
   state?: string;
   zip_code?: string;
   country?: string;
-  address_type?: string;
+}
+
+/**
+ * Profile Image types (from attachments backend)
+ */
+export interface ProfileImage {
+  public_id: string;
+  owner_type: 'user' | 'organization';
+  image_type: 'profile_photo' | 'org_logo' | 'org_favicon' | 'org_letterhead';
+  mime_type: string;
+  file_size: number;
+  width: number | null;
+  height: number | null;
+  is_current: boolean;
+  url: string;
+  thumbnail_url: string;
+  created_at: string;
 }

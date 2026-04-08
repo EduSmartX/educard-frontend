@@ -8,10 +8,12 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   changePassword,
+  deleteMyProfilePhoto,
   sendOTP,
   updateEmail,
   updatePhone,
   updateProfile,
+  uploadMyProfilePhoto,
 } from '../api/profile-api';
 import { authApi } from '@/lib/api/auth-api';
 import { ROUTES } from '@/constants/app-config';
@@ -128,3 +130,43 @@ export function useUpdatePhone() {
 
 // Deprecated - kept for backwards compatibility
 export const useUpdateAddress = useUpdateProfile;
+
+// ──────────────────────────────────────────────────────────────
+// Profile Photo Mutations
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * Hook to upload own profile photo
+ */
+export function useUploadProfilePhoto() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (file: File) => uploadMyProfilePhoto(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile-photo', 'me'] });
+      toast.success(SuccessMessages.PROFILE.PHOTO_UPLOADED);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || ErrorMessages.PROFILE.PHOTO_UPLOAD_FAILED);
+    },
+  });
+}
+
+/**
+ * Hook to delete own profile photo
+ */
+export function useDeleteProfilePhoto() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => deleteMyProfilePhoto(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile-photo', 'me'] });
+      toast.success(SuccessMessages.PROFILE.PHOTO_DELETED);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || ErrorMessages.PROFILE.PHOTO_DELETE_FAILED);
+    },
+  });
+}

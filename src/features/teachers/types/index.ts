@@ -57,6 +57,8 @@ export interface Teacher {
   full_name: string;
   email: string;
   phone: string;
+  gender?: string;
+  profile_photo_thumbnail?: string | null;
   designation: string;
   specialization: string;
   highest_qualification?: string;

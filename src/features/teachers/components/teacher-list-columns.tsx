@@ -10,6 +10,7 @@ import type { Column } from '@/components/ui/data-table';
 import { formatPhoneNumber } from '@/lib/phone-utils';
 import type { Teacher } from '../types';
 import { createCommonColumns } from '@/components/tables/common-columns';
+import { UserAvatar } from '@/components/common/user-avatar';
 
 interface CreateColumnsParams {
   onView: (teacher: Teacher) => void;
@@ -29,6 +30,18 @@ export function createTeacherListColumns({
   const isEmployeeView = viewMode === 'employee';
 
   return [
+    {
+      header: 'Photo',
+      accessor: (row) => (
+        <UserAvatar
+          thumbnailUrl={row.profile_photo_thumbnail}
+          gender={row.gender}
+          name={row.full_name}
+          className="h-9 w-9"
+        />
+      ),
+      width: 50,
+    },
     {
       header: 'Employee ID',
       accessor: (row) => <span className="font-medium text-gray-900">{row.employee_id}</span>,

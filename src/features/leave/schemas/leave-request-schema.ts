@@ -3,6 +3,9 @@
  */
 import { z } from 'zod';
 
+const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024; // 5 MB
+const ALLOWED_ATTACHMENT_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+
 export const leaveRequestFormSchema = z
   .object({
     leave_balance: z.string().min(1, 'Please select a leave type'),
@@ -14,6 +17,16 @@ export const leaveRequestFormSchema = z
       .string()
       .min(1, 'Reason is required')
       .max(500, 'Reason must not exceed 500 characters'),
+    attachment: z
+      .instanceof(File)
+      .optional()
+      .nullable()
+      .refine((file) => !file || file.size <= MAX_ATTACHMENT_SIZE, 'File size must be 5 MB or less')
+      .refine(
+        (file) => !file || ALLOWED_ATTACHMENT_TYPES.includes(file.type),
+        'Only PDF, JPEG, PNG, or WebP files are allowed'
+      ),
+    remove_attachment: z.boolean().optional().default(false),
   })
   .refine(
     (data) => {

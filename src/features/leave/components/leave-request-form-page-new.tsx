@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Briefcase, Loader2, AlertCircle } from 'lucide-react';
+import { Briefcase, Loader2, AlertCircle, Paperclip, X, FileText, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/common/page-header';
 import { Card, CardContent } from '@/components/ui/card';
@@ -42,6 +42,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { getErrorMessage } from '@/lib/utils/error-handler';
+import { getMediaUrl } from '@/lib/utils/media-utils';
 import {
   useLeaveRequest,
   useMyLeaveBalancesSummary,
@@ -96,6 +97,8 @@ export function LeaveRequestFormPageNew() {
       is_half_day: false,
       number_of_days: 1,
       reason: '',
+      attachment: null,
+      remove_attachment: false,
     },
   });
 
@@ -458,6 +461,129 @@ export function LeaveRequestFormPageNew() {
                   </FormItem>
                 )}
               />
+
+              {/* Attachment */}
+              {mode !== 'view' && (
+                <FormField
+                  control={form.control}
+                  name="attachment"
+                  render={({ field: { onChange, value, ...field } }) => {
+                    const currentFile = value instanceof File ? value : null;
+                    const existingAttachment =
+                      request?.attachment_url && !form.watch('remove_attachment') && !currentFile
+                        ? {
+                            url: getMediaUrl(request.attachment_url),
+                            name: request.attachment_name,
+                          }
+                        : null;
+
+                    return (
+                      <FormItem>
+                        <FormLabel>
+                          Supporting Document{' '}
+                          <span className="text-muted-foreground font-normal">(Optional)</span>
+                        </FormLabel>
+                        <div className="space-y-2">
+                          {/* Show selected file preview */}
+                          {currentFile && (
+                            <div className="flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2">
+                              <FileText className="h-4 w-4 shrink-0 text-blue-600" />
+                              <span className="flex-1 truncate text-sm text-blue-800">
+                                {currentFile.name}
+                              </span>
+                              <span className="text-xs text-blue-600">
+                                {(currentFile.size / 1024).toFixed(0)} KB
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => onChange(null)}
+                                className="text-blue-600 hover:text-blue-800"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Show existing attachment (edit mode) */}
+                          {!currentFile && existingAttachment && (
+                            <div className="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-2">
+                              <FileText className="h-4 w-4 shrink-0 text-green-600" />
+                              <span className="flex-1 truncate text-sm text-green-800">
+                                {existingAttachment.name || 'Attached document'}
+                              </span>
+                              <a
+                                href={existingAttachment.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-green-600 hover:text-green-800"
+                              >
+                                <Download className="h-4 w-4" />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  form.setValue('remove_attachment', true);
+                                }}
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          )}
+
+                          {/* File input */}
+                          {!currentFile && !existingAttachment && (
+                            <FormControl>
+                              <div className="flex items-center gap-2">
+                                <label className="flex w-full cursor-pointer items-center gap-2 rounded-md border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-600 transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600">
+                                  <Paperclip className="h-4 w-4" />
+                                  <span>Click to attach a supporting document</span>
+                                  <input
+                                    {...field}
+                                    type="file"
+                                    className="hidden"
+                                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0] || null;
+                                      onChange(file);
+                                      // Reset remove_attachment when a new file is picked
+                                      form.setValue('remove_attachment', false);
+                                    }}
+                                  />
+                                </label>
+                              </div>
+                            </FormControl>
+                          )}
+                        </div>
+                        <FormDescription>PDF, JPEG, PNG, or WebP. Max 5 MB.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
+                />
+              )}
+
+              {/* Attachment (View mode only) */}
+              {mode === 'view' && request?.attachment_url && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Supporting Document</label>
+                  <div className="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-2">
+                    <FileText className="h-4 w-4 shrink-0 text-green-600" />
+                    <span className="flex-1 truncate text-sm text-green-800">
+                      {request.attachment_name || 'Attached document'}
+                    </span>
+                    <a
+                      href={getMediaUrl(request.attachment_url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-200"
+                    >
+                      <Download className="h-3 w-3" />
+                      View
+                    </a>
+                  </div>
+                </div>
+              )}
 
               {/* Status (View mode only) */}
               {mode === 'view' && request && (

@@ -109,6 +109,7 @@ export interface StudentListItem {
   gender: GenderValue | '';
   is_active: boolean;
   can_manage?: boolean; // For class teachers - indicates if they can edit/delete this student
+  profile_photo_thumbnail?: string | null;
 }
 
 // User Payload for Create

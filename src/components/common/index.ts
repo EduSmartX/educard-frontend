@@ -1,4 +1,5 @@
 export { Logo } from './logo';
+export { UserAvatar } from './user-avatar';
 export * from './bulk-upload-dialog';
 export * from './delete-confirmation-dialog';
 export * from './reactivate-confirmation-dialog';

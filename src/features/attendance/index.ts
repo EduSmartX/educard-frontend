@@ -7,3 +7,4 @@ export * from './components/student-attendance-table';
 export * from './components/attendance-coming-soon-card';
 export * from './hooks/use-attendance';
 export * from './types';
+export * from './types/index';
