@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Check, X, Loader2 } from 'lucide-react';
+import { Check, X, Loader2, FileText, Download } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { formatDate } from '@/lib/utils/date-utils';
+import { getMediaUrl } from '@/lib/utils/media-utils';
 
 interface LeaveRequestReview {
   public_id: string;
@@ -41,6 +42,8 @@ interface LeaveRequestReview {
   reason: string;
   status: string;
   applied_at: string;
+  attachment_url?: string | null;
+  attachment_name?: string;
 }
 
 interface LeaveRequestReviewDialogProps {
@@ -163,6 +166,28 @@ export function LeaveRequestReviewDialog({
               {request.reason}
             </div>
           </div>
+
+          {/* Attachment */}
+          {request.attachment_url && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Supporting Document</label>
+              <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2">
+                <FileText className="h-4 w-4 shrink-0 text-green-600" />
+                <span className="flex-1 truncate text-sm text-green-800">
+                  {request.attachment_name || 'Attached document'}
+                </span>
+                <a
+                  href={getMediaUrl(request.attachment_url)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-200"
+                >
+                  <Download className="h-3 w-3" />
+                  View
+                </a>
+              </div>
+            </div>
+          )}
 
           {/* Comments Form - Only for approve/reject actions */}
           {!isViewMode && (

@@ -7,7 +7,7 @@ import {
   getComprehensiveAttendance,
   bulkMarkAttendance,
 } from '../api/attendance-api';
-import type { BulkAttendancePayload } from '../types';
+import type { BulkAttendancePayload } from '../types/index';
 
 // Query keys
 export const attendanceKeys = {

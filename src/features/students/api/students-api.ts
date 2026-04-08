@@ -37,6 +37,7 @@ interface StudentApiResponse {
   admission_date?: string;
   guardian_name?: string;
   gender?: string; // Some backends return gender at root level
+  profile_photo_thumbnail?: string | null;
   is_deleted?: boolean;
   can_manage?: boolean; // Permission flag from backend
   created_at: string;
@@ -70,6 +71,7 @@ export async function fetchStudents(
       gender: (student.user_info?.gender || student.gender || '') as StudentListItem['gender'],
       is_active: !student.is_deleted,
       can_manage: student.can_manage ?? true, // Use backend value, default to true if not provided
+      profile_photo_thumbnail: student.profile_photo_thumbnail ?? null,
     })
   );
 

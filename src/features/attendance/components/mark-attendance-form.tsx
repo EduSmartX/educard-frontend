@@ -31,7 +31,7 @@ import {
   useBulkMarkAttendance,
 } from '../hooks/use-attendance';
 import { StudentAttendanceTable } from './student-attendance-table';
-import type { StudentRow } from '../types';
+import type { StudentRow } from '../types/index';
 import { AttendanceUiText, CommonUiText } from '@/constants';
 
 const formSchema = z.object({

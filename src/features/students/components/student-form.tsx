@@ -10,11 +10,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select,
@@ -38,6 +44,8 @@ import {
 } from '@/lib/utils/error-handler';
 import type { CreateStudentPayload, Student } from '../types';
 import { FormActions } from '@/components/form/form-actions';
+import { FormProfilePhoto } from '@/components/form/form-profile-photo';
+import { uploadProfilePhotoForUser } from '@/lib/utils/upload-profile-photo';
 import { FormMetadata } from '@/components/form/form-metadata';
 import { DeletedDuplicateDialog } from '@/components/common';
 import { useDeletedDuplicateHandler } from '@/hooks/use-deleted-duplicate-handler';
@@ -82,15 +90,16 @@ export function StudentForm({
   const [useQuickAdd, setUseQuickAdd] = useState(false);
   const [isAddressExpanded, setIsAddressExpanded] = useState(false);
   const [isPreviousSchoolExpanded, setIsPreviousSchoolExpanded] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
 
   const { user } = useAuth();
   const isTeacher = user?.role === USER_ROLES.TEACHER;
 
   // Fetch classes for selection
   // For teachers in create mode, only fetch classes where they are class teacher
-  const { data: classesData } = useClasses({ 
+  const { data: classesData } = useClasses({
     page_size: 100,
-    ...(isTeacher && mode === 'create' ? { for_student_form: true } : {})
+    ...(isTeacher && mode === 'create' ? { for_student_form: true } : {}),
   });
   const classes = useMemo<Class[]>(() => classesData?.data || [], [classesData]);
 
@@ -157,7 +166,11 @@ export function StudentForm({
 
       // Scroll to first error field if there are field errors
       if (result.hasFieldErrors) {
-        scrollToFirstFormError(setIsAddressExpanded, setIsPreviousSchoolExpanded, form.formState.errors);
+        scrollToFirstFormError(
+          setIsAddressExpanded,
+          setIsPreviousSchoolExpanded,
+          form.formState.errors
+        );
       }
 
       if (!result.hasFieldErrors) {
@@ -180,7 +193,11 @@ export function StudentForm({
 
       // Scroll to first error field if there are field errors
       if (result.hasFieldErrors) {
-        scrollToFirstFormError(setIsAddressExpanded, setIsPreviousSchoolExpanded, form.formState.errors);
+        scrollToFirstFormError(
+          setIsAddressExpanded,
+          setIsPreviousSchoolExpanded,
+          form.formState.errors
+        );
       }
 
       // Show the actual error message from backend
@@ -237,18 +254,34 @@ export function StudentForm({
     const payload = transformStudentFormToPayload(data);
 
     if (mode === 'create') {
-      createMutation.mutate({ classId: data.class_id, payload });
+      createMutation.mutate(
+        { classId: data.class_id, payload },
+        {
+          onSuccess: (createdStudent) => {
+            // Upload photo if one was selected during form fill
+            if (photoFile && createdStudent?.user_info?.public_id) {
+              uploadProfilePhotoForUser(createdStudent.user_info.public_id, photoFile).catch(() => {
+                toast.error('Student created but photo upload failed. You can upload it later.');
+              });
+            }
+          },
+        }
+      );
     } else if (mode === 'edit' && studentId && initialData) {
       updateMutation.mutate({
         classId: data.class_id,
         publicId: studentId,
-        payload: payload,
+        payload,
       });
     }
   };
 
   const onInvalid = () => {
-    scrollToFirstFormError(setIsAddressExpanded, setIsPreviousSchoolExpanded, form.formState.errors);
+    scrollToFirstFormError(
+      setIsAddressExpanded,
+      setIsPreviousSchoolExpanded,
+      form.formState.errors
+    );
   };
 
   const isViewMode = mode === 'view';
@@ -265,7 +298,7 @@ export function StudentForm({
         <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-6">
           {/* Quick Add Toggle - Only for create mode */}
           {mode === 'create' && (
-            <Card className="bg-blue-50 border-blue-200">
+            <Card className="border-blue-200 bg-blue-50">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="quick-add" className="text-sm font-medium">
@@ -296,13 +329,13 @@ export function StudentForm({
           <Card className="border-primary/50 shadow-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                <span className="bg-primary text-primary-foreground flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold">
                   1
                 </span>
                 Select Class
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}
                 name="class_id"
@@ -400,69 +433,85 @@ export function StudentForm({
                 <CardHeader>
                   <CardTitle className="text-base font-medium">Basic Information</CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <TextInputField
-                    control={form.control}
-                    name="first_name"
-                    label="First Name"
-                    placeholder={FormPlaceholders.ENTER_FIRST_NAME}
-                    disabled={isViewMode || !isClassSelected}
-                    required
-                    validationType="name"
-                    validationOptions={{ fieldName: 'First name' }}
+                <CardContent className="space-y-6">
+                  {/* Profile Photo */}
+                  <FormProfilePhoto
+                    mode={mode}
+                    userPublicId={initialData?.user_info?.public_id}
+                    name={
+                      initialData
+                        ? `${initialData.user_info?.first_name || ''} ${initialData.user_info?.last_name || ''}`.trim()
+                        : undefined
+                    }
+                    gender={initialData?.user_info?.gender || undefined}
+                    onFileSelected={setPhotoFile}
+                    disabled={isLoading || !isClassSelected}
                   />
-                  <TextInputField
-                    control={form.control}
-                    name="last_name"
-                    label="Last Name"
-                    placeholder={FormPlaceholders.ENTER_LAST_NAME}
-                    disabled={isViewMode || !isClassSelected}
-                    required
-                    validationType="name"
-                    validationOptions={{ fieldName: 'Last name' }}
-                  />
-                  <TextInputField
-                    control={form.control}
-                    name="roll_number"
-                    label="Roll Number"
-                    placeholder={FormPlaceholders.ENTER_ROLL_NUMBER}
-                    disabled={isViewMode || !isClassSelected}
-                    required
-                    validationType="alphanumeric"
-                  />
-                  <TextInputField
-                    control={form.control}
-                    name="email"
-                    label="Email"
-                    type="email"
-                    placeholder={FormPlaceholders.ENTER_EMAIL}
-                    disabled={isViewMode || !isClassSelected}
-                    validationType="email"
-                  />
-                  <TextInputField
-                    control={form.control}
-                    name="phone"
-                    label="Phone"
-                    placeholder={FormPlaceholders.ENTER_PHONE_NUMBER}
-                    disabled={isViewMode || !isClassSelected}
-                    validationType="phone"
-                  />
-                  <GenderField
-                    control={form.control}
-                    name="gender"
-                    disabled={isViewMode || !isClassSelected}
-                  />
-                  <BloodGroupField
-                    control={form.control}
-                    name="blood_group"
-                    disabled={isViewMode || !isClassSelected}
-                  />
-                  <DateInputField
-                    control={form.control}
-                    name="date_of_birth"
-                    label="Date of Birth"
-                    disabled={isViewMode || !isClassSelected}
-                  />
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <TextInputField
+                      control={form.control}
+                      name="first_name"
+                      label="First Name"
+                      placeholder={FormPlaceholders.ENTER_FIRST_NAME}
+                      disabled={isViewMode || !isClassSelected}
+                      required
+                      validationType="name"
+                      validationOptions={{ fieldName: 'First name' }}
+                    />
+                    <TextInputField
+                      control={form.control}
+                      name="last_name"
+                      label="Last Name"
+                      placeholder={FormPlaceholders.ENTER_LAST_NAME}
+                      disabled={isViewMode || !isClassSelected}
+                      required
+                      validationType="name"
+                      validationOptions={{ fieldName: 'Last name' }}
+                    />
+                    <TextInputField
+                      control={form.control}
+                      name="roll_number"
+                      label="Roll Number"
+                      placeholder={FormPlaceholders.ENTER_ROLL_NUMBER}
+                      disabled={isViewMode || !isClassSelected}
+                      required
+                      validationType="alphanumeric"
+                    />
+                    <TextInputField
+                      control={form.control}
+                      name="email"
+                      label="Email"
+                      type="email"
+                      placeholder={FormPlaceholders.ENTER_EMAIL}
+                      disabled={isViewMode || !isClassSelected}
+                      validationType="email"
+                    />
+                    <TextInputField
+                      control={form.control}
+                      name="phone"
+                      label="Phone"
+                      placeholder={FormPlaceholders.ENTER_PHONE_NUMBER}
+                      disabled={isViewMode || !isClassSelected}
+                      validationType="phone"
+                    />
+                    <GenderField
+                      control={form.control}
+                      name="gender"
+                      disabled={isViewMode || !isClassSelected}
+                    />
+                    <BloodGroupField
+                      control={form.control}
+                      name="blood_group"
+                      disabled={isViewMode || !isClassSelected}
+                    />
+                    <DateInputField
+                      control={form.control}
+                      name="date_of_birth"
+                      label="Date of Birth"
+                      disabled={isViewMode || !isClassSelected}
+                    />
+                  </div>
                 </CardContent>
               </Card>
 
@@ -471,7 +520,7 @@ export function StudentForm({
                 <CardHeader>
                   <CardTitle className="text-base font-medium">Admission Information</CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <TextInputField
                     control={form.control}
                     name="admission_number"
@@ -494,7 +543,7 @@ export function StudentForm({
                 <CardHeader>
                   <CardTitle className="text-base font-medium">Guardian Information</CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <TextInputField
                     control={form.control}
                     name="guardian_name"
@@ -612,7 +661,8 @@ export function StudentForm({
                 >
                   <CardTitle className="flex items-center justify-between text-base font-medium">
                     <span>
-                      Previous School Information <span className="text-sm text-muted-foreground font-normal">(Optional)</span>
+                      Previous School Information{' '}
+                      <span className="text-muted-foreground text-sm font-normal">(Optional)</span>
                     </span>
                     {isPreviousSchoolExpanded ? (
                       <ChevronUp className="h-5 w-5" />
@@ -671,7 +721,8 @@ export function StudentForm({
                 >
                   <CardTitle className="flex items-center justify-between text-base font-medium">
                     <span>
-                      Address <span className="text-sm text-muted-foreground font-normal">(Optional)</span>
+                      Address{' '}
+                      <span className="text-muted-foreground text-sm font-normal">(Optional)</span>
                     </span>
                     {isAddressExpanded ? (
                       <ChevronUp className="h-5 w-5" />

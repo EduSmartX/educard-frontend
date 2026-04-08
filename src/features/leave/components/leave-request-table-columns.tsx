@@ -2,7 +2,7 @@
  * Leave Request Table Columns
  * Using common columns pattern like all other list pages
  */
-import { X, Eye } from 'lucide-react';
+import { X, Eye, Paperclip } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Column } from '@/components/ui/data-table';
@@ -19,9 +19,16 @@ export function getLeaveRequestColumns(actions: ColumnActions): Column<LeaveRequ
     {
       header: 'Leave Type',
       accessor: (row) => (
-        <div>
-          <div className="font-medium text-gray-900">{row.leave_name}</div>
-          <div className="text-muted-foreground text-xs">{row.leave_type_code}</div>
+        <div className="flex items-center gap-1.5">
+          <div>
+            <div className="font-medium text-gray-900">{row.leave_name}</div>
+            <div className="text-muted-foreground text-xs">{row.leave_type_code}</div>
+          </div>
+          {row.attachment_url && (
+            <span title="Has attachment">
+              <Paperclip className="h-3.5 w-3.5 shrink-0 text-blue-500" />
+            </span>
+          )}
         </div>
       ),
       sortable: true,

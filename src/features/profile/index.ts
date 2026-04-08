@@ -7,6 +7,7 @@
 export { default as ProfilePage } from './pages/profile-page';
 
 // Components
+export { ProfilePhotoUpload } from './components/profile-photo-upload';
 export { ProfileInformationForm } from './components/profile-information-form';
 export { PasswordChangeForm } from './components/password-change-form';
 export { EmailUpdateForm } from './components/email-update-form';
@@ -14,12 +15,19 @@ export { PhoneUpdateForm } from './components/phone-update-form';
 export { AddressUpdateForm } from './components/address-update-form';
 
 // Hooks
-export { useUserProfile } from './hooks/queries';
-export { useUpdateProfile, useUpdateAddress, useChangePassword } from './hooks/mutations';
+export { useUserProfile, useMyProfilePhoto } from './hooks/queries';
+export {
+  useUpdateProfile,
+  useUpdateAddress,
+  useChangePassword,
+  useUploadProfilePhoto,
+  useDeleteProfilePhoto,
+} from './hooks/mutations';
 
 // Types
 export type {
   UserProfile,
+  ProfileImage,
   UpdateProfilePayload,
   ChangePasswordPayload,
   UpdateAddressPayload,

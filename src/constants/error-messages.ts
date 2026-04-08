@@ -146,6 +146,9 @@ export const ErrorMessages = {
     SEND_OTP_FAILED: 'Failed to send OTP. Please try again.',
     UPDATE_EMAIL_FAILED: 'Failed to update email. Please try again.',
     UPDATE_PHONE_FAILED: 'Failed to update phone. Please try again.',
+    PHOTO_UPLOAD_FAILED: 'Failed to upload profile photo. Please try again.',
+    PHOTO_DELETE_FAILED: 'Failed to delete profile photo. Please try again.',
+    PHOTO_FETCH_FAILED: 'Failed to load profile photo.',
   },
 
   LOCATION_UNAVAILABLE: 'Unable to get location.',
@@ -423,6 +426,8 @@ export const SuccessMessages = {
     EMAIL_UPDATED: 'Email updated successfully.',
     PHONE_UPDATED: 'Phone updated successfully.',
     OTP_SENT: 'OTP sent successfully.',
+    PHOTO_UPLOADED: 'Profile photo uploaded successfully.',
+    PHOTO_DELETED: 'Profile photo removed successfully.',
   },
 
   AUTH: {
@@ -445,8 +450,10 @@ export const SuccessMessages = {
  */
 export const InfoMessages = {
   CLASS_TEACHER: {
-    BULK_UPLOAD_STUDENTS: 'As a class teacher, you can bulk upload students only for classes where you are assigned as the class teacher. Please ensure the class information in your template matches your assigned class.',
-    BULK_UPLOAD_SUBJECTS: 'As a class teacher, you can bulk upload subjects only for classes where you are assigned as the class teacher. Please ensure the class information in your template matches your assigned class.',
+    BULK_UPLOAD_STUDENTS:
+      'As a class teacher, you can bulk upload students only for classes where you are assigned as the class teacher. Please ensure the class information in your template matches your assigned class.',
+    BULK_UPLOAD_SUBJECTS:
+      'As a class teacher, you can bulk upload subjects only for classes where you are assigned as the class teacher. Please ensure the class information in your template matches your assigned class.',
   },
 } as const;
 

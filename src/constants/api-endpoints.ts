@@ -173,6 +173,16 @@ export const API_ENDPOINTS = {
     },
   },
 
+  ATTACHMENTS: {
+    MY_PHOTO_UPLOAD: '/attachments/employee/profile-image/my-photo/upload/',
+    MY_PHOTO: '/attachments/employee/profile-image/my-photo/',
+    USER_PHOTO_UPLOAD: (publicId: string) =>
+      `/attachments/employee/profile-image/user/${publicId}/upload/`,
+    USER_PHOTO: (publicId: string) => `/attachments/employee/profile-image/user/${publicId}/`,
+    ORG_BRANDING: (imageType: string) =>
+      `/attachments/employee/profile-image/org-branding/${imageType}/`,
+  },
+
   MASTER: {
     SUBJECTS: {
       LIST: '/core/subjects/',
@@ -219,7 +229,9 @@ export const buildUrl = (
   endpoint: string,
   params?: Record<string, string | number | boolean | undefined | null>
 ): string => {
-  if (!params) return endpoint;
+  if (!params) {
+    return endpoint;
+  }
 
   const queryString = Object.entries(params)
     .filter(([, value]) => value !== undefined && value !== null)

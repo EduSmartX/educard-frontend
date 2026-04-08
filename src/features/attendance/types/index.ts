@@ -83,6 +83,8 @@ export interface ComprehensiveAttendanceRecord {
   email: string;
   roll_number: string | null;
   admission_number: string | null;
+  gender: string;
+  profile_photo_thumbnail: string | null;
 
   // Attendance information
   attendance_public_id: string | null;
@@ -108,6 +110,8 @@ export interface StudentRow {
   email: string;
   roll_number: string | null;
   admission_number: string | null;
+  gender: string;
+  profile_photo_thumbnail: string | null;
   attendance_public_id: string | null;
   // Override to ensure non-null booleans
   morning_present: boolean;
