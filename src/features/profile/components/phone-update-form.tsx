@@ -3,11 +3,12 @@
  * Update phone with OTP verification
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Phone, Send } from 'lucide-react';
 import { z } from 'zod';
+import { PhoneInput } from '@/components/forms/phone-input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -21,12 +22,17 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { CommonUiText, FormPlaceholders } from '@/constants';
+import { isValidTenDigitPhone } from '@/lib/phone-utils';
 import { useUserProfile } from '../hooks/queries';
 import { useSendOTP, useUpdatePhone } from '../hooks/mutations';
 
+const PHONE_ERROR_MESSAGE = 'Please enter a valid 10-digit phone number';
+
 const phoneSchema = z.object({
-  new_phone: z.string().min(10, 'Phone number must be at least 10 digits'),
-  otp: z.string().min(6, 'OTP must be 6 digits').max(6),
+  new_phone: z.string().refine(isValidTenDigitPhone, {
+    message: PHONE_ERROR_MESSAGE,
+  }),
+  otp: z.string().regex(/^\d{6}$/, 'OTP must be 6 digits'),
 });
 
 type PhoneFormValues = z.infer<typeof phoneSchema>;
@@ -37,6 +43,7 @@ export function PhoneUpdateForm() {
   const updatePhoneMutation = useUpdatePhone();
   const [otpSent, setOtpSent] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const otpWindowActive = otpSent && countdown > 0;
 
   const form = useForm<PhoneFormValues>({
     resolver: zodResolver(phoneSchema),
@@ -46,30 +53,45 @@ export function PhoneUpdateForm() {
     },
   });
 
+  useEffect(() => {
+    if (!otpWindowActive) {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      setCountdown((prev) => Math.max(prev - 1, 0));
+    }, 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [otpWindowActive, countdown]);
+
+  const resetOtpState = () => {
+    setOtpSent(false);
+    setCountdown(0);
+    form.setValue('otp', '');
+    form.clearErrors('otp');
+  };
+
   const handleSendOTP = () => {
     const phone = form.getValues('new_phone');
-    if (!phone || phone.length < 10) {
-      form.setError('new_phone', { message: 'Please enter a valid phone number' });
+    if (!phone || !isValidTenDigitPhone(phone)) {
+      form.setError('new_phone', {
+        message: PHONE_ERROR_MESSAGE,
+      });
       return;
     }
+
+    form.clearErrors('new_phone');
 
     sendOTPMutation.mutate(
       { phone, purpose: 'PHONE_VERIFICATION' },
       {
         onSuccess: (data) => {
           setOtpSent(true);
-          const expiresIn = data.data?.expires_in_minutes || 5;
+          form.setValue('otp', '');
+          form.clearErrors('otp');
+          const expiresIn = data.data?.expires_in_minutes || 10;
           setCountdown(expiresIn * 60);
-
-          const timer = setInterval(() => {
-            setCountdown((prev) => {
-              if (prev <= 1) {
-                clearInterval(timer);
-                return 0;
-              }
-              return prev - 1;
-            });
-          }, 1000);
         },
       }
     );
@@ -79,8 +101,7 @@ export function PhoneUpdateForm() {
     updatePhoneMutation.mutate(values, {
       onSuccess: () => {
         form.reset();
-        setOtpSent(false);
-        setCountdown(0);
+        resetOtpState();
       },
     });
   };
@@ -117,36 +138,48 @@ export function PhoneUpdateForm() {
                     New Phone Number <span className="text-red-500">*</span>
                   </FormLabel>
                   <div className="flex gap-2">
-                    <FormControl>
-                      <Input
-                        type="tel"
-                        placeholder={FormPlaceholders.PHONE_EXAMPLE}
-                        {...field}
-                        disabled={otpSent}
-                      />
-                    </FormControl>
+                    <PhoneInput
+                      id="new_phone"
+                      value={field.value}
+                      onChange={(value) => {
+                        if (otpSent && value !== field.value) {
+                          resetOtpState();
+                        }
+                        field.onChange(value);
+                      }}
+                      error={form.formState.errors.new_phone?.message}
+                      placeholder={FormPlaceholders.PHONE_EXAMPLE}
+                      disabled={otpWindowActive}
+                      compact
+                      className="border-input bg-background ring-offset-background focus:border-ring focus:ring-ring h-10 rounded-md border px-3 py-2 text-sm focus:ring-2 focus:ring-offset-2"
+                    />
                     <Button
                       type="button"
                       onClick={handleSendOTP}
-                      disabled={otpSent || sendOTPMutation.isPending}
+                      disabled={otpWindowActive || sendOTPMutation.isPending}
                     >
                       {sendOTPMutation.isPending ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <>
                           <Send className="mr-2 h-4 w-4" />
-                          {CommonUiText.SEND_OTP}
+                          {otpSent ? 'Resend OTP' : CommonUiText.SEND_OTP}
                         </>
                       )}
                     </Button>
                   </div>
                   <FormDescription>
-                    {otpSent ? (
+                    {otpWindowActive ? (
                       <span className="text-green-600">
-                        OTP sent! Expires in {formatTime(countdown)}
+                        {sendOTPMutation.data?.message || 'OTP sent successfully.'} Expires in{' '}
+                        {formatTime(countdown)}
+                      </span>
+                    ) : otpSent ? (
+                      <span className="text-amber-600">
+                        OTP expired. Send a new code to continue.
                       </span>
                     ) : (
-                      'Click the button to send OTP to this phone'
+                      'Send OTP to the new mobile number before verifying the change.'
                     )}
                   </FormDescription>
                   <FormMessage />
@@ -184,14 +217,16 @@ export function PhoneUpdateForm() {
                 variant="outline"
                 onClick={() => {
                   form.reset();
-                  setOtpSent(false);
-                  setCountdown(0);
+                  resetOtpState();
                 }}
                 disabled={updatePhoneMutation.isPending}
               >
                 {CommonUiText.RESET}
               </Button>
-              <Button type="submit" disabled={!otpSent || updatePhoneMutation.isPending}>
+              <Button
+                type="submit"
+                disabled={!otpSent || !otpWindowActive || updatePhoneMutation.isPending}
+              >
                 {updatePhoneMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <Phone className="mr-2 h-4 w-4" />
                 {CommonUiText.UPDATE_PHONE}
