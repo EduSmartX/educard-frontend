@@ -86,13 +86,27 @@ function SidebarNavItem({
     return null;
   }
 
-  // Compute active state: pathname matches this item's path but not a sibling's
-  // longer path. E.g. /attendance/timesheet should NOT be active when at
-  // /attendance/timesheet/approvals because the sibling /attendance/timesheet/approvals
-  // is a more specific match.
+  // Compute active state:
+  // 1. The current URL must exactly equal this item's path, OR start with
+  //    this item's path followed by a "/" (so /attendance/timesheet matches
+  //    /attendance/timesheet/submit but NOT /attendance/timesheet/approvals
+  //    when that sibling is more specific).
+  // 2. No sibling path that is LONGER than this item's path should also
+  //    match the current URL — if one does, that sibling is the real active
+  //    item, not this one.
+  //
+  // Example:
+  //   item.path  = /attendance/timesheet
+  //   sibling    = /attendance/timesheet/approvals
+  //   pathname   = /attendance/timesheet/approvals
+  //   → condition 1 is TRUE  (startsWith '/attendance/timesheet/')
+  //   → condition 2 is TRUE  (sibling '/attendance/timesheet/approvals' is
+  //                           longer AND matches pathname)
+  //   → isItemActive = TRUE && !TRUE = FALSE  ✅ Timesheet is NOT active
+  const allSiblingPaths = siblingPaths ?? [];
   const isItemActive =
     (pathname === item.path || pathname.startsWith(`${item.path}/`)) &&
-    !(siblingPaths ?? []).some((sp) => sp.length > item.path!.length && pathname.startsWith(sp));
+    !allSiblingPaths.some((sp) => sp.length > item.path!.length && pathname.startsWith(sp));
 
   return (
     <NavLink
@@ -145,7 +159,18 @@ export function DashboardSidebar({ sections, footer, onNavigate }: DashboardSide
             )}
             <div className="space-y-1">
               {section.items.map((item) => (
-                <SidebarNavItem key={item.id} item={item} onNavigate={onNavigate} />
+                <SidebarNavItem
+                  key={item.id}
+                  item={item}
+                  siblingPaths={
+                    // Collect the paths of every OTHER item in this section.
+                    // This lets the active-state guard know about siblings so
+                    // it can correctly decide that /attendance/timesheet should
+                    // NOT be active when the URL is /attendance/timesheet/approvals.
+                    section.items.filter((s) => s.path && s.id !== item.id).map((s) => s.path!)
+                  }
+                  onNavigate={onNavigate}
+                />
               ))}
             </div>
           </div>
