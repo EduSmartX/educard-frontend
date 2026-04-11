@@ -76,9 +76,7 @@ export async function updatePhone(payload: UpdatePhonePayload): Promise<ApiRespo
   return response.data;
 }
 
-// ──────────────────────────────────────────────────────────────
 // Profile Photo APIs
-// ──────────────────────────────────────────────────────────────
 
 /**
  * Get current user's profile photo

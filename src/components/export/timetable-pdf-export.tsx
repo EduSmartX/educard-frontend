@@ -18,8 +18,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Download, FileText, Palette } from 'lucide-react';
 
-// ── Types ───────────────────────────────────────────────────
-
 export interface TimetableSlotData {
   slot_label: string;
   start_time: string;
@@ -57,8 +55,6 @@ interface TimetablePdfExportProps {
   className?: string;
 }
 
-// ── Constants ───────────────────────────────────────────────
-
 const DAY_LABELS: Record<number, string> = {
   0: 'Monday',
   1: 'Tuesday',
@@ -75,8 +71,6 @@ const BREAK_LABELS: Record<string, string> = {
   assembly: 'Assembly',
 };
 
-// ── Helpers ─────────────────────────────────────────────────
-
 function formatTime(time: string): string {
   if (!time) {
     return '';
@@ -86,8 +80,6 @@ function formatTime(time: string): string {
   const hour12 = h % 12 || 12;
   return `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
 }
-
-// ── Main Component ──────────────────────────────────────────
 
 export function TimetablePdfExport({
   data,
@@ -152,8 +144,6 @@ export function TimetablePdfExport({
     </>
   );
 }
-
-// ── HTML Generation for Print ───────────────────────────────
 
 function generatePrintableHTML(data: TimetableExportData, mode: 'color' | 'bw'): string {
   const isColor = mode === 'color';

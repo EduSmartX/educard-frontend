@@ -2,8 +2,6 @@
  * Timetable Module Types
  */
 
-// ── Enums / Constants ────────────────────────────────────────
-
 export const DAY_OF_WEEK = {
   MONDAY: 0,
   TUESDAY: 1,
@@ -59,8 +57,6 @@ export const SLOT_TYPE_LABELS: Record<string, string> = {
 export const BREAK_TYPES = new Set(['lunch_break', 'short_break', 'assembly']);
 export const ASSIGNABLE_TYPES = new Set(['period', 'free_period', 'special']);
 
-// ── Class Group ─────────────────────────────────────────────
-
 export interface ClassGroupMapping {
   public_id: string;
   class_public_id: string;
@@ -85,8 +81,6 @@ export interface ClassGroupCreatePayload {
   description?: string;
   display_order?: number;
 }
-
-// ── Slot ────────────────────────────────────────────────────
 
 export interface TimetableSlot {
   public_id: string;
@@ -113,8 +107,6 @@ export interface BulkSlotPayload {
   days_of_week: number[];
   slots: BulkSlotItem[];
 }
-
-// ── Entry ───────────────────────────────────────────────────
 
 export interface TimetableEntry {
   public_id: string;
@@ -144,8 +136,6 @@ export interface TimetableEntryCreatePayload {
   notes?: string;
 }
 
-// ── Class Timetable View (combined response) ────────────────
-
 export interface ClassTimetableSlot {
   public_id: string;
   entry_public_id: string | null;
@@ -171,8 +161,6 @@ export interface ClassTimetableResponse {
   class_public_id: string;
   days: Record<string, ClassTimetableSlot[]>;
 }
-
-// ── My Timetable (teacher's own timetable) ──────────────────
 
 export interface MyTimetableResponse {
   teacher_name: string;

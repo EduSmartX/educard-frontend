@@ -20,15 +20,12 @@ import type {
 const ADMIN_BASE = '/timetable/admin';
 const EMPLOYEE_BASE = '/timetable/employee';
 
-// ── Generic API response wrapper ────────────────────────────
 interface ApiResponse<T> {
   status: string;
   message: string;
   data: T;
   warnings?: string[] | null;
 }
-
-// ── Class Groups ────────────────────────────────────────────
 
 export async function fetchClassGroups(): Promise<ClassGroup[]> {
   const response = await api.get<ApiResponse<ClassGroup[]>>(`${ADMIN_BASE}/class-groups/`);
@@ -75,8 +72,6 @@ export async function removeClassFromGroup(
   await api.delete(`${ADMIN_BASE}/class-groups/${groupPublicId}/classes/${classPublicId}/`);
 }
 
-// ── Slots (per class group) ─────────────────────────────────
-
 export async function fetchSlots(groupPublicId: string, day?: number): Promise<TimetableSlot[]> {
   const params = day !== undefined ? { day } : {};
   const response = await api.get<ApiResponse<TimetableSlot[]>>(
@@ -107,8 +102,6 @@ export async function clearDaySlots(
   return response.data.data;
 }
 
-// ── Entries ─────────────────────────────────────────────────
-
 export interface CreateEntryResult {
   entry: TimetableEntry;
   warnings?: string[] | null;
@@ -126,8 +119,6 @@ export async function deleteEntry(publicId: string): Promise<void> {
   await api.delete(`${ADMIN_BASE}/entries/${publicId}/`);
 }
 
-// ── Class Timetable ─────────────────────────────────────────
-
 export async function fetchClassTimetable(classPublicId: string): Promise<ClassTimetableResponse> {
   const baseUrl = isAdminUser() ? ADMIN_BASE : EMPLOYEE_BASE;
   const response = await api.get<ApiResponse<ClassTimetableResponse>>(
@@ -135,8 +126,6 @@ export async function fetchClassTimetable(classPublicId: string): Promise<ClassT
   );
   return response.data.data;
 }
-
-// ── Employee (my timetable) ─────────────────────────────────
 
 export async function fetchMyTimetable(): Promise<MyTimetableResponse> {
   const response = await api.get<ApiResponse<MyTimetableResponse>>(

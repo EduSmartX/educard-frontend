@@ -45,8 +45,6 @@ import {
   SLOT_TYPE_LABELS,
 } from '../types';
 
-// ── Helpers ─────────────────────────────────────────────────
-
 function getInitials(name: string): string {
   return name
     .split(' ')
@@ -57,14 +55,10 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
-// ── Props ───────────────────────────────────────────────────
-
 interface TimetableGridProps {
   timetable: ClassTimetableResponse;
   isLoading?: boolean;
 }
-
-// ── Helpers ─────────────────────────────────────────────────
 
 function formatTime(time: string): string {
   const [h, m] = time.split(':').map(Number);
@@ -89,8 +83,6 @@ function gridStyle(dayCount: number): React.CSSProperties {
     display: 'grid',
   };
 }
-
-// ── Assignment Popover ──────────────────────────────────────
 
 function AssignmentPopover({
   slot,
@@ -316,8 +308,6 @@ function AssignmentPopover({
   );
 }
 
-// ── Break Row ───────────────────────────────────────────────
-
 function BreakRow({ slot, colCount }: { slot: ClassTimetableSlot; colCount: number }) {
   const typeLabel = SLOT_TYPE_LABELS[slot.slot_type] ?? slot.slot_type;
   const icon =
@@ -347,8 +337,6 @@ function BreakRow({ slot, colCount }: { slot: ClassTimetableSlot; colCount: numb
     </div>
   );
 }
-
-// ── Period Cell ─────────────────────────────────────────────
 
 function PeriodCell({
   slot,
@@ -451,8 +439,6 @@ function PeriodCell({
   );
 }
 
-// ── Skeletons & Empty ───────────────────────────────────────
-
 function TimetableGridSkeleton() {
   return (
     <div className="space-y-3 p-4">
@@ -487,8 +473,6 @@ function EmptyTimetable() {
     </div>
   );
 }
-
-// ── Main Grid ───────────────────────────────────────────────
 
 export function TimetableGrid({ timetable, isLoading }: TimetableGridProps) {
   const activeDays = useMemo(

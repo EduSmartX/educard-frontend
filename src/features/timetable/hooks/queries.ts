@@ -11,8 +11,6 @@ import {
   fetchMyTimetable,
 } from '../api/timetable-api';
 
-// ── Query Keys ──────────────────────────────────────────────
-
 export const timetableKeys = {
   all: ['timetable'] as const,
   classGroups: () => [...timetableKeys.all, 'class-groups'] as const,
@@ -21,8 +19,6 @@ export const timetableKeys = {
   classTimetable: (classId: string) => [...timetableKeys.all, 'class-timetable', classId] as const,
   myTimetable: () => [...timetableKeys.all, 'my-timetable'] as const,
 };
-
-// ── Hooks ───────────────────────────────────────────────────
 
 export function useClassGroups() {
   return useQuery({

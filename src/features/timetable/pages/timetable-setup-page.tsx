@@ -22,8 +22,6 @@ import { ClassGroupsTab } from '../components/class-groups-tab';
 import { TimeSlotsTab } from '../components/time-slots-tab';
 import { TimetableViewTab } from '../components/timetable-view-tab';
 
-// ── Step Config ──────────────────────────────────────────────
-
 const STEPS = [
   {
     id: 'groups',
@@ -59,8 +57,6 @@ const STEPS = [
     description: 'Preview & assign teachers/subjects',
   },
 ] as const;
-
-// ── How It Works Guide ──────────────────────────────────────
 
 function HowItWorksGuide() {
   const [expanded, setExpanded] = useState(false);
@@ -155,8 +151,6 @@ function HowItWorksGuide() {
     </div>
   );
 }
-
-// ── Main Page ───────────────────────────────────────────────
 
 export default function TimetableSetupPage() {
   const [activeTab, setActiveTab] = useState('groups');

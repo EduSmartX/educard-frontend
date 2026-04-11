@@ -60,8 +60,6 @@ import {
   type TimetableSlot,
 } from '../types';
 
-// ── Slot type colors ────────────────────────────────────────
-
 const SLOT_TYPE_COLORS: Record<string, string> = {
   period: 'bg-blue-50 border-blue-200 text-blue-700',
   lunch_break: 'bg-amber-50 border-amber-200 text-amber-700',
@@ -79,8 +77,6 @@ const SLOT_TYPE_ICONS: Record<string, typeof Clock> = {
   free_period: Clock,
   special: Clock,
 };
-
-// ── Helpers ─────────────────────────────────────────────────
 
 function defaultSlot(slotNumber: number): BulkSlotItem {
   return {
@@ -161,8 +157,6 @@ function buildDaySlotMap(allSlots: TimetableSlot[] | undefined): Record<number, 
   }
   return map;
 }
-
-// ── Day Tab Selector (single active day + multi-select save targets) ─────
 
 function DayTabs({
   activeDay,
@@ -288,8 +282,6 @@ function DayTabs({
   );
 }
 
-// ── Single Slot Row ─────────────────────────────────────────
-
 function SlotRow({
   slot,
   index,
@@ -392,8 +384,6 @@ function SlotRow({
     </div>
   );
 }
-
-// ── Copy-to-Days Dialog ─────────────────────────────────────
 
 function CopyToDaysDialog({
   open,
@@ -500,8 +490,6 @@ function CopyToDaysDialog({
     </Dialog>
   );
 }
-
-// ── Slot Editor ──────────────────────────────────────────────
 
 function SlotEditor({
   group,
@@ -781,8 +769,6 @@ function SlotEditor({
     </div>
   );
 }
-
-// ── Main Tab ────────────────────────────────────────────────
 
 export function TimeSlotsTab() {
   const { data: groups, isLoading: groupsLoading } = useClassGroups();

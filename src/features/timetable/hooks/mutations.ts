@@ -26,8 +26,6 @@ import type {
   TimetableEntryCreatePayload,
 } from '../types';
 
-// ── Class Group Mutations ───────────────────────────────────
-
 export function useCreateClassGroup(options?: MutationOptions) {
   const qc = useQueryClient();
   return useMutation({
@@ -116,10 +114,6 @@ export function useRemoveClassFromGroup(options?: MutationOptions) {
   });
 }
 
-// ── Template Mutations (removed — no template model) ────────
-
-// ── Slot Mutations ──────────────────────────────────────────
-
 export function useBulkSaveSlots(groupPublicId: string, options?: MutationOptions) {
   const qc = useQueryClient();
   return useMutation({
@@ -158,8 +152,6 @@ export function useClearDaySlots(groupPublicId: string, options?: MutationOption
     },
   });
 }
-
-// ── Entry Mutations ─────────────────────────────────────────
 
 export function useCreateEntry(classPublicId?: string, options?: MutationOptions) {
   const qc = useQueryClient();
