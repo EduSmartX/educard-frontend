@@ -132,6 +132,10 @@ const HolidayCalendarPage = lazy(() => import('./pages/holidays-page'));
 // Exceptional Work Policy
 const ExceptionalWorkPage = lazy(() => import('./pages/exceptional-work-page'));
 
+// Timetable
+const ClassTimetablePage = lazy(() => import('./features/timetable/pages/class-timetable-page'));
+const TimetableSetupPage = lazy(() => import('./features/timetable/pages/timetable-setup-page'));
+
 // Profile
 const ProfilePage = lazy(() => import('./features/profile/pages/profile-page'));
 
@@ -227,6 +231,10 @@ function App() {
 
             {/* Exceptional Work Policy */}
             <Route path={ROUTES.EXCEPTIONAL_WORK} element={<ExceptionalWorkPage />} />
+
+            {/* Timetable */}
+            <Route path={ROUTES.TIMETABLE} element={<ClassTimetablePage />} />
+            <Route path={ROUTES.TIMETABLE_SETUP} element={<TimetableSetupPage />} />
 
             {/* Profile */}
             <Route path={ROUTES.PROFILE} element={<ProfilePage />} />

@@ -19,6 +19,7 @@ import {
   BarChart3,
   CheckSquare,
   Sliders,
+  Clock,
 } from 'lucide-react';
 import type { SidebarSection } from '@/components/layout/dashboard-sidebar';
 import { ROUTES } from '@/constants/app-config';
@@ -66,6 +67,12 @@ export const employeeSidebarConfig: SidebarSection[] = [
         label: 'Subjects',
         icon: BookOpen,
         path: ROUTES.SUBJECTS,
+      },
+      {
+        id: 'timetable',
+        label: 'Timetable',
+        icon: Clock,
+        path: ROUTES.TIMETABLE,
       },
     ],
   },
