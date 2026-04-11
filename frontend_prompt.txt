@@ -55,7 +55,7 @@
  4.52 Use PageHeader for Headers for Forms for uniqueness
  4.53 ESLINT STRICT: no-console rule set to ERROR (not warn), only console.warn/error allowed, --max-warnings=0 enforced
  4.54 CODE QUALITY: Zero tolerance for console.log/info/debug statements, all removed from codebase
-
+ 4.54: Keep mobile view as well into considerations for look and feel
 
 On front end side regarding the folder strucutre ..what ever the code I have done is as party of the Admin role ...
 

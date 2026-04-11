@@ -7,3 +7,4 @@ export * from './attendance';
 export * from './error-messages';
 export * from './api-constants';
 export * from './user-constants';
+export * from './subject-colors';
