@@ -20,6 +20,9 @@ import {
   AlertTriangle,
   Briefcase,
   CheckSquare,
+  ClipboardList,
+  FileText,
+  PenLine,
 } from 'lucide-react';
 import type { SidebarSection } from '@/components/layout/dashboard-sidebar';
 import { ROUTES } from '@/constants/app-config';
@@ -73,6 +76,29 @@ export const adminSidebarConfig: SidebarSection[] = [
         label: 'Subjects',
         icon: BookOpen,
         path: ROUTES.SUBJECTS,
+      },
+    ],
+  },
+  {
+    title: 'EXAMS & MARKS',
+    items: [
+      {
+        id: 'exam-sessions',
+        label: 'Exam Sessions',
+        icon: ClipboardList,
+        path: ROUTES.EXAMS,
+      },
+      {
+        id: 'exams',
+        label: 'Exams',
+        icon: FileText,
+        path: ROUTES.EXAMS_LIST,
+      },
+      {
+        id: 'marks-entry',
+        label: 'Enter Marks',
+        icon: PenLine,
+        path: ROUTES.MARKS_ENTRY,
       },
     ],
   },

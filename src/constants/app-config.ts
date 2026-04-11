@@ -59,6 +59,15 @@ export const QUERY_KEYS = {
     detail: (id: string | number) => ['subjects', 'detail', id],
     core: ['subjects', 'core'],
   },
+  // Exams
+  exams: {
+    sessions: (filters?: unknown) => ['exam-sessions', filters],
+    session: (id: string) => ['exam-session', id],
+    all: (filters?: unknown) => ['exams', filters],
+    detail: (id: string) => ['exam', id],
+    subjects: (filters?: unknown) => ['exam-subjects', filters],
+    marks: (filters?: unknown) => ['marks', filters],
+  },
   // Attendance
   attendance: {
     student: (filters?: unknown) => ['attendance', 'student', filters],
@@ -225,6 +234,17 @@ export const ROUTES = {
   SUBJECTS_NEW: '/subjects/new',
   SUBJECTS_VIEW: '/subjects/:id',
   SUBJECTS_EDIT: '/subjects/:id/edit',
+  EXAMS: '/exams',
+  EXAM_SESSIONS: '/exams/sessions',
+  EXAM_SESSIONS_NEW: '/exams/sessions/new',
+  EXAM_SESSIONS_VIEW: '/exams/sessions/:id',
+  EXAM_SESSIONS_EDIT: '/exams/sessions/:id/edit',
+  EXAMS_LIST: '/exams/list',
+  EXAMS_NEW: '/exams/new',
+  EXAMS_VIEW: '/exams/:id',
+  EXAMS_EDIT: '/exams/:id/edit',
+  MARKS: '/exams/marks',
+  MARKS_ENTRY: '/exams/marks/entry',
   ALLOCATIONS: '/allocations',
   CALENDAR: '/calendar',
   ANALYTICS: '/analytics',
