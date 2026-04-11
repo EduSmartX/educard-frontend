@@ -8,9 +8,13 @@ const API_BASE_URL =
 
 // Define proper types for API error responses
 interface ApiErrorResponse {
+  success?: boolean;
+  message?: string;
   detail?: string;
   non_field_errors?: string[];
   errors?: Array<{ email: string; error: string }> | Record<string, string | string[]>;
+  data?: unknown;
+  code?: number;
   [key: string]: unknown;
 }
 
@@ -116,10 +120,23 @@ function handleApiError(error: AxiosError): void {
       return;
     }
 
+    // Skip toast for standard backend 400 responses (success=false, message=string)
+    // These will be handled by mutation onError handlers via handleMutationError
+    const isStandardBackendError =
+      status === 400 &&
+      data.success === false &&
+      typeof data.message === 'string' &&
+      data.message.length > 0;
+    if (isStandardBackendError) {
+      return;
+    }
+
     switch (status) {
       case 400:
         // Bad Request - Show validation errors
-        if (data.detail) {
+        if (data.message && typeof data.message === 'string') {
+          toast.error(data.message);
+        } else if (data.detail) {
           toast.error(data.detail);
         } else if (data.non_field_errors) {
           toast.error(data.non_field_errors[0]);
@@ -140,7 +157,7 @@ function handleApiError(error: AxiosError): void {
         break;
 
       case 409:
-        toast.error(data.detail || ErrorMessages.CONFLICT);
+        toast.error(data.message || data.detail || ErrorMessages.CONFLICT);
         break;
 
       case 422:
@@ -160,7 +177,7 @@ function handleApiError(error: AxiosError): void {
         break;
 
       default:
-        toast.error(data.detail || ErrorMessages.GENERIC_RETRY);
+        toast.error(data.message || data.detail || ErrorMessages.GENERIC_RETRY);
     }
   } else if (error.request) {
     // Request made but no response

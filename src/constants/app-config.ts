@@ -246,6 +246,8 @@ export const ROUTES = {
   HOLIDAYS: '/holidays',
   PREFERENCES: '/preferences',
   EXCEPTIONAL_WORK: '/exceptional-work',
+  TIMETABLE: '/timetable',
+  TIMETABLE_SETUP: '/timetable/setup',
   // Role-specific routes
   ADMIN: {
     DASHBOARD: '/admin/dashboard',

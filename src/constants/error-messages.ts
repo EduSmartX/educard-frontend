@@ -131,6 +131,19 @@ export const ErrorMessages = {
     NO_AVAILABLE_TYPES: 'No available leave types.',
   },
 
+  TIMETABLE: {
+    CREATE_GROUP_FAILED: 'Failed to create class group. Please try again.',
+    UPDATE_GROUP_FAILED: 'Failed to update class group. Please try again.',
+    DELETE_GROUP_FAILED: 'Failed to delete class group. Please try again.',
+    ADD_CLASS_FAILED: 'Failed to add class to group. Please try again.',
+    REMOVE_CLASS_FAILED: 'Failed to remove class from group. Please try again.',
+    SAVE_SLOTS_FAILED: 'Failed to save time slots. Please try again.',
+    CLEAR_DAY_FAILED: 'Failed to clear day slots. Please try again.',
+    CREATE_ENTRY_FAILED: 'Failed to save timetable entry. Please try again.',
+    DELETE_ENTRY_FAILED: 'Failed to delete timetable entry. Please try again.',
+    FETCH_FAILED: 'Failed to load timetable data. Please try again.',
+  },
+
   AUTH: {
     PENDING_APPROVAL: 'Organization pending approval.',
     ORGANIZATION_REJECTED: 'Organization has been rejected.',
@@ -418,6 +431,18 @@ export const SuccessMessages = {
     BALANCE_ADDED: 'Leave balance added successfully.',
     BALANCE_UPDATED: 'Leave balance updated successfully.',
     BALANCE_DELETED: 'Leave balance deleted successfully.',
+  },
+
+  TIMETABLE: {
+    GROUP_CREATED: 'Class group created successfully.',
+    GROUP_UPDATED: 'Class group updated successfully.',
+    GROUP_DELETED: 'Class group deleted successfully.',
+    CLASS_ADDED: 'Class added to group successfully.',
+    CLASS_REMOVED: 'Class removed from group successfully.',
+    SLOTS_SAVED: 'Time slots saved successfully.',
+    DAY_CLEARED: 'Day slots cleared successfully.',
+    ENTRY_CREATED: 'Timetable entry saved successfully.',
+    ENTRY_DELETED: 'Timetable entry removed successfully.',
   },
 
   PROFILE: {

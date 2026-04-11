@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   Briefcase,
   CheckSquare,
+  Clock,
 } from 'lucide-react';
 import type { SidebarSection } from '@/components/layout/dashboard-sidebar';
 import { ROUTES } from '@/constants/app-config';
@@ -73,6 +74,12 @@ export const adminSidebarConfig: SidebarSection[] = [
         label: 'Subjects',
         icon: BookOpen,
         path: ROUTES.SUBJECTS,
+      },
+      {
+        id: 'timetable',
+        label: 'Timetable',
+        icon: Clock,
+        path: ROUTES.TIMETABLE_SETUP,
       },
     ],
   },
