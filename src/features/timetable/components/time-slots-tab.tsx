@@ -921,8 +921,8 @@ export function TimeSlotsTab() {
       </div>
 
       {/* Info bar */}
-      <div className="flex items-center justify-between gap-2 rounded-xl bg-indigo-50 px-4 py-2.5 text-sm">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 rounded-xl bg-indigo-50 px-4 py-2.5 text-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
           <Clock className="h-4 w-4 text-indigo-500" />
           <span className="font-medium text-indigo-700">
             {DAY_LABELS[activeDay]}&apos;s Schedule
