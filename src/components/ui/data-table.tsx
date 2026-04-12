@@ -3,15 +3,10 @@
  */
 
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
-import type { ReactNode } from 'react';
+import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  TableCell,
-  TableHead,
-  TableRow,
-} from '@/components/ui/table';
+import { TableCell, TableHead, TableRow } from '@/components/ui/table';
 
 export interface Column<T> {
   header: string;
@@ -75,8 +70,22 @@ export function DataTable<T>({
     columns.map((col) => col.width || 200)
   );
   const [resizingIndex, setResizingIndex] = useState<number | null>(null);
+  // Track selected page size locally so the dropdown reflects the user's choice
+  // immediately, without waiting for the API response to come back.
+  // pagination.page_size from the API was previously len(data) which snapped
+  // back to the item count on the last page instead of the requested size.
+  const [localPageSize, setLocalPageSize] = useState<number>(pagination?.page_size ?? 10);
   const startXRef = useRef<number>(0);
   const startWidthRef = useRef<number>(0);
+
+  // Keep localPageSize in sync when pagination prop changes from outside
+  // (e.g. parent resets page size, or initial load)
+  useEffect(() => {
+    if (pagination?.page_size && pagination.page_size !== localPageSize) {
+      setLocalPageSize(pagination.page_size);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagination?.page_size]);
 
   // Client-side sorting: Sort data based on selected column and direction
   const sortedData = [...data].sort((rowA, rowB) => {
@@ -108,12 +117,20 @@ export function DataTable<T>({
     }
 
     // Handle null/undefined
-    if (aValue === null || aValue === undefined) aValue = '';
-    if (bValue === null || bValue === undefined) bValue = '';
+    if (aValue === null || aValue === undefined) {
+      aValue = '';
+    }
+    if (bValue === null || bValue === undefined) {
+      bValue = '';
+    }
 
     // Convert to lowercase for string comparison
-    if (typeof aValue === 'string') aValue = aValue.toLowerCase();
-    if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+    if (typeof aValue === 'string') {
+      aValue = aValue.toLowerCase();
+    }
+    if (typeof bValue === 'string') {
+      bValue = bValue.toLowerCase();
+    }
 
     const normalizedA = aValue as string | number;
     const normalizedB = bValue as string | number;
@@ -129,7 +146,9 @@ export function DataTable<T>({
 
   // Toggle sort: Click same column to flip direction, click new column to sort asc
   const handleSort = (column: Column<T>) => {
-    if (!column.sortable) return;
+    if (!column.sortable) {
+      return;
+    }
 
     const field = column.sortKey || column.header.toLowerCase().replace(/\s+/g, '_');
 
@@ -142,7 +161,9 @@ export function DataTable<T>({
   };
 
   const getSortIcon = (column: Column<T>) => {
-    if (!column.sortable) return null;
+    if (!column.sortable) {
+      return null;
+    }
 
     const field = column.sortKey || column.header.toLowerCase().replace(/\s+/g, '_');
 
@@ -166,7 +187,9 @@ export function DataTable<T>({
   };
 
   useEffect(() => {
-    if (resizingIndex === null) return;
+    if (resizingIndex === null) {
+      return;
+    }
 
     const handleMouseMove = (e: MouseEvent) => {
       const deltaX = e.clientX - startXRef.current;
@@ -223,7 +246,7 @@ export function DataTable<T>({
   return (
     <div className="w-full">
       <div
-        className="custom-scrollbar w-full overflow-auto relative"
+        className="custom-scrollbar relative w-full overflow-auto"
         style={{
           maxHeight,
           paddingBottom: '4px',
@@ -231,7 +254,7 @@ export function DataTable<T>({
       >
         <table className="w-full caption-bottom text-sm" style={{ minWidth }}>
           <thead className="sticky top-0 z-10 bg-gradient-to-r from-gray-100 to-gray-50 [&_tr]:border-b">
-            <TableRow className="bg-gray-100 border-b-2 border-gray-300">
+            <TableRow className="border-b-2 border-gray-300 bg-gray-100">
               {columns.map((column, index) => (
                 <TableHead
                   key={index}
@@ -316,7 +339,7 @@ export function DataTable<T>({
 
       {/* Pagination Controls - Always show when pagination data is available */}
       {pagination && (
-        <div className="flex items-center justify-between border-t bg-gradient-to-r from-gray-50 to-white px-6 py-4 mt-4 rounded-b-lg">
+        <div className="mt-4 flex items-center justify-between rounded-b-lg border-t bg-gradient-to-r from-gray-50 to-white px-6 py-4">
           {/* Mobile pagination */}
           <div className="flex flex-1 justify-between gap-3 sm:hidden">
             <Button
@@ -324,7 +347,7 @@ export function DataTable<T>({
               disabled={!pagination.has_previous}
               variant="outline"
               size="sm"
-              className="rounded-lg shadow-sm hover:shadow-md transition-shadow"
+              className="rounded-lg shadow-sm transition-shadow hover:shadow-md"
             >
               Previous
             </Button>
@@ -333,7 +356,7 @@ export function DataTable<T>({
               disabled={!pagination.has_next}
               variant="outline"
               size="sm"
-              className="rounded-lg shadow-sm hover:shadow-md transition-shadow"
+              className="rounded-lg shadow-sm transition-shadow hover:shadow-md"
             >
               Next
             </Button>
@@ -361,15 +384,19 @@ export function DataTable<T>({
                 <div className="flex items-center gap-2">
                   <label
                     htmlFor="page-size"
-                    className="text-sm font-medium text-gray-700 whitespace-nowrap"
+                    className="text-sm font-medium whitespace-nowrap text-gray-700"
                   >
                     Per page:
                   </label>
                   <select
                     id="page-size"
-                    value={pagination.page_size}
-                    onChange={(e) => onPageSizeChange(Number(e.target.value))}
-                    className="rounded-lg border-2 border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:border-blue-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-all cursor-pointer"
+                    value={localPageSize}
+                    onChange={(e) => {
+                      const newSize = Number(e.target.value);
+                      setLocalPageSize(newSize); // update UI instantly
+                      onPageSizeChange(newSize); // notify parent → triggers API call
+                    }}
+                    className="cursor-pointer rounded-lg border-2 border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-all hover:border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:outline-none"
                   >
                     <option value={10}>10</option>
                     <option value={20}>20</option>
@@ -385,7 +412,7 @@ export function DataTable<T>({
               <button
                 onClick={() => onPageChange?.(pagination.current_page - 1)}
                 disabled={!pagination.has_previous}
-                className="relative inline-flex items-center justify-center w-10 h-10 rounded-lg text-gray-600 bg-white border-2 border-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 focus:z-20 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:border-gray-200 disabled:hover:text-gray-600 transition-all shadow-sm hover:shadow-md"
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg border-2 border-gray-200 bg-white text-gray-600 shadow-sm transition-all hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 hover:shadow-md focus:z-20 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-200 disabled:hover:bg-white disabled:hover:text-gray-600"
                 aria-label="Previous page"
               >
                 <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -404,7 +431,7 @@ export function DataTable<T>({
               <button
                 onClick={() => onPageChange?.(pagination.current_page + 1)}
                 disabled={!pagination.has_next}
-                className="relative inline-flex items-center justify-center w-10 h-10 rounded-lg text-gray-600 bg-white border-2 border-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 focus:z-20 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:border-gray-200 disabled:hover:text-gray-600 transition-all shadow-sm hover:shadow-md"
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg border-2 border-gray-200 bg-white text-gray-600 shadow-sm transition-all hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 hover:shadow-md focus:z-20 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-200 disabled:hover:bg-white disabled:hover:text-gray-600"
                 aria-label="Next page"
               >
                 <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -462,7 +489,7 @@ function renderPageNumbers(pagination: PaginationInfo, onPageChange?: (page: num
       return (
         <span
           key={`ellipsis-${index}`}
-          className="relative inline-flex items-center justify-center w-10 h-10 text-sm font-semibold text-gray-500"
+          className="relative inline-flex h-10 w-10 items-center justify-center text-sm font-semibold text-gray-500"
         >
           ...
         </span>
@@ -476,10 +503,10 @@ function renderPageNumbers(pagination: PaginationInfo, onPageChange?: (page: num
       <button
         key={pageNum}
         onClick={() => onPageChange?.(pageNum)}
-        className={`relative inline-flex items-center justify-center w-10 h-10 text-sm font-semibold rounded-lg transition-all shadow-sm hover:shadow-md focus:z-20 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+        className={`relative inline-flex h-10 w-10 items-center justify-center rounded-lg text-sm font-semibold shadow-sm transition-all hover:shadow-md focus:z-20 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
           isCurrentPage
-            ? 'z-10 bg-blue-600 text-white border-2 border-blue-600 hover:bg-blue-700 hover:border-blue-700 shadow-md'
-            : 'bg-white text-gray-700 border-2 border-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600'
+            ? 'z-10 border-2 border-blue-600 bg-blue-600 text-white shadow-md hover:border-blue-700 hover:bg-blue-700'
+            : 'border-2 border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600'
         }`}
         aria-current={isCurrentPage ? 'page' : undefined}
       >
