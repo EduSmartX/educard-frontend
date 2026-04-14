@@ -302,6 +302,9 @@ function App() {
             <Route path="/attendance/summary" element={<AttendanceSummaryPage />} />
             <Route path="/attendance/report" element={<AttendanceReportPage />} />
             <Route path="/attendance/monthly" element={<MonthlyAttendanceReportPage />} />
+            {/* Student and Employee attendance routes — linked from dashboard cards */}
+            <Route path={ROUTES.ATTENDANCE.STUDENTS} element={<MarkAttendancePage />} />
+            <Route path={ROUTES.ATTENDANCE.STAFF} element={<EmployeeTimesheetPage />} />
             <Route path={ROUTES.ATTENDANCE.TIMESHEET} element={<EmployeeTimesheetPage />} />
             <Route
               path={ROUTES.ATTENDANCE.TIMESHEET_SUBMIT}
