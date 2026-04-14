@@ -6,6 +6,7 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, User } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
@@ -30,7 +31,9 @@ export function FormMetadata({
   }
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) {
+      return 'N/A';
+    }
     try {
       return format(new Date(dateString), 'MMM dd, yyyy h:mm a');
     } catch {
@@ -39,48 +42,58 @@ export function FormMetadata({
   };
 
   return (
-    <Card className={cn('bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200', className)}>
-      <CardContent className="pt-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Created Information */}
-          {(createdBy || createdAt) && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-blue-600" />
-                Created
-              </h4>
-              <div className="space-y-1 pl-6">
-                {createdBy && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <User className="h-3.5 w-3.5 text-gray-400" />
-                    <span className="font-medium">{createdBy}</span>
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: 0.1 }}
+    >
+      <Card className={cn('bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200', className)}>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Created Information */}
+            {(createdBy || createdAt) && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-100">
+                    <Calendar className="h-3.5 w-3.5 text-blue-600" />
                   </div>
-                )}
-                {createdAt && <div className="text-sm text-gray-500">{formatDate(createdAt)}</div>}
+                  Created
+                </h4>
+                <div className="space-y-1 pl-8">
+                  {createdBy && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <User className="h-3.5 w-3.5 text-gray-400" />
+                      <span className="font-medium">{createdBy}</span>
+                    </div>
+                  )}
+                  {createdAt && <div className="text-sm text-gray-500">{formatDate(createdAt)}</div>}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Updated Information */}
-          {(updatedBy || updatedAt) && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-green-600" />
-                Last Updated
-              </h4>
-              <div className="space-y-1 pl-6">
-                {updatedBy && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <User className="h-3.5 w-3.5 text-gray-400" />
-                    <span className="font-medium">{updatedBy}</span>
+            {/* Updated Information */}
+            {(updatedBy || updatedAt) && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-green-100">
+                    <Calendar className="h-3.5 w-3.5 text-green-600" />
                   </div>
-                )}
-                {updatedAt && <div className="text-sm text-gray-500">{formatDate(updatedAt)}</div>}
+                  Last Updated
+                </h4>
+                <div className="space-y-1 pl-8">
+                  {updatedBy && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <User className="h-3.5 w-3.5 text-gray-400" />
+                      <span className="font-medium">{updatedBy}</span>
+                    </div>
+                  )}
+                  {updatedAt && <div className="text-sm text-gray-500">{formatDate(updatedAt)}</div>}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }

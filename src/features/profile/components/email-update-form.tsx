@@ -184,7 +184,7 @@ export function EmailUpdateForm() {
             <div className="flex justify-end gap-3">
               <Button
                 type="button"
-                variant="outline"
+                variant="brandOutline"
                 onClick={() => {
                   form.reset();
                   setOtpSent(false);
@@ -194,7 +194,7 @@ export function EmailUpdateForm() {
               >
                 {CommonUiText.RESET}
               </Button>
-              <Button type="submit" disabled={!otpSent || updateEmailMutation.isPending}>
+              <Button type="submit" variant="brand" disabled={!otpSent || updateEmailMutation.isPending}>
                 {updateEmailMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <Mail className="mr-2 h-4 w-4" />
                 {CommonUiText.UPDATE_EMAIL}

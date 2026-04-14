@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { PageHeader } from '@/components/common';
 import { PageLoader } from '@/components/ui/loading-spinner';
 import { useClasses } from '@/features/classes/hooks/use-classes';
 import { useClassTimetable } from '../hooks/queries';
@@ -54,14 +55,12 @@ export default function ClassTimetablePage() {
   const classes: Class[] = classesData?.data ?? [];
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
+    <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Timetable</h1>
-          <p className="text-muted-foreground text-sm">View the weekly timetable for any class</p>
-        </div>
-
+      <PageHeader
+        title="Timetable"
+        description="View the weekly timetable for any class"
+      >
         {/* Class Selector */}
         <div className="w-full sm:w-72">
           {classesLoading ? (
@@ -81,7 +80,7 @@ export default function ClassTimetablePage() {
             </Select>
           )}
         </div>
-      </div>
+      </PageHeader>
 
       {/* Timetable Grid */}
       {!selectedClassId ? (

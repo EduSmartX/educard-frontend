@@ -3,12 +3,14 @@
  * Displays profile photo thumbnail with gender-based fallback avatars.
  * Click to smoothly zoom the circular avatar into a larger circle (motion effect).
  * Uses getMediaUrl() to resolve backend paths to full URLs.
+ * Uses LRU cache for efficient image loading.
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getMediaUrl } from '@/lib/utils/media-utils';
+import { getCachedImageUrl } from '@/lib/utils/image-cache';
 import avatarMale from '@/assets/avatars/avatar-male.svg';
 import avatarFemale from '@/assets/avatars/avatar-female.svg';
 import avatarDefault from '@/assets/avatars/avatar-default.svg';
@@ -53,12 +55,42 @@ export function UserAvatar({
   const [expanded, setExpanded] = useState(false);
   const [animating, setAnimating] = useState(false);
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const [cachedUrl, setCachedUrl] = useState<string | null>(null);
   const avatarRef = useRef<HTMLSpanElement>(null);
 
   const resolvedUrl = getMediaUrl(thumbnailUrl);
   const fallbackAvatar = getGenderAvatar(gender);
   const initial = name?.charAt(0)?.toUpperCase() || '?';
   const hasPhoto = !!resolvedUrl;
+
+  // Load and cache image with LRU
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadImage() {
+      if (!resolvedUrl) {
+        setCachedUrl(null);
+        return;
+      }
+
+      try {
+        const url = await getCachedImageUrl(resolvedUrl);
+        if (isMounted) {
+          setCachedUrl(url);
+        }
+      } catch {
+        if (isMounted) {
+          setCachedUrl(resolvedUrl); // Fallback to original
+        }
+      }
+    }
+
+    loadImage();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [resolvedUrl]);
 
   const open = useCallback(() => {
     if (!avatarRef.current) {
@@ -90,6 +122,9 @@ export function UserAvatar({
     return () => window.removeEventListener('keydown', handleKey);
   }, [expanded, close]);
 
+  // Use cached URL if available, otherwise resolved or fallback
+  const displayUrl = cachedUrl || resolvedUrl;
+
   return (
     <>
       <Avatar
@@ -102,8 +137,8 @@ export function UserAvatar({
           }
         }}
       >
-        {resolvedUrl ? (
-          <AvatarImage src={resolvedUrl} alt={name || 'User'} className="object-cover" />
+        {displayUrl ? (
+          <AvatarImage src={displayUrl} alt={name || 'User'} className="object-cover" />
         ) : (
           <AvatarImage src={fallbackAvatar} alt={`${gender || 'default'} avatar`} />
         )}
@@ -133,7 +168,7 @@ export function UserAvatar({
               }}
             >
               <img
-                src={resolvedUrl}
+                src={displayUrl || ''}
                 alt={name || 'Profile photo'}
                 className="h-full w-full object-cover"
               />

@@ -393,7 +393,7 @@ export function LeaveAllocationForm({
           </p>
         </div>
         {isViewMode && (
-          <Button variant="outline" onClick={onCancel}>
+          <Button variant="brandOutline" onClick={onCancel}>
             Close
           </Button>
         )}

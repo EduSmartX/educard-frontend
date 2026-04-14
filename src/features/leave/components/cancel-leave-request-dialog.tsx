@@ -114,7 +114,7 @@ export function CancelLeaveRequestDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={cancelMutation.isPending}>
+          <Button variant="brandOutline" onClick={onClose} disabled={cancelMutation.isPending}>
             No, Keep It
           </Button>
           <Button

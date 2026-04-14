@@ -181,7 +181,7 @@ export function PhoneUpdateForm() {
             <div className="flex justify-end gap-3">
               <Button
                 type="button"
-                variant="outline"
+                variant="brandOutline"
                 onClick={() => {
                   form.reset();
                   setOtpSent(false);
@@ -191,7 +191,7 @@ export function PhoneUpdateForm() {
               >
                 {CommonUiText.RESET}
               </Button>
-              <Button type="submit" disabled={!otpSent || updatePhoneMutation.isPending}>
+              <Button type="submit" variant="brand" disabled={!otpSent || updatePhoneMutation.isPending}>
                 {updatePhoneMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <Phone className="mr-2 h-4 w-4" />
                 {CommonUiText.UPDATE_PHONE}

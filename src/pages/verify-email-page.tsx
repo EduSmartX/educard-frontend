@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import { Eye, EyeOff, Loader2, Mail, CheckCircle2, XCircle } from 'lucide-react';
 import {
   validateVerificationToken,
@@ -91,15 +92,26 @@ export default function VerifyEmailPage() {
   if (isValidating) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-cyan-50 via-teal-50 to-cyan-100 p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
         <Card className="w-full max-w-lg shadow-2xl border-0">
           <CardContent className="flex flex-col items-center justify-center p-12">
-            <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-teal-500 shadow-lg">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', bounce: 0.4 }}
+              className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-teal-500 shadow-lg"
+            >
               <Loader2 className="h-12 w-12 animate-spin text-white" />
-            </div>
+            </motion.div>
             <p className="text-xl font-semibold text-gray-800">Validating verification link...</p>
             <p className="mt-2 text-sm text-gray-500">Please wait while we verify your account</p>
           </CardContent>
         </Card>
+        </motion.div>
       </div>
     );
   }
@@ -116,11 +128,21 @@ export default function VerifyEmailPage() {
 
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-cyan-50 via-teal-50 to-cyan-100 p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
         <Card className="w-full max-w-lg shadow-2xl border-0">
           <CardHeader className="text-center pb-4">
-            <div className="mx-auto mb-6 flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-red-400 to-rose-500 shadow-lg">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.15, type: 'spring', bounce: 0.4 }}
+              className="mx-auto mb-6 flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-red-400 to-rose-500 shadow-lg"
+            >
               <XCircle className="h-14 w-14 text-white" />
-            </div>
+            </motion.div>
             <CardTitle className="text-3xl font-bold text-gray-800 mb-2">Verification Failed</CardTitle>
             <CardDescription className="text-base text-gray-600">{errorMessage}</CardDescription>
           </CardHeader>
@@ -141,6 +163,7 @@ export default function VerifyEmailPage() {
             </Button>
           </CardContent>
         </Card>
+        </motion.div>
       </div>
     );
   }
@@ -149,11 +172,21 @@ export default function VerifyEmailPage() {
   if (setPasswordMutation.isSuccess) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-cyan-50 via-teal-50 to-cyan-100 p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
         <Card className="w-full max-w-lg shadow-2xl border-0">
           <CardHeader className="text-center pb-4">
-            <div className="mx-auto mb-6 flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-emerald-500 shadow-lg">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.15, type: 'spring', bounce: 0.4 }}
+              className="mx-auto mb-6 flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-emerald-500 shadow-lg"
+            >
               <CheckCircle2 className="h-14 w-14 text-white" />
-            </div>
+            </motion.div>
             <CardTitle className="text-3xl font-bold text-gray-800 mb-2">Success! 🎉</CardTitle>
             <CardDescription className="text-base text-gray-600">
               Your email has been verified and password has been set successfully.
@@ -171,6 +204,7 @@ export default function VerifyEmailPage() {
             </div>
           </CardContent>
         </Card>
+        </motion.div>
       </div>
     );
   }
@@ -178,11 +212,21 @@ export default function VerifyEmailPage() {
   // Main form - Set password
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-cyan-50 via-teal-50 to-cyan-100 p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5 }}
+      >
       <Card className="w-full max-w-lg shadow-2xl border-0">
         <CardHeader className="text-center pb-4">
-          <div className="mx-auto mb-6 flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-teal-500 shadow-lg">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.15, type: 'spring', bounce: 0.4 }}
+            className="mx-auto mb-6 flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-teal-500 shadow-lg"
+          >
             <Mail className="h-14 w-14 text-white" />
-          </div>
+          </motion.div>
           <CardTitle className="text-3xl font-bold text-gray-800 mb-2">Set Your Password</CardTitle>
           <CardDescription className="text-base text-gray-600">
             Welcome, <span className="font-semibold text-gray-800">{userDetails.first_name} {userDetails.last_name}</span>!
@@ -304,6 +348,7 @@ export default function VerifyEmailPage() {
           </form>
         </CardContent>
       </Card>
+      </motion.div>
     </div>
   );
 }

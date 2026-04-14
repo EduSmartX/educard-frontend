@@ -24,10 +24,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AlertTriangle, BookOpen, Clock, Coffee, Plus, User, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSubjects } from '@/features/subjects/hooks/use-subjects';
+import { useRole } from '@/hooks/use-role';
 import { useCreateEntry, useDeleteEntry } from '../hooks/mutations';
 import { timetableKeys } from '../hooks/queries';
 import {
@@ -36,6 +36,7 @@ import {
   type SubjectColorScheme,
 } from '@/constants/subject-colors';
 import { TimetablePdfExport, type TimetableExportData } from '@/components/export';
+import { ValidationMessages } from '@/constants/error-messages';
 import {
   type ClassTimetableResponse,
   type ClassTimetableSlot,
@@ -118,7 +119,7 @@ function AssignmentPopover({
 
   const handleAssign = () => {
     if (!selectedSubjectId) {
-      toast.error('Please select a subject');
+      toast.error(ValidationMessages.SELECT_SUBJECT);
       return;
     }
     createEntry.mutate({
@@ -343,99 +344,76 @@ function PeriodCell({
   color,
   classPublicId,
   onChanged,
+  isAdmin,
 }: {
   slot: ClassTimetableSlot;
   color: SubjectColorScheme;
   classPublicId: string;
   onChanged: () => void;
+  isAdmin: boolean;
 }) {
   const deleteEntry = useDeleteEntry(classPublicId, { onSuccess: onChanged });
 
   if (!slot.subject_name) {
+    // Non-admin: show empty placeholder instead of assignment popover
+    if (!isAdmin) {
+      return (
+        <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/30 px-2 py-3">
+          <span className="text-[10px] text-slate-300">No assignment</span>
+        </div>
+      );
+    }
     return <AssignmentPopover slot={slot} classPublicId={classPublicId} onAssigned={onChanged} />;
   }
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div
-            className={`group relative flex h-full flex-col rounded-xl border border-l-4 ${color.border} ${color.bg} px-3 py-2.5 transition-all hover:shadow-md`}
-          >
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (slot.entry_public_id) {
-                  deleteEntry.mutate(slot.entry_public_id);
-                }
-              }}
-              className="absolute -top-1.5 -right-1.5 z-10 hidden h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-sm transition-all group-hover:flex hover:bg-red-600"
-              title="Remove assignment"
-            >
-              <X className="h-3 w-3" />
-            </button>
+    <div
+      className={`group relative flex h-full flex-col rounded-xl border border-l-4 ${color.border} ${color.bg} px-3 py-2.5 transition-all hover:shadow-md`}
+    >
+      {isAdmin && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (slot.entry_public_id) {
+              deleteEntry.mutate(slot.entry_public_id);
+            }
+          }}
+          className="absolute -top-1.5 -right-1.5 z-10 hidden h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-sm transition-all group-hover:flex hover:bg-red-600"
+          title="Remove assignment"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
 
-            <span className={`text-[10px] font-semibold ${color.text} opacity-60`}>
-              {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
-            </span>
+      <span className={`text-[10px] font-semibold ${color.text} opacity-60`}>
+        {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
+      </span>
 
-            <span className={`mt-0.5 text-sm leading-tight font-bold ${color.text}`}>
-              {slot.subject_name}
-            </span>
+      <span className={`mt-0.5 text-sm leading-tight font-bold ${color.text}`}>
+        {slot.subject_name}
+      </span>
 
-            {slot.teacher_name && (
-              <div className="mt-auto flex items-center gap-1.5 pt-2">
-                <Avatar className="h-5 w-5 shadow-sm">
-                  <AvatarFallback className={`${color.light} text-[8px] font-bold ${color.text}`}>
-                    {getInitials(slot.teacher_name)}
-                  </AvatarFallback>
-                </Avatar>
-                <span className={`truncate text-[10px] font-medium ${color.text} opacity-75`}>
-                  {slot.teacher_name}
-                </span>
-              </div>
-            )}
+      {slot.teacher_name && (
+        <div className="mt-auto flex items-center gap-1.5 pt-2">
+          <Avatar className="h-5 w-5 shadow-sm">
+            <AvatarFallback className={`${color.light} text-[8px] font-bold ${color.text}`}>
+              {getInitials(slot.teacher_name)}
+            </AvatarFallback>
+          </Avatar>
+          <span className={`truncate text-[10px] font-medium ${color.text} opacity-75`}>
+            {slot.teacher_name}
+          </span>
+        </div>
+      )}
 
-            {slot.room && (
-              <span
-                className={`mt-1.5 self-start rounded-md px-1.5 py-0.5 text-[9px] font-semibold ${color.badge}`}
-              >
-                📍 {slot.room}
-              </span>
-            )}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-[240px]">
-          <div className="space-y-1 text-xs">
-            <p className="font-bold">{slot.label}</p>
-            <p>
-              {formatTime(slot.start_time)} – {formatTime(slot.end_time)} ({slot.duration_minutes}
-              &nbsp;min)
-            </p>
-            {slot.subject_name && (
-              <p>
-                <span className="text-muted-foreground">Subject:</span> {slot.subject_name}
-              </p>
-            )}
-            {slot.teacher_name && (
-              <p>
-                <span className="text-muted-foreground">Teacher:</span> {slot.teacher_name}
-              </p>
-            )}
-            {slot.room && (
-              <p>
-                <span className="text-muted-foreground">Room:</span> {slot.room}
-              </p>
-            )}
-            {slot.notes && (
-              <p>
-                <span className="text-muted-foreground">Notes:</span> {slot.notes}
-              </p>
-            )}
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+      {slot.room && (
+        <span
+          className={`mt-1.5 self-start rounded-md px-1.5 py-0.5 text-[9px] font-semibold ${color.badge}`}
+        >
+          📍 {slot.room}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -475,6 +453,7 @@ function EmptyTimetable() {
 }
 
 export function TimetableGrid({ timetable, isLoading }: TimetableGridProps) {
+  const { isAdmin } = useRole();
   const activeDays = useMemo(
     () => (timetable.days ? getActiveDays(timetable.days) : []),
     [timetable.days]
@@ -648,6 +627,7 @@ export function TimetableGrid({ timetable, isLoading }: TimetableGridProps) {
                         color={color}
                         classPublicId={timetable.class_public_id}
                         onChanged={handleChanged}
+                        isAdmin={isAdmin}
                       />
                     </div>
                   );

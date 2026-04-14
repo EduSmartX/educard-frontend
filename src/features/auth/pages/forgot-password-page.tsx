@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 import { Mail, ArrowLeft, Send, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -139,13 +140,30 @@ export default function ForgotPasswordPage() {
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50 p-4">
       {/* Animated Background Orbs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-20 h-72 w-72 animate-pulse rounded-full bg-teal-300/30 blur-3xl" />
-        <div className="absolute right-20 bottom-20 h-96 w-96 animate-pulse rounded-full bg-cyan-300/30 blur-3xl delay-700" />
-        <div className="absolute top-1/2 left-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-blue-300/20 blur-3xl delay-1000" />
+        <motion.div
+          className="absolute top-20 left-20 h-72 w-72 rounded-full bg-teal-300/30 blur-3xl"
+          animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.2, 0.3] }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute right-20 bottom-20 h-96 w-96 rounded-full bg-cyan-300/30 blur-3xl"
+          animate={{ scale: [1.1, 1, 1.1], opacity: [0.25, 0.15, 0.25] }}
+          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute top-1/2 left-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-300/20 blur-3xl"
+          animate={{ scale: [1, 1.2, 1] }}
+          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+        />
       </div>
 
       {/* Main Card */}
-      <div className="relative w-full max-w-md">
+      <motion.div
+        initial={{ opacity: 0, y: 30, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+        className="relative w-full max-w-md"
+      >
         <div className="space-y-6 rounded-3xl border border-white/20 bg-white/90 p-8 shadow-2xl backdrop-blur-xl">
           {/* Back Button */}
           {currentStep === 'request' && (
@@ -519,7 +537,7 @@ export default function ForgotPasswordPage() {
             </>
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

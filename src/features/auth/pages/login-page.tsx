@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 import { Mail, Lock, LogIn, UserCircle2 } from 'lucide-react';
 import { authApi, type LoginCredentials } from '@/lib/api/auth-api';
 import {
@@ -102,27 +103,53 @@ export default function LoginPage() {
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4">
       {/* Animated Background Orbs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-20 h-72 w-72 animate-pulse rounded-full bg-purple-300/30 blur-3xl" />
-        <div className="absolute right-20 bottom-20 h-96 w-96 animate-pulse rounded-full bg-pink-300/30 blur-3xl delay-700" />
-        <div className="absolute top-1/2 left-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-indigo-300/20 blur-3xl delay-1000" />
+        <motion.div
+          className="absolute top-20 left-20 h-72 w-72 rounded-full bg-purple-300/30 blur-3xl"
+          animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.2, 0.3] }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute right-20 bottom-20 h-96 w-96 rounded-full bg-pink-300/30 blur-3xl"
+          animate={{ scale: [1.1, 1, 1.1], opacity: [0.25, 0.15, 0.25] }}
+          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute top-1/2 left-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-300/20 blur-3xl"
+          animate={{ scale: [1, 1.2, 1] }}
+          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+        />
       </div>
 
       {/* Main Card */}
-      <div className="relative w-full max-w-md">
+      <motion.div
+        initial={{ opacity: 0, y: 30, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+        className="relative w-full max-w-md"
+      >
         <div className="space-y-8 rounded-3xl border border-white/20 bg-white/80 p-8 shadow-2xl backdrop-blur-xl">
           {/* Logo & Title */}
           <div className="space-y-4 text-center">
-            <div className="flex justify-center">
+            <motion.div
+              initial={{ scale: 0, rotate: -10 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: 0.2, type: 'spring', bounce: 0.4 }}
+              className="flex justify-center"
+            >
               <Logo variant="icon" size="xl" withGlow withRing />
-            </div>
-            <div>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+            >
               <h1 className="mb-2 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-4xl font-bold text-transparent">
                 Welcome Back! 👋
               </h1>
               <p className="text-base text-gray-600">
                 Sign in to access your {BRANDING.APP_NAME} account
               </p>
-            </div>
+            </motion.div>
           </div>
 
           {/* Login Form */}
@@ -244,7 +271,7 @@ export default function LoginPage() {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

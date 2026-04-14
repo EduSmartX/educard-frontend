@@ -1,22 +1,32 @@
 /**
  * Employee Dashboard Page
  *
- * Real-time dashboard for teachers/staff with:
- * - Today's classes from timetable API
- * - Leave balance from leave API
- * - Pending timesheet submissions
- * - Current month attendance distribution
- * - Color-coded cards
+ * Motion-rich dashboard for teachers/staff with:
+ * - Animated greeting banner with breathing orbs
+ * - Staggered stat card reveals with hover interactions
+ * - Today's classes from timetable API with animated list
+ * - Leave balance, pending timesheets, attendance donut chart
  */
 
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { motion, useInView } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar, Clock, AlertCircle, TrendingUp, FileText, CalendarDays } from 'lucide-react';
+import {
+  Calendar,
+  Clock,
+  AlertCircle,
+  TrendingUp,
+  FileText,
+  CalendarDays,
+  ArrowRight,
+  Sparkles,
+  BarChart3,
+} from 'lucide-react';
 import { useMyTimetable } from '@/features/timetable/hooks/queries';
 import { useMyLeaveBalancesSummary } from '@/features/leave/hooks/use-leave-balances';
 import { useTimesheetSubmissions } from '@/features/attendance/hooks';
@@ -24,16 +34,89 @@ import { useEmployeeAttendance } from '@/features/attendance/hooks/queries/use-e
 import { useAuth } from '@/hooks/use-auth';
 import { DAY_LABELS, type TimetableEntry } from '@/features/timetable/types';
 
+const STAGGER_CHILDREN = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.08 } },
+} as const;
+
+const FADE_UP = {
+  hidden: { opacity: 0, y: 24 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] } },
+} as const;
+
+function getGreeting(): { text: string; emoji: string } {
+  const h = new Date().getHours();
+  if (h < 12) {
+    return { text: 'Good Morning', emoji: '☀️' };
+  }
+  if (h < 17) {
+    return { text: 'Good Afternoon', emoji: '🌤️' };
+  }
+  return { text: 'Good Evening', emoji: '🌙' };
+}
+
+function SectionHeader({
+  icon: Icon,
+  title,
+  delay = 0,
+}: {
+  icon: React.ElementType;
+  title: string;
+  delay?: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -16 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.4, delay }}
+      className="mb-4 flex items-center gap-2"
+    >
+      <Icon className="h-5 w-5 text-blue-600" />
+      <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+    </motion.div>
+  );
+}
+
+function AnimatedNumber({ value, isLoading }: { value: number; isLoading: boolean }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-40px' });
+
+  if (isLoading) {
+    return <Skeleton className="h-8 w-16" />;
+  }
+
+  return (
+    <motion.span
+      ref={ref}
+      className="text-2xl font-bold"
+      initial={{ opacity: 0, scale: 0.5 }}
+      animate={isInView ? { opacity: 1, scale: 1 } : {}}
+      transition={{ duration: 0.5, type: 'spring', bounce: 0.3 }}
+    >
+      {value}
+    </motion.span>
+  );
+}
+
+const DONUT_SEGMENTS = [
+  { key: 'present', label: 'Present', color: '#22c55e', dotClass: 'bg-green-500', borderClass: 'border-green-200', bgClass: 'bg-green-50', textClass: 'text-green-700', boldClass: 'text-green-800' },
+  { key: 'absent', label: 'Absent', color: '#ef4444', dotClass: 'bg-red-500', borderClass: 'border-red-200', bgClass: 'bg-red-50', textClass: 'text-red-700', boldClass: 'text-red-800' },
+  { key: 'leaves', label: 'Leave', color: '#f97316', dotClass: 'bg-orange-500', borderClass: 'border-orange-200', bgClass: 'bg-orange-50', textClass: 'text-orange-700', boldClass: 'text-orange-800' },
+  { key: 'holidays', label: 'Holiday', color: '#a855f7', dotClass: 'bg-purple-500', borderClass: 'border-purple-200', bgClass: 'bg-purple-50', textClass: 'text-purple-700', boldClass: 'text-purple-800' },
+] as const;
+
 export default function EmployeeDashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const greeting = getGreeting();
+  const firstName = user?.full_name?.split(' ')[0] || 'Teacher';
+
   const { data: timetableData, isLoading: loadingTimetable } = useMyTimetable();
   const { data: leaveData, isLoading: loadingLeave } = useMyLeaveBalancesSummary();
   const { data: timesheetData, isLoading: loadingTimesheet } = useTimesheetSubmissions({
     status: 'DRAFT,RETURNED',
   });
 
-  // Get current month date range
   const currentMonthRange = useMemo(() => {
     const now = new Date();
     return {
@@ -42,19 +125,16 @@ export default function EmployeeDashboardPage() {
     };
   }, []);
 
-  // Fetch current month attendance
   const { data: attendanceData, isLoading: loadingAttendance } = useEmployeeAttendance(
     currentMonthRange,
     true
   );
 
-  // Get today's day number (0=Mon, 6=Sun)
   const todayDayNum = useMemo(() => {
-    const jsDay = new Date().getDay(); // 0=Sun, 6=Sat
-    return jsDay === 0 ? 6 : jsDay - 1; // Convert to 0=Mon, 6=Sun
+    const jsDay = new Date().getDay();
+    return jsDay === 0 ? 6 : jsDay - 1;
   }, []);
 
-  // Calculate today's classes from timetable
   const todayClasses = useMemo((): TimetableEntry[] => {
     if (!timetableData?.days) {
       return [];
@@ -68,19 +148,15 @@ export default function EmployeeDashboardPage() {
     });
   }, [timetableData, todayDayNum]);
 
-  // Calculate next class
   const nextClass = useMemo((): TimetableEntry | undefined => {
     const now = new Date();
     const currentTime = now.getHours() * 60 + now.getMinutes();
-
     return todayClasses.find((entry) => {
       const [hours, minutes] = (entry.start_time || '00:00').split(':').map(Number);
-      const classTime = hours * 60 + minutes;
-      return classTime > currentTime;
+      return hours * 60 + minutes > currentTime;
     });
   }, [todayClasses]);
 
-  // Total leave balance
   const totalLeaveBalance = useMemo(() => {
     if (!leaveData?.data) {
       return 0;
@@ -88,12 +164,10 @@ export default function EmployeeDashboardPage() {
     return leaveData.data.reduce((sum, balance) => sum + (balance.available || 0), 0);
   }, [leaveData]);
 
-  // Pending timesheets count
   const pendingTimesheets = useMemo(() => {
     return timesheetData?.results?.length || 0;
   }, [timesheetData]);
 
-  // Format time helper
   const formatTime = (timeStr: string): string => {
     if (!timeStr) {
       return '';
@@ -104,7 +178,6 @@ export default function EmployeeDashboardPage() {
     return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
   };
 
-  // Attendance stats for current month
   const attendanceStats = useMemo(() => {
     const stats = attendanceData?.stats || {};
     const present = stats.total_present || 0;
@@ -116,97 +189,184 @@ export default function EmployeeDashboardPage() {
     return { present, absent, leaves, holidays, total, percentage };
   }, [attendanceData]);
 
+  const formattedDate = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
   return (
-    <div className="container mx-auto space-y-4 px-2 py-3 sm:space-y-6 sm:p-6">
-      {/* Header Section */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight sm:text-3xl">Employee Dashboard</h1>
-          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            Welcome back, {user?.full_name || 'Teacher'}! Here's what's happening today.
-          </p>
+    <div className="container mx-auto max-w-5xl space-y-8 px-3 py-4 sm:p-6">
+      {/* Animated Greeting Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+        className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 p-6 text-white shadow-2xl shadow-blue-500/20 sm:p-8"
+      >
+        <motion.div
+          className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-white/10 blur-2xl"
+          animate={{ scale: [1.2, 1, 1.2], opacity: [0.15, 0.05, 0.15] }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+        />
+
+        <div className="relative z-10">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="flex items-center gap-2"
+          >
+            <Clock className="h-4 w-4 text-white/60" />
+            <span className="text-sm font-medium text-white/70">{formattedDate}</span>
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl"
+          >
+            {greeting.text}, {firstName}! {greeting.emoji}
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+            className="mt-1.5 text-sm text-white/75 sm:text-base"
+          >
+            Here&apos;s what&apos;s happening today
+          </motion.p>
+
+          {nextClass ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.4 }}
+              className="mt-4 flex w-fit items-center gap-2 rounded-full bg-white/15 px-4 py-2 backdrop-blur-sm"
+            >
+              <Calendar className="h-4 w-4 text-cyan-300" />
+              <span className="text-sm font-medium">
+                Next class: {formatTime(nextClass.start_time)} — {nextClass.subject_name}
+              </span>
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.4 }}
+              className="mt-4 flex w-fit items-center gap-2 rounded-full bg-white/15 px-4 py-2 backdrop-blur-sm"
+            >
+              <Sparkles className="h-4 w-4 text-yellow-300" />
+              <span className="text-sm font-medium">
+                {todayClasses.length > 0
+                  ? 'All classes completed for today!'
+                  : 'No classes scheduled today'}
+              </span>
+            </motion.div>
+          )}
         </div>
-      </div>
+      </motion.div>
 
-      {/* Main Two-Column Layout */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Left Column - Stats, Schedule, Timesheets, Quick Actions */}
-        <div className="space-y-4 lg:col-span-2">
-          {/* Vertical Stats Cards */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {/* My Classes Today - Blue */}
-            <Card className="border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50 to-white transition-shadow hover:shadow-lg">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-blue-900">
-                  My Classes Today
-                </CardTitle>
-                <Calendar className="h-5 w-5 text-blue-600" />
-              </CardHeader>
-              <CardContent>
-                {loadingTimetable ? (
-                  <Skeleton className="h-8 w-16" />
-                ) : (
-                  <>
-                    <div className="text-2xl font-bold text-blue-700">{todayClasses.length}</div>
-                    {nextClass ? (
-                      <p className="text-muted-foreground mt-1 text-xs">
-                        Next: {formatTime(nextClass.start_time)} - {nextClass.subject_name}
-                      </p>
-                    ) : todayClasses.length > 0 ? (
-                      <p className="text-muted-foreground mt-1 text-xs">All classes completed</p>
-                    ) : (
-                      <p className="text-muted-foreground mt-1 text-xs">No classes scheduled</p>
-                    )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Leave Balance - Green */}
-            <Card className="border-l-4 border-l-green-500 bg-gradient-to-br from-green-50 to-white transition-shadow hover:shadow-lg">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-green-900">Leave Balance</CardTitle>
-                <CalendarDays className="h-5 w-5 text-green-600" />
-              </CardHeader>
-              <CardContent>
-                {loadingLeave ? (
-                  <Skeleton className="h-8 w-16" />
-                ) : (
-                  <>
-                    <div className="text-2xl font-bold text-green-700">{totalLeaveBalance}</div>
-                    <p className="text-muted-foreground mt-1 text-xs">Days remaining this year</p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Pending Tasks - Orange */}
-            <Card className="border-l-4 border-l-orange-500 bg-gradient-to-br from-orange-50 to-white transition-shadow hover:shadow-lg">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-orange-900">Pending Tasks</CardTitle>
-                <Clock className="h-5 w-5 text-orange-600" />
-              </CardHeader>
-              <CardContent>
-                {loadingTimesheet ? (
-                  <Skeleton className="h-8 w-16" />
-                ) : (
-                  <>
-                    <div className="text-2xl font-bold text-orange-700">{pendingTimesheets}</div>
-                    <p className="text-muted-foreground mt-1 text-xs">
-                      {pendingTimesheets > 0 ? 'Timesheet submission due' : 'All caught up! ✓'}
+      {/* Stats Cards */}
+      <section>
+        <SectionHeader icon={BarChart3} title="Overview" delay={0.2} />
+        <motion.div
+          variants={STAGGER_CHILDREN}
+          initial="hidden"
+          animate="show"
+          className="grid gap-4 sm:grid-cols-3"
+        >
+          {/* My Classes Today */}
+          <motion.div variants={FADE_UP} whileHover={{ y: -4, scale: 1.02 }} whileTap={{ scale: 0.98 }} className="group cursor-pointer" onClick={() => navigate('/timetable')}>
+            <Card className="relative overflow-hidden border border-gray-100 shadow-sm transition-shadow duration-300 hover:shadow-xl">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/90 to-indigo-600/90 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+              <CardContent className="relative z-10 p-5">
+                <div className="flex items-center gap-4">
+                  <div className="shrink-0 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 p-3 transition-transform duration-300 group-hover:scale-110">
+                    <Calendar className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-gray-500 transition-colors duration-300 group-hover:text-white/80">
+                      My Classes Today
                     </p>
-                  </>
-                )}
+                    <div className="transition-colors duration-300 group-hover:text-white">
+                      <AnimatedNumber value={todayClasses.length} isLoading={loadingTimetable} />
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          </div>
+          </motion.div>
 
+          {/* Leave Balance */}
+          <motion.div variants={FADE_UP} whileHover={{ y: -4, scale: 1.02 }} whileTap={{ scale: 0.98 }} className="group cursor-pointer" onClick={() => navigate('/leave/requests/new')}>
+            <Card className="relative overflow-hidden border border-gray-100 shadow-sm transition-shadow duration-300 hover:shadow-xl">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/90 to-teal-600/90 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+              <CardContent className="relative z-10 p-5">
+                <div className="flex items-center gap-4">
+                  <div className="shrink-0 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 p-3 transition-transform duration-300 group-hover:scale-110">
+                    <CalendarDays className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-gray-500 transition-colors duration-300 group-hover:text-white/80">
+                      Leave Balance
+                    </p>
+                    <div className="transition-colors duration-300 group-hover:text-white">
+                      <AnimatedNumber value={totalLeaveBalance} isLoading={loadingLeave} />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Pending Tasks */}
+          <motion.div variants={FADE_UP} whileHover={{ y: -4, scale: 1.02 }} whileTap={{ scale: 0.98 }} className="group cursor-pointer" onClick={() => navigate('/employee/attendance/timesheet')}>
+            <Card className="relative overflow-hidden border border-gray-100 shadow-sm transition-shadow duration-300 hover:shadow-xl">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/90 to-amber-600/90 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+              <CardContent className="relative z-10 p-5">
+                <div className="flex items-center gap-4">
+                  <div className="shrink-0 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 p-3 transition-transform duration-300 group-hover:scale-110">
+                    <FileText className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-gray-500 transition-colors duration-300 group-hover:text-white/80">
+                      Pending Tasks
+                    </p>
+                    <div className="transition-colors duration-300 group-hover:text-white">
+                      <AnimatedNumber value={pendingTimesheets} isLoading={loadingTimesheet} />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* Two-Column Layout: Schedule + Attendance */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Left Column */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="space-y-6 lg:col-span-2"
+        >
           {/* Today's Schedule */}
-          <Card className="border-t-4 border-t-cyan-500 transition-shadow hover:shadow-lg">
-            <CardHeader>
+          <Card className="overflow-hidden border border-gray-100 shadow-sm">
+            <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-cyan-50 to-blue-50">
               <CardTitle className="flex items-center gap-2 text-cyan-900">
                 <Calendar className="h-5 w-5" />
-                Today's Schedule — {DAY_LABELS[todayDayNum]}
+                Today&apos;s Schedule — {DAY_LABELS[todayDayNum]}
               </CardTitle>
               <CardDescription>
                 {loadingTimetable
@@ -216,20 +376,24 @@ export default function EmployeeDashboardPage() {
                     : 'No classes scheduled for today'}
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4">
               {loadingTimetable ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-20 w-full" />
+                    <Skeleton key={i} className="h-20 w-full rounded-xl" />
                   ))}
                 </div>
               ) : todayClasses.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex flex-col items-center justify-center py-8 text-center"
+                >
                   <Calendar className="mb-2 h-12 w-12 text-gray-300" />
                   <p className="text-sm text-gray-500">No classes scheduled for today</p>
-                </div>
+                </motion.div>
               ) : (
-                <div className="max-h-72 space-y-3 overflow-y-auto pr-2">
+                <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
                   {todayClasses.map((entry, idx) => {
                     const isNext = nextClass?.public_id === entry.public_id;
                     const [hours] = (entry.start_time || '00:00').split(':').map(Number);
@@ -237,17 +401,23 @@ export default function EmployeeDashboardPage() {
                     const displayHours = hours % 12 || 12;
 
                     return (
-                      <div
+                      <motion.div
                         key={entry.public_id || idx}
-                        className={`flex items-center gap-3 rounded-lg border p-3 transition-colors ${
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 * idx, duration: 0.4 }}
+                        whileHover={{ x: 4 }}
+                        className={`flex items-center gap-3 rounded-xl border p-3 transition-all ${
                           isNext
-                            ? 'border-cyan-300 bg-cyan-50'
-                            : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
+                            ? 'border-cyan-300 bg-cyan-50 shadow-sm shadow-cyan-100'
+                            : 'border-gray-100 bg-gray-50 hover:border-gray-200 hover:shadow-sm'
                         }`}
                       >
                         <div
-                          className={`flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-lg text-white ${
-                            isNext ? 'bg-cyan-600' : 'bg-gray-600'
+                          className={`flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl text-white ${
+                            isNext
+                              ? 'bg-gradient-to-br from-cyan-500 to-blue-600'
+                              : 'bg-gradient-to-br from-gray-500 to-gray-600'
                           }`}
                         >
                           <span className="text-xs font-medium">
@@ -275,7 +445,7 @@ export default function EmployeeDashboardPage() {
                         <div className="text-right text-xs text-gray-500">
                           {formatTime(entry.start_time)} - {formatTime(entry.end_time)}
                         </div>
-                      </div>
+                      </motion.div>
                     );
                   })}
                 </div>
@@ -283,109 +453,168 @@ export default function EmployeeDashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Pending Timesheets Section */}
+          {/* Pending Timesheets */}
           {pendingTimesheets > 0 && (
-            <Card className="border-t-4 border-t-amber-500 transition-shadow hover:shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-amber-900">
-                  <FileText className="h-5 w-5" />
-                  Pending Timesheet Submissions
-                </CardTitle>
-                <CardDescription>
-                  {pendingTimesheets} timesheet{pendingTimesheets > 1 ? 's' : ''} waiting for
-                  submission
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="max-h-48 space-y-3 overflow-y-auto pr-2">
-                  {timesheetData?.results?.map((submission) => (
-                    <div
-                      key={submission.public_id}
-                      className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3"
-                    >
-                      <AlertCircle className="mt-0.5 h-5 w-5 text-amber-600" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">
-                          Week: {new Date(submission.week_start_date).toLocaleDateString()} –{' '}
-                          {new Date(submission.week_end_date).toLocaleDateString()}
-                        </p>
-                        <p className="text-muted-foreground text-xs">
-                          Status:{' '}
-                          {submission.submission_status === 'DRAFT' ? 'Not submitted' : 'Returned'}
-                        </p>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="shrink-0"
-                        onClick={() => navigate('/employee/attendance/timesheet')}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+            >
+              <Card className="overflow-hidden border border-gray-100 shadow-sm">
+                <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-amber-50 to-orange-50">
+                  <CardTitle className="flex items-center gap-2 text-amber-900">
+                    <FileText className="h-5 w-5" />
+                    Pending Timesheet Submissions
+                  </CardTitle>
+                  <CardDescription>
+                    {pendingTimesheets} timesheet{pendingTimesheets > 1 ? 's' : ''} waiting for
+                    submission
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="max-h-48 space-y-3 overflow-y-auto pr-1">
+                    {timesheetData?.results?.map((submission, idx) => (
+                      <motion.div
+                        key={submission.public_id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 * idx, duration: 0.4 }}
+                        whileHover={{ x: 4 }}
+                        className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 transition-all hover:shadow-sm"
                       >
-                        Submit
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                        <AlertCircle className="mt-0.5 h-5 w-5 text-amber-600" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">
+                            Week: {new Date(submission.week_start_date).toLocaleDateString()} –{' '}
+                            {new Date(submission.week_end_date).toLocaleDateString()}
+                          </p>
+                          <p className="text-muted-foreground text-xs">
+                            Status:{' '}
+                            {submission.submission_status === 'DRAFT'
+                              ? 'Not submitted'
+                              : 'Returned'}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="shrink-0"
+                          onClick={() => navigate('/employee/attendance/timesheet')}
+                        >
+                          Submit
+                        </Button>
+                      </motion.div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           )}
 
           {/* Quick Actions */}
-          <Card className="border-l-4 border-l-indigo-400 bg-gradient-to-br from-indigo-50 to-white transition-shadow hover:shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-sm text-indigo-900">
-                <TrendingUp className="h-4 w-4" />
-                Quick Actions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-indigo-200 hover:bg-indigo-50"
-                onClick={() => navigate('/timetable')}
-              >
-                View Full Timetable
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-indigo-200 hover:bg-indigo-50"
-                onClick={() => navigate('/employee/attendance/mark')}
-              >
-                Mark Attendance
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-indigo-200 hover:bg-indigo-50"
-                onClick={() => navigate('/leave/requests/new')}
-              >
-                Apply for Leave
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+          >
+            <SectionHeader icon={TrendingUp} title="Quick Actions" delay={0.5} />
+            <motion.div
+              variants={STAGGER_CHILDREN}
+              initial="hidden"
+              animate="show"
+              className="grid gap-3 sm:grid-cols-3"
+            >
+              {[
+                {
+                  label: 'View Timetable',
+                  path: '/timetable',
+                  iconBg: 'bg-gradient-to-br from-cyan-500 to-blue-600',
+                  icon: Calendar,
+                },
+                {
+                  label: 'Mark Attendance',
+                  path: '/employee/attendance/mark',
+                  iconBg: 'bg-gradient-to-br from-emerald-500 to-teal-600',
+                  icon: TrendingUp,
+                },
+                {
+                  label: 'Apply for Leave',
+                  path: '/leave/requests/new',
+                  iconBg: 'bg-gradient-to-br from-violet-500 to-purple-600',
+                  icon: CalendarDays,
+                },
+              ].map((action) => (
+                <motion.div
+                  key={action.label}
+                  variants={FADE_UP}
+                  whileHover={{ y: -3, scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => navigate(action.path)}
+                  className="group cursor-pointer"
+                >
+                  <Card className="border border-gray-100 shadow-sm transition-all duration-200 hover:shadow-lg">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`shrink-0 rounded-xl p-2.5 ${action.iconBg} transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}
+                        >
+                          <action.icon className="h-5 w-5 text-white" />
+                        </div>
+                        <span className="text-sm font-semibold text-gray-900 transition-colors group-hover:text-blue-700">
+                          {action.label}
+                        </span>
+                        <ArrowRight className="ml-auto h-4 w-4 text-gray-300 transition-all group-hover:translate-x-1 group-hover:text-blue-500" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
+        </motion.div>
 
-        {/* Right Column - Attendance Distribution */}
-        <div className="lg:col-span-1">
-          <Card className="sticky top-4 transition-shadow hover:shadow-lg">
-            <CardHeader className="pb-3">
+        {/* Right Column — Attendance Distribution */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+          className="lg:col-span-1"
+        >
+          <Card className="sticky top-4 overflow-hidden border border-gray-100 shadow-sm transition-shadow hover:shadow-lg">
+            <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-violet-50 to-purple-50 pb-3">
               <CardTitle className="text-base font-semibold">Attendance Distribution</CardTitle>
               <p className="text-xs text-gray-600">
-                Current Month • Overall: {attendanceStats.percentage}%
+                Current Month • Overall:{' '}
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                  className="font-semibold text-violet-700"
+                >
+                  {attendanceStats.percentage}%
+                </motion.span>
               </p>
             </CardHeader>
-            <CardContent className="flex flex-col items-center">
+            <CardContent className="flex flex-col items-center p-4">
               {loadingAttendance ? (
                 <Skeleton className="h-48 w-48 rounded-full" />
               ) : attendanceStats.total === 0 ? (
-                <div className="flex h-48 items-center justify-center text-gray-400">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex h-48 items-center justify-center text-gray-400"
+                >
                   No attendance data
-                </div>
+                </motion.div>
               ) : (
                 <>
-                  {/* Donut Chart */}
-                  <div className="relative mb-4 h-48 w-48">
+                  {/* Animated Donut Chart */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8, rotate: -90 }}
+                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                    transition={{ delay: 0.5, duration: 0.8, type: 'spring', bounce: 0.2 }}
+                    className="relative mb-4 h-48 w-48"
+                  >
                     <svg viewBox="0 0 100 100" className="-rotate-90 transform">
                       {(() => {
                         const { present, absent, leaves, holidays, total } = attendanceStats;
@@ -422,71 +651,66 @@ export default function EmployeeDashboardPage() {
                         });
                       })()}
                     </svg>
-                    {/* Center text */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-3xl font-bold">{attendanceStats.percentage}%</span>
+                      <motion.span
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.8, type: 'spring', bounce: 0.3 }}
+                        className="text-3xl font-bold"
+                      >
+                        {attendanceStats.percentage}%
+                      </motion.span>
                       <span className="text-xs text-gray-500">Present</span>
                     </div>
-                  </div>
+                  </motion.div>
 
                   {/* Legend */}
                   <div className="w-full space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="h-3 w-3 rounded-full bg-green-500" />
-                        <span className="text-sm">Present</span>
-                      </div>
-                      <span className="font-semibold">{attendanceStats.present}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="h-3 w-3 rounded-full bg-red-500" />
-                        <span className="text-sm">Absent</span>
-                      </div>
-                      <span className="font-semibold">{attendanceStats.absent}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="h-3 w-3 rounded-full bg-orange-500" />
-                        <span className="text-sm">Leave</span>
-                      </div>
-                      <span className="font-semibold">{attendanceStats.leaves}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="h-3 w-3 rounded-full bg-purple-500" />
-                        <span className="text-sm">Holiday</span>
-                      </div>
-                      <span className="font-semibold">{attendanceStats.holidays}</span>
-                    </div>
+                    {DONUT_SEGMENTS.map((seg, idx) => (
+                      <motion.div
+                        key={seg.key}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.6 + idx * 0.08 }}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className={`h-3 w-3 rounded-full ${seg.dotClass}`} />
+                          <span className="text-sm">{seg.label}</span>
+                        </div>
+                        <span className="font-semibold">
+                          {attendanceStats[seg.key as keyof typeof attendanceStats]}
+                        </span>
+                      </motion.div>
+                    ))}
                   </div>
 
                   {/* Stats Cards Grid */}
-                  <div className="mt-4 grid w-full grid-cols-2 gap-2">
-                    <div className="rounded-lg border border-green-200 bg-green-50 p-3">
-                      <p className="text-xs font-medium text-green-700">Present</p>
-                      <p className="text-xl font-bold text-green-800">{attendanceStats.present}</p>
-                    </div>
-                    <div className="rounded-lg border border-red-200 bg-red-50 p-3">
-                      <p className="text-xs font-medium text-red-700">Absent</p>
-                      <p className="text-xl font-bold text-red-800">{attendanceStats.absent}</p>
-                    </div>
-                    <div className="rounded-lg border border-orange-200 bg-orange-50 p-3">
-                      <p className="text-xs font-medium text-orange-700">Leaves</p>
-                      <p className="text-xl font-bold text-orange-800">{attendanceStats.leaves}</p>
-                    </div>
-                    <div className="rounded-lg border border-purple-200 bg-purple-50 p-3">
-                      <p className="text-xs font-medium text-purple-700">Holidays</p>
-                      <p className="text-xl font-bold text-purple-800">
-                        {attendanceStats.holidays}
-                      </p>
-                    </div>
-                  </div>
+                  <motion.div
+                    variants={STAGGER_CHILDREN}
+                    initial="hidden"
+                    animate="show"
+                    className="mt-4 grid w-full grid-cols-2 gap-2"
+                  >
+                    {DONUT_SEGMENTS.map((seg) => (
+                      <motion.div
+                        key={seg.key}
+                        variants={FADE_UP}
+                        whileHover={{ scale: 1.05 }}
+                        className={`rounded-lg border ${seg.borderClass} ${seg.bgClass} p-3 transition-shadow hover:shadow-sm`}
+                      >
+                        <p className={`text-xs font-medium ${seg.textClass}`}>{seg.label}</p>
+                        <p className={`text-xl font-bold ${seg.boldClass}`}>
+                          {attendanceStats[seg.key as keyof typeof attendanceStats]}
+                        </p>
+                      </motion.div>
+                    ))}
+                  </motion.div>
                 </>
               )}
             </CardContent>
           </Card>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

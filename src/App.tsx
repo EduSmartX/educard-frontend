@@ -123,6 +123,29 @@ const TimesheetApprovalsPage = lazy(
   () => import('./features/attendance/pages/timesheet-approvals-page')
 );
 
+// Exams & Marks
+const ExamSessionsPage = lazy(() =>
+  import('./features/exams/pages').then((m) => ({ default: m.ExamSessionsPage }))
+);
+const ExamsListPage = lazy(() =>
+  import('./features/exams/pages').then((m) => ({ default: m.ExamsListPage }))
+);
+const ExamOverviewPage = lazy(() =>
+  import('./features/exams/pages').then((m) => ({ default: m.ExamOverviewPage }))
+);
+const ExamSessionFormPage = lazy(() =>
+  import('./features/exams/pages').then((m) => ({ default: m.ExamSessionFormPage }))
+);
+const ExamFormPage = lazy(() =>
+  import('./features/exams/pages').then((m) => ({ default: m.ExamFormPage }))
+);
+const BulkExamCreatePage = lazy(() =>
+  import('./features/exams/pages').then((m) => ({ default: m.BulkExamCreatePage }))
+);
+const MarksOverviewPage = lazy(() =>
+  import('./features/exams/pages').then((m) => ({ default: m.MarksOverviewPage }))
+);
+
 // Preferences
 const PreferencesPage = lazy(() => import('./features/preferences/pages/preferences-page'));
 
@@ -219,6 +242,19 @@ function App() {
             <Route path={ROUTES.SUBJECTS_NEW} element={<SubjectFormPage />} />
             <Route path={ROUTES.SUBJECTS_VIEW} element={<SubjectFormPage />} />
             <Route path={ROUTES.SUBJECTS_EDIT} element={<SubjectFormPage />} />
+
+            {/* Exams & Marks */}
+            <Route path={ROUTES.EXAMS} element={<ExamSessionsPage />} />
+            <Route path={ROUTES.EXAMS_OVERVIEW} element={<ExamOverviewPage />} />
+            <Route path={ROUTES.EXAMS_LIST} element={<ExamsListPage />} />
+            <Route path={ROUTES.EXAM_SESSIONS_NEW} element={<ExamSessionFormPage />} />
+            <Route path={ROUTES.EXAM_SESSIONS_VIEW} element={<ExamSessionFormPage />} />
+            <Route path={ROUTES.EXAM_SESSIONS_EDIT} element={<ExamSessionFormPage />} />
+            <Route path={ROUTES.EXAMS_NEW} element={<ExamFormPage />} />
+            <Route path={ROUTES.EXAMS_BULK_CREATE} element={<BulkExamCreatePage />} />
+            <Route path={ROUTES.EXAMS_VIEW} element={<ExamFormPage />} />
+            <Route path={ROUTES.EXAMS_EDIT} element={<ExamFormPage />} />
+            <Route path={ROUTES.MARKS_OVERVIEW} element={<MarksOverviewPage />} />
 
             {/* Organization Preferences */}
             <Route path={ROUTES.PREFERENCES} element={<PreferencesPage />} />

@@ -21,6 +21,8 @@ import {
   Briefcase,
   CheckSquare,
   Clock,
+  ClipboardList,
+  FileText,
 } from 'lucide-react';
 import type { SidebarSection } from '@/components/layout/dashboard-sidebar';
 import { ROUTES } from '@/constants/app-config';
@@ -80,6 +82,35 @@ export const adminSidebarConfig: SidebarSection[] = [
         label: 'Timetable',
         icon: Clock,
         path: ROUTES.TIMETABLE_SETUP,
+      },
+    ],
+  },
+  {
+    title: 'EXAMS & MARKS',
+    items: [
+      {
+        id: 'exam-sessions',
+        label: 'Exam Sessions',
+        icon: ClipboardList,
+        path: ROUTES.EXAMS,
+      },
+      {
+        id: 'exams',
+        label: 'Exams',
+        icon: FileText,
+        path: ROUTES.EXAMS_LIST,
+      },
+      {
+        id: 'exam-overview',
+        label: 'Exam Overview',
+        icon: BarChart3,
+        path: ROUTES.EXAMS_OVERVIEW,
+      },
+      {
+        id: 'marks-overview',
+        label: 'Marks Overview',
+        icon: CheckSquare,
+        path: ROUTES.MARKS_OVERVIEW,
       },
     ],
   },

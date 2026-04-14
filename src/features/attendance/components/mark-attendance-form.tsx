@@ -479,7 +479,7 @@ export function MarkAttendanceForm() {
             <div className="flex justify-end gap-2">
               <Button
                 type="button"
-                variant="outline"
+                variant="brandOutline"
                 onClick={handleReset}
                 disabled={isSubmitting || !isWorkingDay}
                 className="px-6"
@@ -488,8 +488,9 @@ export function MarkAttendanceForm() {
               </Button>
               <Button
                 type="submit"
+                variant="brand"
                 disabled={isSubmitting || !isWorkingDay}
-                className="bg-blue-600 px-6 hover:bg-blue-700"
+                className="px-6"
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isSubmitting ? CommonUiText.SUBMITTING : AttendanceUiText.SUBMIT_ATTENDANCE}

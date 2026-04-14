@@ -104,3 +104,30 @@ export async function updateOrganizationAddress(
   );
   return response.data;
 }
+
+// Academic Year types
+export interface AcademicYear {
+  public_id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  is_current: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Get all academic years for the organization
+ */
+export async function getAcademicYears(): Promise<ApiResponse<AcademicYear[]>> {
+  const response = await api.get<ApiResponse<AcademicYear[]>>('/organization-preferences/academic-years/');
+  return response.data;
+}
+
+/**
+ * Get current academic year for the organization
+ */
+export async function getCurrentAcademicYear(): Promise<ApiResponse<AcademicYear>> {
+  const response = await api.get<ApiResponse<AcademicYear>>('/organization-preferences/current-academic-year/');
+  return response.data;
+}

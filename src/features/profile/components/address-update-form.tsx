@@ -91,7 +91,7 @@ export function AddressUpdateForm() {
             <div className="flex justify-end gap-3">
               <Button
                 type="button"
-                variant="outline"
+                variant="brandOutline"
                 onClick={() => form.reset()}
                 disabled={updateMutation.isPending || !form.formState.isDirty}
               >
