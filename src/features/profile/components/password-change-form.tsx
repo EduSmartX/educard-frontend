@@ -163,13 +163,13 @@ export function PasswordChangeForm() {
             <div className="flex justify-end gap-3">
               <Button
                 type="button"
-                variant="outline"
+                variant="brandOutline"
                 onClick={() => form.reset()}
                 disabled={changeMutation.isPending}
               >
                 {CommonUiText.RESET}
               </Button>
-              <Button type="submit" disabled={changeMutation.isPending}>
+              <Button type="submit" variant="brand" disabled={changeMutation.isPending}>
                 {changeMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <Save className="mr-2 h-4 w-4" />
                 {CommonUiText.CHANGE_PASSWORD}

@@ -1,5 +1,5 @@
 /**
- * Exam Types – simplified 3-table design
+ * Exam Types ï¿½ simplified 3-table design
  * ExamSession -> Exam (session+subject) -> Mark
  */
 
@@ -89,6 +89,9 @@ export interface Exam {
   public_id: string;
   session_name: string;
   session_public_id: string;
+  session_type: ExamSessionType;
+  session_start_date: string | null;
+  session_end_date: string | null;
   subject_name: string;
   subject_public_id: string;
   class_name: string;
@@ -99,6 +102,8 @@ export interface Exam {
   date: string | null;
   start_time: string | null;
   end_time: string | null;
+  duration: number | null;  // Duration in minutes
+  duration_formatted: string | null;  // e.g., "2h 30m" or "45m"
   description: string;
   marks_count: number;
   created_at: string;
@@ -142,6 +147,23 @@ export interface ExamUpdatePayload {
   description?: string;
 }
 
+// Bulk exam creation types
+export interface BulkExamItem {
+  subject_id: string;
+  max_marks?: number;
+  passing_marks?: number;
+  date?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+}
+
+export interface BulkExamCreatePayload {
+  session_id: string;
+  class_id?: string;
+  status?: ExamStatus;
+  exams: BulkExamItem[];
+}
+
 // -- Marks ---------------------------------------------------------
 
 export interface Mark {
@@ -159,7 +181,6 @@ export interface Mark {
   is_absent: boolean;
   is_pass: boolean;
   percentage: number;
-  remarks: string;
   created_at: string;
   updated_at: string;
   created_by_public_id: string | null;
@@ -168,38 +189,8 @@ export interface Mark {
   updated_by_name: string | null;
 }
 
-export interface MarkListParams {
-  page?: number;
-  page_size?: number;
-  search?: string;
-  exam?: string;
-  session?: string;
-  student?: string;
-  is_deleted?: boolean;
-}
-
-export interface MarkCreatePayload {
-  exam_id: string;
-  student_id: string;
-  marks_obtained: number;
-  is_absent?: boolean;
-  remarks?: string;
-}
-
-export interface MarkUpdatePayload {
-  marks_obtained?: number;
-  is_absent?: boolean;
-  remarks?: string;
-}
-
 export interface BulkMarkEntry {
   student_id: string;
   marks_obtained: number;
   is_absent?: boolean;
-  remarks?: string;
-}
-
-export interface BulkMarkCreatePayload {
-  exam_id: string;
-  marks: BulkMarkEntry[];
 }

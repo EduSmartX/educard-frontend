@@ -210,7 +210,7 @@ export function LeaveBalanceDialog({
           <DialogFooter className="gap-3 pt-4">
             <Button
               type="button"
-              variant="outline"
+              variant="brandOutline"
               onClick={() => onClose()}
               disabled={createBalanceMutation.isPending || updateBalanceMutation.isPending}
               className="min-w-[100px]"

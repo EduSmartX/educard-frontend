@@ -131,9 +131,7 @@ export function useUpdatePhone() {
 // Deprecated - kept for backwards compatibility
 export const useUpdateAddress = useUpdateProfile;
 
-// ──────────────────────────────────────────────────────────────
 // Profile Photo Mutations
-// ──────────────────────────────────────────────────────────────
 
 /**
  * Hook to upload own profile photo

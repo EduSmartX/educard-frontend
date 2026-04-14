@@ -2,66 +2,111 @@
  * Exam Session Form Page
  * Create / Edit / View exam session
  * Solid, grounded form layout with proper structure
+ * 
+ * Role-based access:
+ * - Admin: Full access (create, edit, view)
+ * - Teacher: View only
  */
 
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PageHeader } from '@/components/common';
+import { DatePicker } from '@/components/ui/date-picker';
+import { PageHeader, FormActions } from '@/components/common';
 import { ROUTES } from '@/constants';
+import { ValidationMessages } from '@/constants/error-messages';
+import { formatDateForAPI, parseDate } from '@/lib/utils/date-utils';
 import { useExamSession } from '../hooks/use-exams';
 import { useCreateExamSession, useUpdateExamSession } from '../hooks/mutations';
-import { EXAM_SESSION_TYPE_OPTIONS } from '../types';
-import type { ExamSessionType, ExamSessionCreatePayload, ExamSessionUpdatePayload } from '../types';
+import { useAcademicYears } from '@/features/organizations/hooks/queries';
+import { useRole } from '@/hooks/use-role';
+import { EXAM_SESSION_TYPE_OPTIONS, EXAM_SESSION_TYPE_LABELS, type ExamSessionType, type ExamSessionCreatePayload, type ExamSessionUpdatePayload } from '../types';
 
 export function ExamSessionFormPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
+  const { isAdmin } = useRole();
+  
   const isEdit = location.pathname.includes('/edit');
   const isView = !!id && !isEdit;
   const isCreate = !id;
 
+  // Non-admin users can only view, not create or edit
+  useEffect(() => {
+    if (!isAdmin && (isCreate || isEdit)) {
+      navigate(ROUTES.EXAMS, { replace: true });
+    }
+  }, [isAdmin, isCreate, isEdit, navigate]);
+
   const { data: existingSession, isLoading: isLoadingSession } = useExamSession(id);
+  const { data: academicYears = [], isLoading: _isLoadingAcademicYears } = useAcademicYears();
 
   // Form state
   const [name, setName] = useState('');
-  const [sessionType, setSessionType] = useState<ExamSessionType>('unit_test');
+  const [sessionType, setSessionType] = useState<ExamSessionType | ''>('');
   const [academicYear, setAcademicYear] = useState('');
   const [description, setDescription] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // Set defaults when creating
+  useEffect(() => {
+    if (isCreate) {
+      // Set default session type
+      if (!sessionType) {
+        setSessionType('unit_test');
+      }
+      // Set default academic year to current one
+      if (academicYears.length > 0 && !academicYear) {
+        const currentYear = academicYears.find((y) => y.is_current);
+        if (currentYear) {
+          setAcademicYear(currentYear.name);
+        }
+      }
+    }
+  }, [isCreate, academicYears, academicYear, sessionType]);
 
   // Populate form when editing
   useEffect(() => {
     if (existingSession) {
       setName(existingSession.name);
       setSessionType(existingSession.session_type);
-      setAcademicYear(existingSession.academic_year);
       setDescription(existingSession.description || '');
-      setStartDate(existingSession.start_date || '');
-      setEndDate(existingSession.end_date || '');
+      setStartDate(parseDate(existingSession.start_date));
+      setEndDate(parseDate(existingSession.end_date));
     }
   }, [existingSession]);
+
+  // Set academic year after academicYears list loads (needed for Select to match)
+  useEffect(() => {
+    if (existingSession && academicYears.length > 0 && !academicYear) {
+      setAcademicYear(existingSession.academic_year);
+    }
+  }, [existingSession, academicYears, academicYear]);
 
   const createMutation = useCreateExamSession({
     onSuccess: () => navigate(ROUTES.EXAMS),
     onError: (_err, errors) => {
-      if (errors) setFieldErrors(errors as Record<string, string>);
+      if (errors) {
+        setFieldErrors(errors as Record<string, string>);
+      }
     },
   });
 
   const updateMutation = useUpdateExamSession({
     onSuccess: () => navigate(ROUTES.EXAMS),
     onError: (_err, errors) => {
-      if (errors) setFieldErrors(errors as Record<string, string>);
+      if (errors) {
+        setFieldErrors(errors as Record<string, string>);
+      }
     },
   });
 
@@ -73,8 +118,15 @@ export function ExamSessionFormPage() {
 
     // Basic client-side validation
     const errors: Record<string, string> = {};
-    if (!name.trim()) errors.name = 'Session name is required.';
-    if (!academicYear.trim()) errors.academic_year = 'Academic year is required.';
+    if (!name.trim()) {
+      errors.name = ValidationMessages.EXAM_SESSION.ENTER_NAME;
+    }
+    if (!sessionType) {
+      errors.session_type = ValidationMessages.EXAM_SESSION.SELECT_TYPE;
+    }
+    if (!academicYear.trim()) {
+      errors.academic_year = ValidationMessages.EXAM_SESSION.SELECT_ACADEMIC_YEAR;
+    }
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
@@ -83,21 +135,21 @@ export function ExamSessionFormPage() {
     if (isCreate) {
       const payload: ExamSessionCreatePayload = {
         name: name.trim(),
-        session_type: sessionType,
+        session_type: sessionType as ExamSessionType,
         academic_year: academicYear.trim(),
         description: description.trim(),
-        start_date: startDate || null,
-        end_date: endDate || null,
+        start_date: formatDateForAPI(startDate) || null,
+        end_date: formatDateForAPI(endDate) || null,
       };
       createMutation.mutate(payload);
     } else if (isEdit && id) {
       const payload: ExamSessionUpdatePayload = {
         name: name.trim(),
-        session_type: sessionType,
+        session_type: sessionType as ExamSessionType,
         academic_year: academicYear.trim(),
         description: description.trim(),
-        start_date: startDate || null,
-        end_date: endDate || null,
+        start_date: formatDateForAPI(startDate) || null,
+        end_date: formatDateForAPI(endDate) || null,
       };
       updateMutation.mutate({ id, data: payload });
     }
@@ -116,7 +168,7 @@ export function ExamSessionFormPage() {
   return (
     <div className="space-y-6">
       <PageHeader title={title}>
-        <Button variant="outline" onClick={() => navigate(ROUTES.EXAMS)} className="gap-2">
+        <Button variant="brandOutline" onClick={() => navigate(ROUTES.EXAMS)} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
           Back to Exams
         </Button>
@@ -152,22 +204,33 @@ export function ExamSessionFormPage() {
                 <Label htmlFor="session_type">
                   Session Type <span className="text-red-500">*</span>
                 </Label>
-                <Select
-                  value={sessionType}
-                  onValueChange={(v) => setSessionType(v as ExamSessionType)}
-                  disabled={isView}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {EXAM_SESSION_TYPE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {isView ? (
+                  <Input
+                    value={sessionType ? EXAM_SESSION_TYPE_LABELS[sessionType as ExamSessionType] : '-'}
+                    disabled
+                    className="bg-gray-50"
+                  />
+                ) : (
+                  <Select
+                    key={`session-type-${sessionType || 'empty'}`}
+                    value={sessionType || undefined}
+                    onValueChange={(v) => setSessionType(v as ExamSessionType)}
+                  >
+                    <SelectTrigger className={fieldErrors.session_type ? 'border-red-500' : ''}>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EXAM_SESSION_TYPE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {fieldErrors.session_type && (
+                  <p className="text-sm text-red-500">{fieldErrors.session_type}</p>
+                )}
               </div>
 
               {/* Academic Year */}
@@ -175,14 +238,30 @@ export function ExamSessionFormPage() {
                 <Label htmlFor="academic_year">
                   Academic Year <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="academic_year"
-                  placeholder="e.g., 2025-26"
-                  value={academicYear}
-                  onChange={(e) => setAcademicYear(e.target.value)}
-                  disabled={isView}
-                  className={fieldErrors.academic_year ? 'border-red-500' : ''}
-                />
+                {isView ? (
+                  <Input
+                    value={academicYear || '-'}
+                    disabled
+                    className="bg-gray-50"
+                  />
+                ) : (
+                  <Select
+                    key={`academic-year-${academicYear || 'empty'}`}
+                    value={academicYear || undefined}
+                    onValueChange={setAcademicYear}
+                  >
+                    <SelectTrigger className={fieldErrors.academic_year ? 'border-red-500' : ''}>
+                      <SelectValue placeholder="Select academic year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {academicYears.map((year) => (
+                        <SelectItem key={year.public_id} value={year.name}>
+                          {year.name} {year.is_current && '(Current)'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 {fieldErrors.academic_year && (
                   <p className="text-sm text-red-500">{fieldErrors.academic_year}</p>
                 )}
@@ -191,11 +270,10 @@ export function ExamSessionFormPage() {
               {/* Start Date */}
               <div className="space-y-2">
                 <Label htmlFor="start_date">Start Date</Label>
-                <Input
-                  id="start_date"
-                  type="date"
+                <DatePicker
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={setStartDate}
+                  placeholder="Select start date"
                   disabled={isView}
                 />
               </div>
@@ -203,12 +281,12 @@ export function ExamSessionFormPage() {
               {/* End Date */}
               <div className="space-y-2">
                 <Label htmlFor="end_date">End Date</Label>
-                <Input
-                  id="end_date"
-                  type="date"
+                <DatePicker
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={setEndDate}
+                  placeholder="Select end date"
                   disabled={isView}
+                  minDate={startDate || undefined}
                   className={fieldErrors.end_date ? 'border-red-500' : ''}
                 />
                 {fieldErrors.end_date && (
@@ -232,43 +310,37 @@ export function ExamSessionFormPage() {
 
             {/* Actions */}
             {!isView && (
-              <div className="flex items-center gap-3 border-t pt-6">
-                <Button type="submit" disabled={isPending} className="gap-2">
-                  {isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4" />
-                  )}
-                  {isCreate ? 'Create Session' : 'Save Changes'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate(ROUTES.EXAMS)}
-                >
-                  Cancel
-                </Button>
-              </div>
+              <FormActions
+                primaryAction={{
+                  label: isCreate ? 'Create Session' : 'Save Changes',
+                  type: 'submit',
+                  icon: isCreate ? 'create' : 'save',
+                  isLoading: isPending,
+                  disabled: isPending,
+                }}
+                secondaryAction={{
+                  label: 'Cancel',
+                  onClick: () => navigate(ROUTES.EXAMS),
+                  icon: 'cancel',
+                }}
+              />
             )}
 
             {/* View mode: Edit button */}
             {isView && (
-              <div className="flex items-center gap-3 border-t pt-6">
-                <Button
-                  type="button"
-                  onClick={() => navigate(ROUTES.EXAM_SESSIONS_EDIT.replace(':id', id!))}
-                  className="gap-2"
-                >
-                  Edit Session
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate(ROUTES.EXAMS)}
-                >
-                  Back
-                </Button>
-              </div>
+              <FormActions
+                primaryAction={{
+                  label: 'Edit Session',
+                  onClick: () => navigate(ROUTES.EXAM_SESSIONS_EDIT.replace(':id', id!)),
+                  type: 'button',
+                  style: 'info',
+                }}
+                secondaryAction={{
+                  label: 'Back',
+                  onClick: () => navigate(ROUTES.EXAMS),
+                  icon: 'back',
+                }}
+              />
             )}
           </form>
         </CardContent>

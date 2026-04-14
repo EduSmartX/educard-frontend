@@ -6,13 +6,12 @@ import { Eye, Pencil, Trash2, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Column } from '@/components/ui/data-table';
-import type { ExamSession } from '../types';
-import { EXAM_SESSION_TYPE_LABELS, type ExamSessionType } from '../types';
+import { EXAM_SESSION_TYPE_LABELS, type ExamSession, type ExamSessionType } from '../types';
 import { format } from 'date-fns';
 
 interface CreateColumnsParams {
   onView: (session: ExamSession) => void;
-  onEdit: (session: ExamSession) => void;
+  onEdit?: (session: ExamSession) => void;
   onDelete?: (session: ExamSession) => void;
   isDeletedView?: boolean;
 }
@@ -139,28 +138,32 @@ export function createExamSessionColumns({
               >
                 <Eye className="h-4 w-4" />
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(session);
-                }}
-                title="Edit"
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete?.(session);
-                }}
-                title="Delete"
-              >
-                <Trash2 className="h-4 w-4 text-red-500" />
-              </Button>
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(session);
+                  }}
+                  title="Edit"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(session);
+                  }}
+                  title="Delete"
+                >
+                  <Trash2 className="h-4 w-4 text-red-500" />
+                </Button>
+              )}
             </>
           )}
         </div>

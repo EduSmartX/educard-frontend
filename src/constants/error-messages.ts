@@ -164,6 +164,19 @@ export const ErrorMessages = {
     NO_AVAILABLE_TYPES: 'No available leave types.',
   },
 
+  TIMETABLE: {
+    CREATE_GROUP_FAILED: 'Failed to create class group. Please try again.',
+    UPDATE_GROUP_FAILED: 'Failed to update class group. Please try again.',
+    DELETE_GROUP_FAILED: 'Failed to delete class group. Please try again.',
+    ADD_CLASS_FAILED: 'Failed to add class to group. Please try again.',
+    REMOVE_CLASS_FAILED: 'Failed to remove class from group. Please try again.',
+    SAVE_SLOTS_FAILED: 'Failed to save time slots. Please try again.',
+    CLEAR_DAY_FAILED: 'Failed to clear day slots. Please try again.',
+    CREATE_ENTRY_FAILED: 'Failed to save timetable entry. Please try again.',
+    DELETE_ENTRY_FAILED: 'Failed to delete timetable entry. Please try again.',
+    FETCH_FAILED: 'Failed to load timetable data. Please try again.',
+  },
+
   AUTH: {
     PENDING_APPROVAL: 'Organization pending approval.',
     ORGANIZATION_REJECTED: 'Organization has been rejected.',
@@ -480,6 +493,18 @@ export const SuccessMessages = {
     BALANCE_DELETED: 'Leave balance deleted successfully.',
   },
 
+  TIMETABLE: {
+    GROUP_CREATED: 'Class group created successfully.',
+    GROUP_UPDATED: 'Class group updated successfully.',
+    GROUP_DELETED: 'Class group deleted successfully.',
+    CLASS_ADDED: 'Class added to group successfully.',
+    CLASS_REMOVED: 'Class removed from group successfully.',
+    SLOTS_SAVED: 'Time slots saved successfully.',
+    DAY_CLEARED: 'Day slots cleared successfully.',
+    ENTRY_CREATED: 'Timetable entry saved successfully.',
+    ENTRY_DELETED: 'Timetable entry removed successfully.',
+  },
+
   PROFILE: {
     UPDATED: 'Profile updated successfully.',
     PASSWORD_CHANGED: 'Password changed successfully. Logging out...',
@@ -548,5 +573,63 @@ export const ConfirmationMessages = {
 
   HOLIDAY: {
     DELETE: 'Are you sure you want to delete this holiday?',
+  },
+} as const;
+
+/**
+ * Validation messages for form fields
+ */
+export const ValidationMessages = {
+  // Generic field validation
+  REQUIRED: 'This field is required.',
+  
+  // Select field validations
+  SELECT_EXAM_SESSION: 'Please select an exam session.',
+  SELECT_SUBJECT: 'Please select a subject.',
+  SELECT_STATUS: 'Please select a status.',
+  SELECT_CLASS: 'Please select a class.',
+  SELECT_ACADEMIC_YEAR: 'Please select an academic year.',
+  SELECT_SESSION_TYPE: 'Please select a session type.',
+  SELECT_AT_LEAST_ONE_SUBJECT: 'Please select at least one subject.',
+  SELECT_SESSION_AND_EXAM: 'Please select session and exam.',
+  SELECT_LEAVE_TYPE: 'Please select a leave type.',
+  SELECT_DATE: 'Please select a date.',
+  SELECT_START_END_DATE: 'Please select start and end dates.',
+  SELECT_AT_LEAST_ONE_SESSION: 'Please select at least one session or mark as absent.',
+  SELECT_AT_LEAST_ONE_CLASS: 'Please select at least one class.',
+  
+  // Input field validations
+  ENTER_NAME: 'Please enter a name.',
+  ENTER_DESCRIPTION: 'Please enter a description.',
+  ENTER_MAX_MARKS: 'Please enter maximum marks.',
+  ENTER_PASSING_MARKS: 'Please enter passing marks.',
+  
+  // Date validations
+  INVALID_DATE_RANGE: 'Start date must be before or equal to end date.',
+  DATE_REQUIRED: 'Please select a date.',
+  
+  // Numeric validations
+  MARKS_EXCEED_MAXIMUM: 'Marks obtained cannot exceed maximum marks.',
+  INVALID_MARKS: 'Please enter valid marks.',
+  
+  // Exam-specific
+  EXAM: {
+    SELECT_SESSION: 'Please select an exam session.',
+    SELECT_SUBJECT: 'Please select a subject.',
+    SELECT_STATUS: 'Please select a status.',
+    SELECT_CLASS: 'Please select a class.',
+    SELECT_AT_LEAST_ONE_SUBJECT: 'Please select at least one subject.',
+    DATE_IS_HOLIDAY: 'The selected date falls on a holiday. Please select a working day.',
+    DATE_OUTSIDE_SESSION: 'The exam date must be within the session date range.',
+    MARKS_LESS_THAN_ZERO: 'Marks cannot be less than 0.',
+    MARKS_EXCEED_MAX: 'Marks cannot exceed the maximum marks.',
+    MARKS_INVALID_RANGE: 'Marks must be between 0 and maximum marks.',
+  },
+  
+  // Exam Session-specific
+  EXAM_SESSION: {
+    SELECT_TYPE: 'Please select a session type.',
+    SELECT_ACADEMIC_YEAR: 'Please select an academic year.',
+    ENTER_NAME: 'Please enter a session name.',
   },
 } as const;

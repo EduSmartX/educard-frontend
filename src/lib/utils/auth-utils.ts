@@ -48,13 +48,14 @@ export function getDashboardRoute(role?: string | null): string {
  */
 export function getUserRole(): UserRole | null {
   try {
-    const authDataStr = localStorage.getItem('auth');
-    if (!authDataStr) {
+    // User is stored directly in 'user' key (not nested in 'auth')
+    const userDataStr = localStorage.getItem('user');
+    if (!userDataStr) {
       return null;
     }
 
-    const authData = JSON.parse(authDataStr);
-    const role = authData?.user?.role;
+    const userData = JSON.parse(userDataStr);
+    const role = userData?.role;
 
     if (!role) {
       return null;

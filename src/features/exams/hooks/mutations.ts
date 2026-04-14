@@ -15,17 +15,11 @@ import {
   updateExamSession,
   deleteExamSession,
   reactivateExamSession,
+  bulkUpdateExamStatusBySession,
   createExam,
   updateExam,
   deleteExam,
   reactivateExam,
-  createExamSubject,
-  updateExamSubject,
-  deleteExamSubject,
-  createMark,
-  updateMark,
-  deleteMark,
-  bulkCreateMarks,
 } from '../api/exams-api';
 import { ErrorMessages, SuccessMessages } from '@/constants';
 import type {
@@ -33,16 +27,12 @@ import type {
   ExamSessionUpdatePayload,
   ExamCreatePayload,
   ExamUpdatePayload,
-  ExamSubjectCreatePayload,
-  ExamSubjectUpdatePayload,
-  MarkCreatePayload,
-  MarkUpdatePayload,
-  BulkMarkCreatePayload,
+  ExamStatus,
 } from '../types';
 
 export type { MutationOptions };
 
-// ── Exam Session Mutations ─────────────────────────────────
+// Exam Session Mutations
 
 export function useCreateExamSession(options?: MutationOptions<FieldErrors>) {
   const queryClient = useQueryClient();
@@ -105,7 +95,7 @@ export function useReactivateExamSession(options?: MutationOptions<FieldErrors>)
   });
 }
 
-// ── Exam Mutations ─────────────────────────────────────────
+// Exam Mutations
 
 export function useCreateExam(options?: MutationOptions<FieldErrors>) {
   const queryClient = useQueryClient();
@@ -169,114 +159,37 @@ export function useReactivateExam(options?: MutationOptions<FieldErrors>) {
   });
 }
 
-// ── Exam Subject Mutations ─────────────────────────────────
+// Status Update Mutations
 
-export function useCreateExamSubject(options?: MutationOptions<FieldErrors>) {
+export function useUpdateExamStatus(options?: MutationOptions<FieldErrors>) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: ExamSubjectCreatePayload) => createExamSubject(data),
+    mutationFn: ({ id, status }: { id: string; status: ExamStatus }) =>
+      updateExam(id, { status }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['exam-subjects'] });
       queryClient.invalidateQueries({ queryKey: ['exams'] });
-      toast.success(SuccessMessages.EXAM_SUBJECT.CREATE_SUCCESS);
+      toast.success('Exam status updated successfully');
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      handleMutationError(error, ErrorMessages.EXAM_SUBJECT.CREATE_FAILED, options?.onError);
+      handleMutationError(error, 'Failed to update exam status', options?.onError);
     },
   });
 }
 
-export function useUpdateExamSubject(options?: MutationOptions<FieldErrors>) {
+export function useBulkUpdateExamStatusBySession(options?: MutationOptions<FieldErrors>) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: ExamSubjectUpdatePayload }) =>
-      updateExamSubject(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['exam-subjects'] });
-      toast.success(SuccessMessages.EXAM_SUBJECT.UPDATE_SUCCESS);
-      options?.onSuccess?.();
-    },
-    onError: (error: Error) => {
-      handleMutationError(error, ErrorMessages.EXAM_SUBJECT.UPDATE_FAILED, options?.onError);
-    },
-  });
-}
-
-export function useDeleteExamSubject(options?: MutationOptions<FieldErrors>) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: deleteExamSubject,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['exam-subjects'] });
+    mutationFn: ({ sessionId, status }: { sessionId: string; status: string }) =>
+      bulkUpdateExamStatusBySession(sessionId, status),
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['exams'] });
-      toast.success(SuccessMessages.EXAM_SUBJECT.DELETE_SUCCESS);
+      queryClient.invalidateQueries({ queryKey: ['exam-sessions'] });
+      toast.success(`Successfully updated ${data.updated_count} exam(s)`);
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      handleMutationError(error, ErrorMessages.EXAM_SUBJECT.DELETE_FAILED, options?.onError);
-    },
-  });
-}
-
-// ── Mark Mutations ─────────────────────────────────────────
-
-export function useCreateMark(options?: MutationOptions<FieldErrors>) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: MarkCreatePayload) => createMark(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['marks'] });
-      toast.success(SuccessMessages.MARK.CREATE_SUCCESS);
-      options?.onSuccess?.();
-    },
-    onError: (error: Error) => {
-      handleMutationError(error, ErrorMessages.MARK.CREATE_FAILED, options?.onError);
-    },
-  });
-}
-
-export function useUpdateMark(options?: MutationOptions<FieldErrors>) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: MarkUpdatePayload }) => updateMark(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['marks'] });
-      toast.success(SuccessMessages.MARK.UPDATE_SUCCESS);
-      options?.onSuccess?.();
-    },
-    onError: (error: Error) => {
-      handleMutationError(error, ErrorMessages.MARK.UPDATE_FAILED, options?.onError);
-    },
-  });
-}
-
-export function useDeleteMark(options?: MutationOptions<FieldErrors>) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: deleteMark,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['marks'] });
-      toast.success(SuccessMessages.MARK.DELETE_SUCCESS);
-      options?.onSuccess?.();
-    },
-    onError: (error: Error) => {
-      handleMutationError(error, ErrorMessages.MARK.DELETE_FAILED, options?.onError);
-    },
-  });
-}
-
-export function useBulkCreateMarks(options?: MutationOptions<FieldErrors>) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: BulkMarkCreatePayload) => bulkCreateMarks(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['marks'] });
-      toast.success(SuccessMessages.MARK.BULK_CREATE_SUCCESS);
-      options?.onSuccess?.();
-    },
-    onError: (error: Error) => {
-      handleMutationError(error, ErrorMessages.MARK.BULK_CREATE_FAILED, options?.onError);
+      handleMutationError(error, 'Failed to bulk update exam statuses', options?.onError);
     },
   });
 }

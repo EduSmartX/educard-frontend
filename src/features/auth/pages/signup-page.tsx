@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 import { sendOtps, verifyOtp } from '@/lib/api/otp-api';
 import { registerOrganization } from '@/lib/api/organization-api';
 import { parseOtpErrors } from '@/lib/api';
@@ -209,7 +210,7 @@ export default function SignupPage() {
     }
   };
 
-  const handleStep2Submit = async (data: Step2Data) => {
+  const handleStep2Submit = (data: Step2Data) => {
     // If using same email, only need admin OTP verified
     const isVerified = useSameEmail ? adminOtpVerified : adminOtpVerified && orgOtpVerified;
 
@@ -275,11 +276,24 @@ export default function SignupPage() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 sm:p-6 lg:p-8">
       {/* Animated background elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-teal-400/20 to-cyan-400/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse delay-700"></div>
+        <motion.div
+          className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-teal-400/20 to-cyan-400/20 rounded-full blur-3xl"
+          animate={{ scale: [1, 1.15, 1], opacity: [0.2, 0.1, 0.2] }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-3xl"
+          animate={{ scale: [1.1, 1, 1.1], opacity: [0.15, 0.08, 0.15] }}
+          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+        />
       </div>
 
-      <div className="relative max-w-4xl mx-auto">
+      <motion.div
+        initial={{ opacity: 0, y: 30, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+        className="relative max-w-4xl mx-auto"
+      >
         {/* Modern Card with glassmorphism */}
         <Card className="backdrop-blur-xl bg-white/80 shadow-2xl border-0 rounded-3xl overflow-hidden">
           <CardHeader className="space-y-6 pb-8 px-6 sm:px-10 pt-10">
@@ -1075,7 +1089,7 @@ export default function SignupPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
     </div>
   );
 }

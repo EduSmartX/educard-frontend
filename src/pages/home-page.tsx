@@ -420,18 +420,28 @@ export default function HomePage() {
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
-                <motion.div key={index} variants={staggerItem}>
-                  <Card className="group h-full border-2 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
-                    <CardHeader className="pb-3">
+                <motion.div
+                  key={index}
+                  variants={staggerItem}
+                  whileHover={{ y: -8, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Card className="group relative h-full overflow-hidden border-2 transition-all duration-300 hover:shadow-xl">
+                    <div
+                      className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 transition-opacity duration-500 group-hover:opacity-100`}
+                    />
+                    <CardHeader className="relative z-10 pb-3">
                       <div
                         className={`mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${feature.color} shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl`}
                       >
                         <Icon className="h-6 w-6 text-white" />
                       </div>
-                      <CardTitle className="text-lg">{feature.title}</CardTitle>
+                      <CardTitle className="text-lg transition-colors duration-300 group-hover:text-white">
+                        {feature.title}
+                      </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <CardDescription className="text-sm leading-relaxed">
+                    <CardContent className="relative z-10">
+                      <CardDescription className="text-sm leading-relaxed transition-colors duration-300 group-hover:text-white/80">
                         {feature.description}
                       </CardDescription>
                     </CardContent>
@@ -481,6 +491,7 @@ export default function HomePage() {
                   <motion.div
                     key={i}
                     variants={staggerItem}
+                    whileHover={{ x: 8 }}
                     className="flex items-start gap-3 rounded-lg bg-gradient-to-r from-emerald-50 to-transparent p-3 transition-colors hover:from-emerald-100"
                   >
                     <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
@@ -513,8 +524,12 @@ export default function HomePage() {
               <CarouselContent>
                 {testimonials.map((testimonial, index) => (
                   <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
-                    <div className="p-2">
-                      <Card className="h-full border-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                    <motion.div
+                      className="p-2"
+                      whileHover={{ y: -4, scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Card className="h-full border-2 transition-all duration-300 hover:shadow-xl">
                         <CardHeader className="pb-3">
                           <div className="flex items-start justify-between">
                             <div className="flex items-center gap-3">
@@ -551,7 +566,7 @@ export default function HomePage() {
                           </p>
                         </CardContent>
                       </Card>
-                    </div>
+                    </motion.div>
                   </CarouselItem>
                 ))}
               </CarouselContent>
@@ -570,6 +585,16 @@ export default function HomePage() {
             <div className="absolute top-10 left-10 h-40 w-40 rounded-full bg-white blur-3xl" />
             <div className="absolute right-10 bottom-10 h-60 w-60 rounded-full bg-white blur-3xl" />
           </div>
+          <motion.div
+            className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/10 blur-2xl"
+            animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <motion.div
+            className="absolute -bottom-8 -left-8 h-36 w-36 rounded-full bg-white/10 blur-2xl"
+            animate={{ scale: [1.2, 1, 1.2], opacity: [0.15, 0.05, 0.15] }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+          />
 
           <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center justify-center text-center">
             <motion.h2

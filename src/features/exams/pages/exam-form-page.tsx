@@ -1,18 +1,22 @@
 /**
  * Exam Form Page
- * Create / Edit / View an exam with class multi-select
- * Solid, grounded UI
+ * Create / Edit / View an exam (session + subject)
+ * New model: Exam is linked to session and subject (class comes from subject)
+ * 
+ * Role-based access:
+ * - Admin: Full access (create, edit, view)
+ * - Teacher: View only
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2, Plus, X } from 'lucide-react';
+import { ArrowLeft, Loader2, CalendarDays, AlertTriangle } from 'lucide-react';
+import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -20,87 +24,186 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { PageHeader } from '@/components/common';
+import { DatePicker } from '@/components/ui/date-picker';
+import { PageHeader, FormActions } from '@/components/common';
 import { ROUTES } from '@/constants';
+import { ValidationMessages } from '@/constants/error-messages';
+import { formatDateForAPI, parseDate } from '@/lib/utils/date-utils';
 import { useExam, useExamSessions } from '../hooks/use-exams';
 import { useCreateExam, useUpdateExam } from '../hooks/mutations';
-import { useClasses } from '@/features/classes/hooks/use-classes';
-import { EXAM_STATUS_OPTIONS } from '../types';
-import type { ExamStatus, ExamCreatePayload, ExamUpdatePayload } from '../types';
+import { useSubjects } from '@/features/subjects/hooks/use-subjects';
+import { useRole } from '@/hooks/use-role';
+import { validateAttendanceDate } from '@/features/attendance/api/attendance-api';
+import {
+  EXAM_STATUS_OPTIONS,
+  EXAM_STATUS_LABELS,
+  type ExamStatus,
+  type ExamCreatePayload,
+  type ExamUpdatePayload,
+} from '../types';
 
 export function ExamFormPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
+  const { isAdmin } = useRole();
+  
   const isEdit = location.pathname.includes('/edit');
   const isView = !!id && !isEdit;
   const isCreate = !id;
 
+  // Non-admin users can only view, not create or edit
+  useEffect(() => {
+    if (!isAdmin && (isCreate || isEdit)) {
+      navigate(ROUTES.EXAMS_LIST, { replace: true });
+    }
+  }, [isAdmin, isCreate, isEdit, navigate]);
+
   const { data: existingExam, isLoading: isLoadingExam } = useExam(id);
   const { data: sessionsData } = useExamSessions({ page: 1, page_size: 100 });
-  const { data: classesData } = useClasses({ page: 1, page_size: 100 });
+  const { data: subjectsData } = useSubjects({ page: 1, page_size: 200 });
 
-  const sessionsList = sessionsData?.data || [];
-  const classesList = classesData?.data || [];
+  const sessionsList = useMemo(() => sessionsData?.data || [], [sessionsData]);
+  const subjectsList = useMemo(() => subjectsData?.data || [], [subjectsData]);
 
   // Form state
   const [sessionId, setSessionId] = useState('');
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [status, setStatus] = useState<ExamStatus>('draft');
-  const [examDate, setExamDate] = useState('');
+  const [subjectId, setSubjectId] = useState('');
+  const [status, setStatus] = useState<ExamStatus | ''>('');
+  const [maxMarks, setMaxMarks] = useState('100');
+  const [passingMarks, setPassingMarks] = useState('35');
+  const [examDate, setExamDate] = useState<Date | null>(null);
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
-  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
+  const [description, setDescription] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [dateError, setDateError] = useState<string | undefined>();
+
+  // Get the selected session to display its date range
+  const selectedSession = useMemo(
+    () => sessionsList.find((s) => s.public_id === sessionId),
+    [sessionsList, sessionId]
+  );
+
+  // Get class ID from selected subject for date validation
+  const classIdForValidation = useMemo(() => {
+    const subject = subjectsList.find((s) => s.public_id === subjectId);
+    return subject?.class_info?.public_id;
+  }, [subjectsList, subjectId]);
+
+  /**
+   * Validate if a date is a valid exam date
+   * - Must be within session date range
+   * - Must not be a holiday (uses backend validation API)
+   */
+  const validateExamDate = async (date: Date | null): Promise<string | undefined> => {
+    if (!date) {
+      return undefined;
+    }
+
+    const dateStr = format(date, 'yyyy-MM-dd');
+
+    // Check if date is within session range
+    if (selectedSession?.start_date && selectedSession?.end_date) {
+      const sessionStart = new Date(selectedSession.start_date);
+      const sessionEnd = new Date(selectedSession.end_date);
+      // Reset times for date comparison
+      sessionStart.setHours(0, 0, 0, 0);
+      sessionEnd.setHours(0, 0, 0, 0);
+      const checkDate = new Date(date);
+      checkDate.setHours(0, 0, 0, 0);
+
+      if (checkDate < sessionStart || checkDate > sessionEnd) {
+        return ValidationMessages.EXAM.DATE_OUTSIDE_SESSION;
+      }
+    }
+
+    // Use backend API to validate if date is a working day
+    if (classIdForValidation) {
+      try {
+        const response = await validateAttendanceDate(classIdForValidation, dateStr);
+        if (!response.is_working_day) {
+          return response.reason || ValidationMessages.EXAM.DATE_IS_HOLIDAY;
+        }
+      } catch {
+        // If validation API fails, allow the date (server will validate on submit)
+        console.warn('Date validation API failed, proceeding without holiday check');
+      }
+    }
+
+    return undefined;
+  };
+
+  // Handle exam date change with validation
+  const handleExamDateChange = async (date: Date | null) => {
+    setExamDate(date);
+    const error = await validateExamDate(date);
+    setDateError(error);
+  };
+
+  // Set default status for create mode
+  useEffect(() => {
+    if (isCreate && !status) {
+      setStatus('scheduled');
+    }
+  }, [isCreate, status]);
 
   // Populate form when editing
   useEffect(() => {
     if (existingExam) {
       setSessionId(existingExam.session_public_id);
-      setName(existingExam.name);
-      setDescription(existingExam.description || '');
+      setSubjectId(existingExam.subject_public_id);
       setStatus(existingExam.status);
-      setExamDate(existingExam.date || '');
-      setStartTime(existingExam.start_time?.slice(0, 5) || '');
-      setEndTime(existingExam.end_time?.slice(0, 5) || '');
-      setSelectedClassIds(existingExam.classes_info.map((c) => c.public_id));
+      setMaxMarks(String(existingExam.max_marks));
+      setPassingMarks(String(existingExam.passing_marks));
+      setExamDate(parseDate(existingExam.date));
+      setStartTime(existingExam.start_time || '');
+      setEndTime(existingExam.end_time || '');
+      setDescription(existingExam.description || '');
     }
   }, [existingExam]);
 
   const createMutation = useCreateExam({
-    onSuccess: () => navigate(ROUTES.EXAMS),
+    onSuccess: () => navigate(ROUTES.EXAMS_LIST),
     onError: (_err, errors) => {
-      if (errors) setFieldErrors(errors as Record<string, string>);
+      if (errors) {
+        setFieldErrors(errors as Record<string, string>);
+      }
     },
   });
 
   const updateMutation = useUpdateExam({
-    onSuccess: () => navigate(ROUTES.EXAMS),
+    onSuccess: () => navigate(ROUTES.EXAMS_LIST),
     onError: (_err, errors) => {
-      if (errors) setFieldErrors(errors as Record<string, string>);
+      if (errors) {
+        setFieldErrors(errors as Record<string, string>);
+      }
     },
   });
 
   const isPending = createMutation.isPending || updateMutation.isPending;
 
-  const handleAddClass = (classId: string) => {
-    if (!selectedClassIds.includes(classId)) {
-      setSelectedClassIds([...selectedClassIds, classId]);
-    }
-  };
-
-  const handleRemoveClass = (classId: string) => {
-    setSelectedClassIds(selectedClassIds.filter((id) => id !== classId));
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFieldErrors({});
 
+    // Basic validation
     const errors: Record<string, string> = {};
-    if (!name.trim()) errors.name = 'Exam name is required.';
-    if (!sessionId) errors.session_id = 'Please select an exam session.';
+    if (!sessionId) {
+      errors.session_id = ValidationMessages.EXAM.SELECT_SESSION;
+    }
+    if (!subjectId) {
+      errors.subject_id = ValidationMessages.EXAM.SELECT_SUBJECT;
+    }
+    if (!status) {
+      errors.status = ValidationMessages.EXAM.SELECT_STATUS;
+    }
+
+    // Date validation
+    if (dateError) {
+      errors.date = dateError;
+    }
+
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
@@ -109,24 +212,25 @@ export function ExamFormPage() {
     if (isCreate) {
       const payload: ExamCreatePayload = {
         session_id: sessionId,
-        name: name.trim(),
-        description: description.trim(),
-        status,
-        date: examDate || null,
+        subject_id: subjectId,
+        status: status as ExamStatus,
+        max_marks: Number(maxMarks),
+        passing_marks: Number(passingMarks),
+        date: formatDateForAPI(examDate) || null,
         start_time: startTime || null,
         end_time: endTime || null,
-        class_ids: selectedClassIds,
+        description: description.trim(),
       };
       createMutation.mutate(payload);
     } else if (isEdit && id) {
       const payload: ExamUpdatePayload = {
-        name: name.trim(),
-        description: description.trim(),
-        status,
-        date: examDate || null,
+        status: status as ExamStatus,
+        max_marks: Number(maxMarks),
+        passing_marks: Number(passingMarks),
+        date: formatDateForAPI(examDate) || null,
         start_time: startTime || null,
         end_time: endTime || null,
-        class_ids: selectedClassIds,
+        description: description.trim(),
       };
       updateMutation.mutate({ id, data: payload });
     }
@@ -142,94 +246,195 @@ export function ExamFormPage() {
     );
   }
 
+  // Get selected subject info for display
+  const selectedSubject = subjectsList.find((s) => s.public_id === subjectId);
+
   return (
     <div className="space-y-6">
       <PageHeader title={title}>
-        <Button variant="outline" onClick={() => navigate(ROUTES.EXAMS)} className="gap-2">
+        <Button variant="brandOutline" onClick={() => navigate(ROUTES.EXAMS_LIST)} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
           Back to Exams
         </Button>
       </PageHeader>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Info */}
+        {/* Exam Details Card */}
         <Card className="border shadow-sm">
           <CardHeader className="border-b bg-muted/30 px-6 py-4">
             <CardTitle className="text-lg">Exam Details</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {/* Session */}
+              {/* Exam Session */}
               <div className="space-y-2">
-                <Label>
+                <Label htmlFor="session_id">
                   Exam Session <span className="text-red-500">*</span>
                 </Label>
-                <Select
-                  value={sessionId}
-                  onValueChange={setSessionId}
-                  disabled={isView || isEdit}
-                >
-                  <SelectTrigger className={fieldErrors.session_id ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select session" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sessionsList.map((s) => (
-                      <SelectItem key={s.public_id} value={s.public_id}>
-                        {s.name} ({s.academic_year})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {isView ? (
+                  <Input
+                    value={existingExam?.session_name || '-'}
+                    disabled
+                    className="bg-gray-50"
+                  />
+                ) : (
+                  <Select
+                    key={`session-${sessionId || 'empty'}`}
+                    value={sessionId}
+                    onValueChange={setSessionId}
+                    disabled={isEdit}
+                  >
+                    <SelectTrigger className={fieldErrors.session_id ? 'border-red-500' : ''}>
+                      <SelectValue placeholder="Select session" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sessionsList.map((session) => (
+                        <SelectItem key={session.public_id} value={session.public_id}>
+                          {session.name} ({session.academic_year})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 {fieldErrors.session_id && (
                   <p className="text-sm text-red-500">{fieldErrors.session_id}</p>
                 )}
+                {/* Session Date Range */}
+                {selectedSession && (selectedSession.start_date || selectedSession.end_date) && (
+                  <div className="flex items-center gap-1.5 rounded-md bg-blue-50 px-2.5 py-1.5 text-xs text-blue-700">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    <span className="font-medium">
+                      {selectedSession.start_date
+                        ? format(new Date(selectedSession.start_date), 'dd MMM yyyy')
+                        : 'N/A'}
+                      {' → '}
+                      {selectedSession.end_date
+                        ? format(new Date(selectedSession.end_date), 'dd MMM yyyy')
+                        : 'N/A'}
+                    </span>
+                  </div>
+                )}
               </div>
 
-              {/* Name */}
+              {/* Subject (includes class) */}
               <div className="space-y-2">
-                <Label htmlFor="exam_name">
-                  Exam Name <span className="text-red-500">*</span>
+                <Label htmlFor="subject_id">
+                  Subject <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="exam_name"
-                  placeholder="e.g., Mathematics Unit Test 1"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  disabled={isView}
-                  className={fieldErrors.name ? 'border-red-500' : ''}
-                />
-                {fieldErrors.name && (
-                  <p className="text-sm text-red-500">{fieldErrors.name}</p>
+                {isView ? (
+                  <Input
+                    value={existingExam ? `${existingExam.subject_name} - ${existingExam.class_name}` : '-'}
+                    disabled
+                    className="bg-gray-50"
+                  />
+                ) : (
+                  <Select
+                    key={`subject-${subjectId || 'empty'}`}
+                    value={subjectId}
+                    onValueChange={setSubjectId}
+                    disabled={isEdit}
+                  >
+                    <SelectTrigger className={fieldErrors.subject_id ? 'border-red-500' : ''}>
+                      <SelectValue placeholder="Select subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjectsList.map((subject) => (
+                        <SelectItem key={subject.public_id} value={subject.public_id}>
+                          {subject.subject_info.name} - {subject.class_info.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {fieldErrors.subject_id && (
+                  <p className="text-sm text-red-500">{fieldErrors.subject_id}</p>
+                )}
+                {!isView && selectedSubject && (
+                  <p className="text-xs text-gray-500">
+                    Class: {selectedSubject.class_info.name}
+                  </p>
                 )}
               </div>
 
               {/* Status */}
               <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={status} onValueChange={(v) => setStatus(v as ExamStatus)} disabled={isView}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {EXAM_STATUS_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="status">
+                  Status <span className="text-red-500">*</span>
+                </Label>
+                {isView ? (
+                  <Input
+                    value={status ? EXAM_STATUS_LABELS[status as ExamStatus] : '-'}
+                    disabled
+                    className="bg-gray-50"
+                  />
+                ) : (
+                  <Select
+                    key={`status-${status || 'empty'}`}
+                    value={status}
+                    onValueChange={(v) => setStatus(v as ExamStatus)}
+                  >
+                    <SelectTrigger className={fieldErrors.status ? 'border-red-500' : ''}>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EXAM_STATUS_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {fieldErrors.status && (
+                  <p className="text-sm text-red-500">{fieldErrors.status}</p>
+                )}
               </div>
 
-              {/* Date */}
+              {/* Max Marks */}
               <div className="space-y-2">
-                <Label htmlFor="exam_date">Exam Date</Label>
+                <Label htmlFor="max_marks">Maximum Marks</Label>
                 <Input
-                  id="exam_date"
-                  type="date"
-                  value={examDate}
-                  onChange={(e) => setExamDate(e.target.value)}
+                  id="max_marks"
+                  type="number"
+                  min="1"
+                  value={maxMarks}
+                  onChange={(e) => setMaxMarks(e.target.value)}
                   disabled={isView}
                 />
+              </div>
+
+              {/* Passing Marks */}
+              <div className="space-y-2">
+                <Label htmlFor="passing_marks">Passing Marks</Label>
+                <Input
+                  id="passing_marks"
+                  type="number"
+                  min="0"
+                  value={passingMarks}
+                  onChange={(e) => setPassingMarks(e.target.value)}
+                  disabled={isView}
+                />
+              </div>
+
+              {/* Exam Date */}
+              <div className="space-y-2">
+                <Label htmlFor="exam_date">Exam Date</Label>
+                <DatePicker
+                  value={examDate}
+                  onChange={handleExamDateChange}
+                  placeholder="Select exam date"
+                  disabled={isView}
+                  className={dateError ? 'border-red-500' : ''}
+                />
+                {dateError && (
+                  <div className="flex items-center gap-1 text-xs text-red-500">
+                    <AlertTriangle className="h-3 w-3" />
+                    <span>{dateError}</span>
+                  </div>
+                )}
+                {fieldErrors.date && !dateError && (
+                  <p className="text-sm text-red-500">{fieldErrors.date}</p>
+                )}
               </div>
 
               {/* Start Time */}
@@ -259,105 +464,52 @@ export function ExamFormPage() {
 
             {/* Description */}
             <div className="mt-6 space-y-2">
-              <Label htmlFor="exam_description">Description</Label>
+              <Label htmlFor="description">Description</Label>
               <Textarea
-                id="exam_description"
-                placeholder="Optional description..."
+                id="description"
+                placeholder="Optional description for this exam..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 disabled={isView}
                 rows={3}
               />
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Class Selection */}
-        <Card className="border shadow-sm">
-          <CardHeader className="border-b bg-muted/30 px-6 py-4">
-            <CardTitle className="text-lg">Applicable Classes</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
+            {/* Actions */}
             {!isView && (
-              <div className="mb-4 space-y-2">
-                <Label>Add Class</Label>
-                <Select onValueChange={handleAddClass}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a class to add..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {classesList
-                      .filter((c) => !selectedClassIds.includes(c.public_id))
-                      .map((c) => (
-                        <SelectItem key={c.public_id} value={c.public_id}>
-                          {c.class_master?.name || 'Class'} - {c.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <FormActions
+                primaryAction={{
+                  label: isCreate ? 'Create Exam' : 'Save Changes',
+                  type: 'submit',
+                  icon: isCreate ? 'create' : 'save',
+                  isLoading: isPending,
+                  disabled: isPending,
+                }}
+                secondaryAction={{
+                  label: 'Cancel',
+                  onClick: () => navigate(ROUTES.EXAMS_LIST),
+                  icon: 'cancel',
+                }}
+              />
             )}
 
-            {selectedClassIds.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {selectedClassIds.map((classId) => {
-                  const cls = classesList.find((c) => c.public_id === classId);
-                  const label = cls
-                    ? `${cls.class_master?.name || 'Class'} - ${cls.name}`
-                    : classId;
-                  return (
-                    <Badge
-                      key={classId}
-                      variant="secondary"
-                      className="gap-1 px-3 py-1.5 text-sm"
-                    >
-                      {label}
-                      {!isView && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveClass(classId)}
-                          className="ml-1 rounded-full p-0.5 hover:bg-gray-300"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      )}
-                    </Badge>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500 italic">No classes selected yet.</p>
+            {isView && (
+              <FormActions
+                primaryAction={{
+                  label: 'Edit Exam',
+                  onClick: () => navigate(ROUTES.EXAMS_EDIT.replace(':id', id!)),
+                  type: 'button',
+                  style: 'info',
+                }}
+                secondaryAction={{
+                  label: 'Back',
+                  onClick: () => navigate(ROUTES.EXAMS_LIST),
+                  icon: 'back',
+                }}
+              />
             )}
           </CardContent>
         </Card>
-
-        {/* Actions */}
-        {!isView && (
-          <div className="flex items-center gap-3">
-            <Button type="submit" disabled={isPending} className="gap-2">
-              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {isCreate ? 'Create Exam' : 'Save Changes'}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => navigate(ROUTES.EXAMS)}>
-              Cancel
-            </Button>
-          </div>
-        )}
-
-        {isView && (
-          <div className="flex items-center gap-3">
-            <Button
-              type="button"
-              onClick={() => navigate(ROUTES.EXAMS_EDIT.replace(':id', id!))}
-              className="gap-2"
-            >
-              Edit Exam
-            </Button>
-            <Button type="button" variant="outline" onClick={() => navigate(ROUTES.EXAMS)}>
-              Back
-            </Button>
-          </div>
-        )}
       </form>
     </div>
   );

@@ -8,18 +8,12 @@ import {
   fetchExamSession,
   fetchExams,
   fetchExam,
-  fetchExamSubjects,
-  fetchExamSubject,
-  fetchMarks,
+  fetchMarksOverview,
+  type MarksOverviewParams,
 } from '../api/exams-api';
-import type {
-  ExamSessionListParams,
-  ExamListParams,
-  ExamSubjectListParams,
-  MarkListParams,
-} from '../types';
+import type { ExamSessionListParams, ExamListParams } from '../types';
 
-// ── Exam Sessions ──────────────────────────────────────────
+// Exam Sessions
 
 export function useExamSessions(params?: ExamSessionListParams) {
   return useQuery({
@@ -36,7 +30,7 @@ export function useExamSession(publicId?: string) {
   });
 }
 
-// ── Exams ──────────────────────────────────────────────────
+// Exams (Subject + Session combination)
 
 export function useExams(params?: ExamListParams) {
   return useQuery({
@@ -53,28 +47,11 @@ export function useExam(publicId?: string) {
   });
 }
 
-// ── Exam Subjects ──────────────────────────────────────────
-
-export function useExamSubjects(params?: ExamSubjectListParams) {
+// Marks Overview
+export function useMarksOverview(params: MarksOverviewParams | null) {
   return useQuery({
-    queryKey: ['exam-subjects', params],
-    queryFn: () => fetchExamSubjects(params),
-  });
-}
-
-export function useExamSubject(publicId?: string) {
-  return useQuery({
-    queryKey: ['exam-subject', publicId],
-    queryFn: () => fetchExamSubject(publicId!),
-    enabled: !!publicId,
-  });
-}
-
-// ── Marks ──────────────────────────────────────────────────
-
-export function useMarks(params?: MarkListParams) {
-  return useQuery({
-    queryKey: ['marks', params],
-    queryFn: () => fetchMarks(params),
+    queryKey: ['marks-overview', params],
+    queryFn: () => fetchMarksOverview(params!),
+    enabled: !!params?.session_id && !!params?.class_id,
   });
 }

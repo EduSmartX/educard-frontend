@@ -1,18 +1,24 @@
 /**
  * Exam Table Columns Configuration
+ * Matches the Exam interface: session_name, subject_name, class_name, status, etc.
  */
 
 import { Eye, Pencil, Trash2, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Column } from '@/components/ui/data-table';
-import type { Exam } from '../types';
-import { EXAM_STATUS_LABELS, type ExamStatus } from '../types';
+import {
+  EXAM_STATUS_LABELS,
+  EXAM_SESSION_TYPE_LABELS,
+  type Exam,
+  type ExamStatus,
+  type ExamSessionType,
+} from '../types';
 import { format } from 'date-fns';
 
 interface CreateColumnsParams {
   onView: (exam: Exam) => void;
-  onEdit: (exam: Exam) => void;
+  onEdit?: (exam: Exam) => void;
   onDelete?: (exam: Exam) => void;
   isDeletedView?: boolean;
 }
@@ -25,6 +31,14 @@ const statusBadgeClass: Record<ExamStatus, string> = {
   cancelled: 'bg-red-50 text-red-700 border-red-200',
 };
 
+const sessionTypeBadgeClass: Record<ExamSessionType, string> = {
+  unit_test: 'bg-purple-50 text-purple-700 border-purple-200',
+  quarterly: 'bg-blue-50 text-blue-700 border-blue-200',
+  half_yearly: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+  annual: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  custom: 'bg-gray-50 text-gray-700 border-gray-200',
+};
+
 export function createExamColumns({
   onView,
   onEdit,
@@ -33,16 +47,64 @@ export function createExamColumns({
 }: CreateColumnsParams): Column<Exam>[] {
   return [
     {
-      header: 'Exam Name',
+      header: 'Session',
       accessor: (row) => (
         <div className="flex flex-col gap-1">
-          <span className="font-semibold text-gray-900">{row.name}</span>
-          <span className="text-xs text-gray-500">{row.session_name}</span>
+          <span className="font-semibold text-gray-900">{row.session_name}</span>
+          <Badge
+            variant="outline"
+            className={`text-xs font-medium w-fit ${sessionTypeBadgeClass[row.session_type] || ''}`}
+          >
+            {EXAM_SESSION_TYPE_LABELS[row.session_type] || row.session_type}
+          </Badge>
         </div>
       ),
       sortable: true,
-      sortKey: 'name',
-      width: 220,
+      sortKey: 'session_name',
+      width: 180,
+    },
+    {
+      header: 'Session Duration',
+      accessor: (row) => {
+        if (!row.session_start_date && !row.session_end_date) {
+          return <span className="text-gray-400 italic text-sm">Not set</span>;
+        }
+        return (
+          <div className="flex flex-col gap-0.5 text-sm">
+            {row.session_start_date && (
+              <span className="text-gray-700">
+                {format(new Date(row.session_start_date), 'dd MMM yyyy')}
+              </span>
+            )}
+            {row.session_end_date && (
+              <span className="text-xs text-gray-500">
+                to {format(new Date(row.session_end_date), 'dd MMM yyyy')}
+              </span>
+            )}
+          </div>
+        );
+      },
+      width: 140,
+    },
+    {
+      header: 'Subject',
+      accessor: (row) => (
+        <span className="font-medium text-gray-900">{row.subject_name}</span>
+      ),
+      sortable: true,
+      sortKey: 'subject_name',
+      width: 150,
+    },
+    {
+      header: 'Class',
+      accessor: (row) => (
+        <Badge variant="secondary" className="text-xs font-medium">
+          {row.class_name}
+        </Badge>
+      ),
+      sortable: true,
+      sortKey: 'class_name',
+      width: 120,
     },
     {
       header: 'Status',
@@ -56,12 +118,14 @@ export function createExamColumns({
       ),
       sortable: true,
       sortKey: 'status',
-      width: 120,
+      width: 110,
     },
     {
-      header: 'Date',
+      header: 'Exam Date',
       accessor: (row) => {
-        if (!row.date) return <span className="text-gray-400 italic">Not set</span>;
+        if (!row.date) {
+          return <span className="text-gray-400 italic">Not set</span>;
+        }
         return (
           <div className="flex flex-col gap-0.5 text-sm">
             <span className="text-gray-700">{format(new Date(row.date), 'dd MMM yyyy')}</span>
@@ -78,33 +142,12 @@ export function createExamColumns({
       width: 130,
     },
     {
-      header: 'Classes',
+      header: 'Marks',
       accessor: (row) => (
-        <div className="flex flex-wrap gap-1">
-          {row.classes_info.length > 0 ? (
-            row.classes_info.slice(0, 3).map((cls) => (
-              <Badge key={cls.public_id} variant="secondary" className="text-xs">
-                {cls.class_master_name}-{cls.name}
-              </Badge>
-            ))
-          ) : (
-            <span className="text-gray-400 italic">None</span>
-          )}
-          {row.classes_info.length > 3 && (
-            <Badge variant="outline" className="text-xs">
-              +{row.classes_info.length - 3}
-            </Badge>
-          )}
+        <div className="flex flex-col gap-0.5 text-sm">
+          <span className="font-medium text-gray-700">Max: {row.max_marks}</span>
+          <span className="text-xs text-gray-500">Pass: {row.passing_marks}</span>
         </div>
-      ),
-      width: 200,
-    },
-    {
-      header: 'Subjects',
-      accessor: (row) => (
-        <Badge variant="secondary" className="font-medium">
-          {row.subject_count}
-        </Badge>
       ),
       width: 90,
     },
@@ -137,33 +180,37 @@ export function createExamColumns({
               >
                 <Eye className="h-4 w-4" />
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(exam);
-                }}
-                title="Edit"
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete?.(exam);
-                }}
-                title="Delete"
-              >
-                <Trash2 className="h-4 w-4 text-red-500" />
-              </Button>
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(exam);
+                  }}
+                  title="Edit"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(exam);
+                  }}
+                  title="Delete"
+                >
+                  <Trash2 className="h-4 w-4 text-red-500" />
+                </Button>
+              )}
             </>
           )}
         </div>
       ),
-      width: 120,
+      width: 100,
     },
   ];
 }

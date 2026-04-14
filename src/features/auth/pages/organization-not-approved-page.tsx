@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Clock, Building2, Mail, Phone, CheckCircle2, XCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/common/logo';
 import { ROUTES } from '@/constants/app-config';
@@ -38,13 +39,30 @@ export default function OrganizationNotApprovedPage() {
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 p-4">
       {/* Animated Background Orbs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-20 h-72 w-72 animate-pulse rounded-full bg-orange-300/30 blur-3xl" />
-        <div className="absolute right-20 bottom-20 h-96 w-96 animate-pulse rounded-full bg-amber-300/30 blur-3xl delay-700" />
-        <div className="absolute top-1/2 left-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-yellow-300/20 blur-3xl delay-1000" />
+        <motion.div
+          className="absolute top-20 left-20 h-72 w-72 rounded-full bg-orange-300/30 blur-3xl"
+          animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.2, 0.3] }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute right-20 bottom-20 h-96 w-96 rounded-full bg-amber-300/30 blur-3xl"
+          animate={{ scale: [1.1, 1, 1.1], opacity: [0.25, 0.15, 0.25] }}
+          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute top-1/2 left-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-yellow-300/20 blur-3xl"
+          animate={{ scale: [1, 1.2, 1] }}
+          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+        />
       </div>
 
       {/* Main Card */}
-      <div className="relative w-full max-w-2xl">
+      <motion.div
+        initial={{ opacity: 0, y: 30, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+        className="relative w-full max-w-2xl"
+      >
         <div className="space-y-8 rounded-3xl border border-white/40 bg-white/90 p-8 shadow-2xl backdrop-blur-xl">
           {/* Logo */}
           <div className="flex justify-center">
@@ -52,24 +70,31 @@ export default function OrganizationNotApprovedPage() {
           </div>
 
           {/* Status Icon */}
-          <div className="flex justify-center">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: 'spring', bounce: 0.4 }}
+            className="flex justify-center"
+          >
             <div className="relative">
-              <div
-                className={`h-24 w-24 rounded-full ${isRejected ? 'bg-gradient-to-br from-red-100 to-rose-100' : 'bg-gradient-to-br from-orange-100 to-amber-100'} flex animate-pulse items-center justify-center`}
+              <motion.div
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                className={`h-24 w-24 rounded-full ${isRejected ? 'bg-gradient-to-br from-red-100 to-rose-100' : 'bg-gradient-to-br from-orange-100 to-amber-100'} flex items-center justify-center`}
               >
                 {isRejected ? (
                   <XCircle className="h-12 w-12 text-red-600" strokeWidth={2} />
                 ) : (
                   <Clock className="h-12 w-12 text-orange-600" strokeWidth={2} />
                 )}
-              </div>
+              </motion.div>
               <div
                 className={`absolute -right-2 -bottom-2 h-10 w-10 rounded-full ${isRejected ? 'bg-red-500' : 'bg-orange-500'} flex items-center justify-center shadow-lg`}
               >
                 <span className="text-2xl">{isRejected ? '❌' : '⏳'}</span>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Main Message */}
           <div className="space-y-4 text-center">
@@ -242,7 +267,7 @@ export default function OrganizationNotApprovedPage() {
             </Button>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

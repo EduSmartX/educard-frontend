@@ -1,15 +1,13 @@
 /**
  * Admin Dashboard Page
  *
- * Clean, attractive dashboard with:
- * - Welcome greeting
- * - Attendance Statistics (live counts from API)
- * - Quick Actions: Teachers, Classes, Subjects, Students
- * - Setup: Organization Preferences, Leave Allocations
- * - Notifications: Pending Leave Requests, Timesheet Submissions
+ * Motion-rich dashboard with animated counters, staggered card reveals,
+ * gradient greeting banner, and hover micro-interactions.
  */
 
+import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, useInView } from 'framer-motion';
 import {
   Users,
   GraduationCap,
@@ -24,6 +22,9 @@ import {
   Settings,
   BarChart3,
   Loader2,
+  Sparkles,
+  TrendingUp,
+  Clock,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
@@ -34,89 +35,153 @@ import { useStudents } from '@/features/students/hooks/use-students';
 import { useClasses } from '@/features/classes/hooks/use-classes';
 import { getDashboardAttendanceStats } from '@/features/attendance/api/attendance-api';
 
-/* -------------------------------------------------------------------------- */
-/*  Stat Card                                                                  */
-/* -------------------------------------------------------------------------- */
+const STAGGER_CHILDREN = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.08 } },
+} as const;
+
+const FADE_UP = {
+  hidden: { opacity: 0, y: 24 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] } },
+} as const;
+
+function getGreeting(): { text: string; emoji: string } {
+  const h = new Date().getHours();
+  if (h < 12) {
+    return { text: 'Good Morning', emoji: '☀️' };
+  }
+  if (h < 17) {
+    return { text: 'Good Afternoon', emoji: '🌤️' };
+  }
+  return { text: 'Good Evening', emoji: '🌙' };
+}
+
+function AnimatedNumber({
+  value,
+  isLoading,
+  suffix = '',
+}: {
+  value: number | undefined;
+  isLoading: boolean;
+  suffix?: string;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-40px' });
+
+  if (isLoading) {
+    return <Loader2 className="mt-1 h-6 w-6 animate-spin text-gray-300" />;
+  }
+
+  return (
+    <motion.span
+      ref={ref}
+      className="text-3xl font-bold tracking-tight text-gray-900"
+      initial={{ opacity: 0, scale: 0.5 }}
+      animate={isInView ? { opacity: 1, scale: 1 } : {}}
+      transition={{ duration: 0.5, type: 'spring', bounce: 0.3 }}
+    >
+      {value ?? '–'}
+      {suffix}
+    </motion.span>
+  );
+}
 
 interface StatCardProps {
   icon: React.ElementType;
   label: string;
   value: number | undefined;
   isLoading: boolean;
-  color: string;
-  bgColor: string;
+  gradient: string;
+  iconBg: string;
   path: string;
+  delay?: number;
 }
 
-function StatCard({ icon: Icon, label, value, isLoading, color, bgColor, path }: StatCardProps) {
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  isLoading,
+  gradient,
+  iconBg,
+  path,
+  delay = 0,
+}: StatCardProps) {
   const navigate = useNavigate();
 
   return (
-    <Card
-      className="group cursor-pointer border border-gray-100 shadow-sm transition-all duration-200 hover:border-gray-200 hover:shadow-md"
+    <motion.div
+      variants={FADE_UP}
+      whileHover={{ y: -4, scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.3, delay }}
       onClick={() => navigate(path)}
+      className="group cursor-pointer"
     >
-      <CardContent className="p-5">
-        <div className="flex items-center gap-4">
-          <div className={`rounded-xl p-3 ${bgColor} shrink-0`}>
-            <Icon className={`h-6 w-6 ${color}`} />
+      <Card className="relative overflow-hidden border border-gray-100 shadow-sm transition-shadow duration-300 hover:shadow-xl">
+        <div className={`absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 ${gradient}`} />
+        <CardContent className="relative z-10 p-5">
+          <div className="flex items-center gap-4">
+            <div
+              className={`shrink-0 rounded-xl p-3 ${iconBg} transition-transform duration-300 group-hover:scale-110`}
+            >
+              <Icon className="h-6 w-6 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm text-gray-500 transition-colors duration-300 group-hover:text-white/80">
+                {label}
+              </p>
+              <div className="transition-colors duration-300 group-hover:text-white">
+                <AnimatedNumber value={value} isLoading={isLoading} />
+              </div>
+            </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm text-gray-500">{label}</p>
-            {isLoading ? (
-              <Loader2 className="mt-1 h-5 w-5 animate-spin text-gray-300" />
-            ) : (
-              <p className="text-2xl font-bold text-gray-900">{value ?? '-'}</p>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
-
-/* -------------------------------------------------------------------------- */
-/*  Action Card                                                                */
-/* -------------------------------------------------------------------------- */
 
 interface ActionCardProps {
   icon: React.ElementType;
   label: string;
   description: string;
   path: string;
-  color: string;
-  bgColor: string;
+  iconBg: string;
 }
 
-function ActionCard({ icon: Icon, label, description, path, color, bgColor }: ActionCardProps) {
+function ActionCard({ icon: Icon, label, description, path, iconBg }: ActionCardProps) {
   const navigate = useNavigate();
 
   return (
-    <Card
-      className="group cursor-pointer border border-gray-100 shadow-sm transition-all duration-200 hover:border-gray-200 hover:shadow-md"
+    <motion.div
+      variants={FADE_UP}
+      whileHover={{ y: -3, scale: 1.01 }}
+      whileTap={{ scale: 0.98 }}
       onClick={() => navigate(path)}
+      className="group cursor-pointer"
     >
-      <CardContent className="p-5">
-        <div className="flex items-start gap-4">
-          <div className={`rounded-xl p-3 ${bgColor} shrink-0`}>
-            <Icon className={`h-6 w-6 ${color}`} />
+      <Card className="border border-gray-100 shadow-sm transition-all duration-200 hover:shadow-lg">
+        <CardContent className="p-5">
+          <div className="flex items-start gap-4">
+            <div
+              className={`shrink-0 rounded-xl p-3 ${iconBg} transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}
+            >
+              <Icon className="h-6 w-6 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-gray-900 transition-colors group-hover:text-teal-700">
+                {label}
+              </h3>
+              <p className="mt-0.5 text-sm text-gray-500">{description}</p>
+            </div>
+            <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-gray-300 transition-all group-hover:translate-x-1 group-hover:text-teal-500" />
           </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="font-semibold text-gray-900 transition-colors group-hover:text-teal-700">
-              {label}
-            </h3>
-            <p className="mt-0.5 text-sm text-gray-500">{description}</p>
-          </div>
-          <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-gray-300 transition-all group-hover:translate-x-0.5 group-hover:text-teal-500" />
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
-
-/* -------------------------------------------------------------------------- */
-/*  Notification Card                                                          */
-/* -------------------------------------------------------------------------- */
 
 interface NotificationCardProps {
   icon: React.ElementType;
@@ -124,6 +189,7 @@ interface NotificationCardProps {
   description: string;
   path: string;
   badgeColor: string;
+  delay?: number;
 }
 
 function NotificationCard({
@@ -132,38 +198,126 @@ function NotificationCard({
   description,
   path,
   badgeColor,
+  delay = 0,
 }: NotificationCardProps) {
   const navigate = useNavigate();
 
   return (
-    <div
-      className="group flex cursor-pointer items-center gap-4 rounded-xl border border-gray-100 bg-white p-4 transition-all duration-200 hover:border-gray-200 hover:shadow-sm"
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.4, delay }}
+      whileHover={{ x: 4 }}
       onClick={() => navigate(path)}
+      className="group flex cursor-pointer items-center gap-4 rounded-xl border border-gray-100 bg-white p-4 transition-all duration-200 hover:border-gray-200 hover:shadow-md"
     >
-      <div className={`rounded-full p-2.5 ${badgeColor}`}>
+      <motion.div
+        className={`rounded-full p-2.5 ${badgeColor}`}
+        whileHover={{ scale: 1.1 }}
+      >
         <Icon className="h-5 w-5 text-white" />
-      </div>
+      </motion.div>
       <div className="min-w-0 flex-1">
         <p className="font-medium text-gray-900 transition-colors group-hover:text-teal-700">
           {label}
         </p>
         <p className="text-sm text-gray-500">{description}</p>
       </div>
-      <ArrowRight className="h-4 w-4 shrink-0 text-gray-300 transition-all group-hover:translate-x-0.5 group-hover:text-teal-500" />
-    </div>
+      <ArrowRight className="h-4 w-4 shrink-0 text-gray-300 transition-all group-hover:translate-x-1 group-hover:text-teal-500" />
+    </motion.div>
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Dashboard Page                                                             */
-/* -------------------------------------------------------------------------- */
+function AttendanceCard({
+  icon: Icon,
+  label,
+  isLoading,
+  stats,
+  iconBg,
+  badgeBg,
+  path,
+}: {
+  icon: React.ElementType;
+  label: string;
+  isLoading: boolean;
+  stats: { present?: number; total_registered?: number; marked?: number; attendance_percentage?: number } | undefined;
+  iconBg: string;
+  badgeBg: string;
+  path: string;
+}) {
+  const navigate = useNavigate();
+  const marked = stats?.marked ?? 0;
+
+  return (
+    <motion.div variants={FADE_UP} whileHover={{ y: -3 }} className="group cursor-pointer" onClick={() => navigate(path)}>
+      <Card className="border border-gray-100 shadow-sm transition-all duration-200 hover:shadow-lg">
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`shrink-0 rounded-xl p-3 ${iconBg} transition-transform duration-300 group-hover:scale-110`}>
+                <Icon className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">{label}</p>
+                {isLoading ? (
+                  <Loader2 className="mt-1 h-5 w-5 animate-spin text-gray-300" />
+                ) : marked > 0 ? (
+                  <p className="text-xl font-bold text-gray-900">
+                    {stats?.present ?? 0}
+                    <span className="text-sm font-normal text-gray-400">
+                      {' '}/ {stats?.total_registered ?? 0}
+                    </span>
+                  </p>
+                ) : (
+                  <p className="mt-0.5 text-sm text-gray-400">Not marked yet</p>
+                )}
+              </div>
+            </div>
+            {!isLoading && marked > 0 && (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 400, delay: 0.3 }}
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold ${badgeBg}`}
+              >
+                <TrendingUp className="h-3.5 w-3.5" />
+                {stats?.attendance_percentage ?? 0}%
+              </motion.span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+function SectionHeader({
+  icon: Icon,
+  title,
+  delay = 0,
+}: {
+  icon: React.ElementType;
+  title: string;
+  delay?: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -16 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.4, delay }}
+      className="mb-4 flex items-center gap-2"
+    >
+      <Icon className="h-5 w-5 text-teal-600" />
+      <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+    </motion.div>
+  );
+}
 
 export default function AdminDashboardPage() {
   const { user, organization } = useAuth();
-  const navigate = useNavigate();
   const firstName = user?.full_name?.split(' ')[0] || 'Admin';
+  const greeting = getGreeting();
 
-  // Fetch counts (page_size=1 to minimise payload — we only need pagination.count)
   const { data: teachersData, isLoading: loadingTeachers } = useTeachers({
     page_size: 1,
     is_deleted: false,
@@ -171,11 +325,10 @@ export default function AdminDashboardPage() {
   const { data: studentsData, isLoading: loadingStudents } = useStudents({ page_size: 1 });
   const { data: classesData, isLoading: loadingClasses } = useClasses({ page_size: 1 });
 
-  // Today's attendance stats
   const { data: attendanceStats, isLoading: loadingAttendance } = useQuery({
     queryKey: ['dashboard', 'attendance-stats'],
     queryFn: getDashboardAttendanceStats,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 2 * 60 * 1000,
     retry: 1,
   });
 
@@ -183,30 +336,90 @@ export default function AdminDashboardPage() {
   const totalStudents = studentsData?.pagination?.count;
   const totalClasses = classesData?.pagination?.count;
 
-  return (
-    <div className="container mx-auto max-w-5xl space-y-6 px-3 py-4 sm:space-y-8 sm:p-6">
-      {/* Welcome Header */}
-      <div className="rounded-2xl bg-gradient-to-r from-teal-600 to-teal-500 p-4 text-white sm:p-6 md:p-8">
-        <h1 className="text-xl font-bold sm:text-2xl md:text-3xl">Welcome back, {firstName}! 👋</h1>
-        <p className="mt-1 text-xs text-teal-100 sm:mt-1.5 sm:text-sm md:text-base">
-          {organization?.name ? `Managing ${organization.name}` : "Here's your school overview"}
-        </p>
-      </div>
+  const formattedDate = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 
-      {/* Attendance Statistics */}
-      <section>
-        <div className="mb-4 flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-teal-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Statistics</h2>
+  return (
+    <div className="container mx-auto max-w-5xl space-y-8 px-3 py-4 sm:p-6">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+        className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 p-6 text-white shadow-2xl shadow-teal-500/20 sm:p-8"
+      >
+        <motion.div
+          className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-white/10 blur-2xl"
+          animate={{ scale: [1.2, 1, 1.2], opacity: [0.15, 0.05, 0.15] }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+        />
+
+        <div className="relative z-10">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="flex items-center gap-2"
+          >
+            <Clock className="h-4 w-4 text-white/60" />
+            <span className="text-sm font-medium text-white/70">{formattedDate}</span>
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl"
+          >
+            {greeting.text}, {firstName}! {greeting.emoji}
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+            className="mt-1.5 text-sm text-white/75 sm:text-base"
+          >
+            {organization?.name
+              ? `Managing ${organization.name}`
+              : "Here's your school overview"}
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.4 }}
+            className="mt-4 flex w-fit items-center gap-2 rounded-full bg-white/15 px-4 py-2 backdrop-blur-sm"
+          >
+            <Sparkles className="h-4 w-4 text-yellow-300" />
+            <span className="text-sm font-medium">Everything is running smoothly today</span>
+          </motion.div>
         </div>
-        <div className="grid gap-3 sm:grid-cols-3">
+      </motion.div>
+
+      <section>
+        <SectionHeader icon={BarChart3} title="Statistics" delay={0.2} />
+        <motion.div
+          variants={STAGGER_CHILDREN}
+          initial="hidden"
+          animate="show"
+          className="grid gap-4 sm:grid-cols-3"
+        >
           <StatCard
             icon={Users}
             label="Total Teachers"
             value={totalTeachers}
             isLoading={loadingTeachers}
-            color="text-blue-600"
-            bgColor="bg-blue-50"
+            gradient="bg-gradient-to-br from-blue-500/90 to-indigo-600/90"
+            iconBg="bg-gradient-to-br from-blue-500 to-indigo-600"
             path={ROUTES.TEACHERS}
           />
           <StatCard
@@ -214,8 +427,8 @@ export default function AdminDashboardPage() {
             label="Total Students"
             value={totalStudents}
             isLoading={loadingStudents}
-            color="text-emerald-600"
-            bgColor="bg-emerald-50"
+            gradient="bg-gradient-to-br from-emerald-500/90 to-teal-600/90"
+            iconBg="bg-gradient-to-br from-emerald-500 to-teal-600"
             path={ROUTES.STUDENTS}
           />
           <StatCard
@@ -223,185 +436,129 @@ export default function AdminDashboardPage() {
             label="Total Classes"
             value={totalClasses}
             isLoading={loadingClasses}
-            color="text-violet-600"
-            bgColor="bg-violet-50"
+            gradient="bg-gradient-to-br from-violet-500/90 to-purple-600/90"
+            iconBg="bg-gradient-to-br from-violet-500 to-purple-600"
             path={ROUTES.CLASSES}
           />
-        </div>
+        </motion.div>
 
-        {/* Today's Attendance — below the totals */}
-        <div className="mt-4">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+          className="mt-4"
+        >
           <p className="mb-3 text-sm font-medium text-gray-500">Today's Attendance</p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {/* Student Attendance */}
-            <Card
-              className="group cursor-pointer border border-gray-100 shadow-sm transition-all duration-200 hover:border-gray-200 hover:shadow-md"
-              onClick={() => navigate(ROUTES.ATTENDANCE.STUDENTS)}
-            >
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="shrink-0 rounded-xl bg-green-50 p-3">
-                      <GraduationCap className="h-6 w-6 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Student Attendance</p>
-                      {loadingAttendance ? (
-                        <Loader2 className="mt-1 h-5 w-5 animate-spin text-gray-300" />
-                      ) : (attendanceStats?.students?.marked ?? 0) > 0 ? (
-                        <p className="text-xl font-bold text-gray-900">
-                          {attendanceStats?.students?.present ?? 0}
-                          <span className="text-sm font-normal text-gray-400">
-                            {' '}
-                            / {attendanceStats?.students?.total_registered ?? 0}
-                          </span>
-                        </p>
-                      ) : (
-                        <p className="mt-0.5 text-sm text-gray-400">Not marked yet</p>
-                      )}
-                    </div>
-                  </div>
-                  {!loadingAttendance && (attendanceStats?.students?.marked ?? 0) > 0 && (
-                    <div className="text-right">
-                      <span className="inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-sm font-semibold text-green-700">
-                        {attendanceStats?.students?.attendance_percentage ?? 0}%
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Employee Attendance */}
-            <Card
-              className="group cursor-pointer border border-gray-100 shadow-sm transition-all duration-200 hover:border-gray-200 hover:shadow-md"
-              onClick={() => navigate(ROUTES.ATTENDANCE.STAFF)}
-            >
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="shrink-0 rounded-xl bg-cyan-50 p-3">
-                      <Users className="h-6 w-6 text-cyan-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Employee Attendance</p>
-                      {loadingAttendance ? (
-                        <Loader2 className="mt-1 h-5 w-5 animate-spin text-gray-300" />
-                      ) : (attendanceStats?.employees?.marked ?? 0) > 0 ? (
-                        <p className="text-xl font-bold text-gray-900">
-                          {attendanceStats?.employees?.present ?? 0}
-                          <span className="text-sm font-normal text-gray-400">
-                            {' '}
-                            / {attendanceStats?.employees?.total_registered ?? 0}
-                          </span>
-                        </p>
-                      ) : (
-                        <p className="mt-0.5 text-sm text-gray-400">Not marked yet</p>
-                      )}
-                    </div>
-                  </div>
-                  {!loadingAttendance && (attendanceStats?.employees?.marked ?? 0) > 0 && (
-                    <div className="text-right">
-                      <span className="inline-flex items-center rounded-full bg-cyan-50 px-3 py-1 text-sm font-semibold text-cyan-700">
-                        {attendanceStats?.employees?.attendance_percentage ?? 0}%
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+          <motion.div
+            variants={STAGGER_CHILDREN}
+            initial="hidden"
+            animate="show"
+            className="grid gap-4 sm:grid-cols-2"
+          >
+            <AttendanceCard
+              icon={GraduationCap}
+              label="Student Attendance"
+              isLoading={loadingAttendance}
+              stats={attendanceStats?.students}
+              iconBg="bg-gradient-to-br from-green-500 to-emerald-600"
+              badgeBg="bg-green-50 text-green-700"
+              path={ROUTES.ATTENDANCE.STUDENTS}
+            />
+            <AttendanceCard
+              icon={Users}
+              label="Employee Attendance"
+              isLoading={loadingAttendance}
+              stats={attendanceStats?.employees}
+              iconBg="bg-gradient-to-br from-cyan-500 to-blue-600"
+              badgeBg="bg-cyan-50 text-cyan-700"
+              path={ROUTES.ATTENDANCE.STAFF}
+            />
+          </motion.div>
+        </motion.div>
       </section>
 
-      {/* Quick Actions — Manage */}
       <section>
-        <div className="mb-4 flex items-center gap-2">
-          <Plus className="h-5 w-5 text-teal-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Quick Actions</h2>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <SectionHeader icon={Plus} title="Quick Actions" delay={0.5} />
+        <motion.div
+          variants={STAGGER_CHILDREN}
+          initial="hidden"
+          animate="show"
+          className="grid gap-3 sm:grid-cols-2"
+        >
           <ActionCard
             icon={Users}
             label="Teachers"
             description="Add and manage teaching staff"
             path={ROUTES.TEACHERS}
-            color="text-blue-600"
-            bgColor="bg-blue-50"
+            iconBg="bg-gradient-to-br from-blue-500 to-indigo-600"
           />
           <ActionCard
             icon={School}
             label="Classes"
             description="Create and organize classes"
             path={ROUTES.CLASSES}
-            color="text-violet-600"
-            bgColor="bg-violet-50"
+            iconBg="bg-gradient-to-br from-violet-500 to-purple-600"
           />
           <ActionCard
             icon={GraduationCap}
             label="Students"
             description="Enroll and manage students"
             path={ROUTES.STUDENTS}
-            color="text-emerald-600"
-            bgColor="bg-emerald-50"
+            iconBg="bg-gradient-to-br from-emerald-500 to-teal-600"
           />
           <ActionCard
             icon={BookOpen}
             label="Subjects"
             description="Configure curriculum subjects"
             path={ROUTES.SUBJECTS}
-            color="text-amber-600"
-            bgColor="bg-amber-50"
+            iconBg="bg-gradient-to-br from-amber-500 to-orange-600"
           />
-        </div>
+        </motion.div>
       </section>
 
-      {/* Setup */}
       <section>
-        <div className="mb-4 flex items-center gap-2">
-          <Settings className="h-5 w-5 text-teal-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Setup</h2>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <SectionHeader icon={Settings} title="Setup" delay={0.6} />
+        <motion.div
+          variants={STAGGER_CHILDREN}
+          initial="hidden"
+          animate="show"
+          className="grid gap-3 sm:grid-cols-2"
+        >
           <ActionCard
             icon={Sliders}
             label="Organization Preferences"
             description="Configure school settings and policies"
             path={ROUTES.PREFERENCES}
-            color="text-slate-600"
-            bgColor="bg-slate-50"
+            iconBg="bg-gradient-to-br from-slate-500 to-slate-700"
           />
           <ActionCard
             icon={CalendarCheck}
             label="Leave Allocations"
             description="Set up leave types and quotas"
             path={ROUTES.LEAVE.ALLOCATIONS}
-            color="text-teal-600"
-            bgColor="bg-teal-50"
+            iconBg="bg-gradient-to-br from-teal-500 to-cyan-600"
           />
-        </div>
+        </motion.div>
       </section>
 
-      {/* Notifications */}
       <section>
-        <div className="mb-4 flex items-center gap-2">
-          <Bell className="h-5 w-5 text-teal-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Notifications</h2>
-        </div>
+        <SectionHeader icon={Bell} title="Notifications" delay={0.7} />
         <div className="space-y-3">
           <NotificationCard
             icon={ClipboardCheck}
             label="Leave Requests"
             description="Review and approve pending leave applications"
             path={ROUTES.LEAVE.REVIEWS}
-            badgeColor="bg-orange-500"
+            badgeColor="bg-gradient-to-br from-orange-500 to-amber-600"
+            delay={0.75}
           />
           <NotificationCard
             icon={ClipboardCheck}
             label="Timesheet Submissions"
             description="Review and approve submitted employee timesheets"
             path={ROUTES.ATTENDANCE.TIMESHEET_APPROVALS}
-            badgeColor="bg-blue-500"
+            badgeColor="bg-gradient-to-br from-blue-500 to-indigo-600"
+            delay={0.85}
           />
         </div>
       </section>

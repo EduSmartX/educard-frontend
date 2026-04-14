@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { CheckCircle2, Mail, Clock, Settings, Users, Calendar } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Logo } from '@/components/branding/logo';
@@ -33,19 +34,42 @@ export default function RegistrationSuccessPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50 p-4">
-      <Card className="w-full max-w-3xl shadow-2xl">
+      <motion.div
+        initial={{ opacity: 0, y: 30, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+        className="w-full max-w-3xl"
+      >
+      <Card className="shadow-2xl">
         <CardContent className="p-0">
           {/* Header */}
           <div className="bg-gradient-to-r from-teal-600 to-cyan-600 p-8 text-center text-white">
-            <div className="mb-4 flex justify-center">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: 'spring', bounce: 0.4 }}
+              className="mb-4 flex justify-center"
+            >
               <div className="rounded-full bg-white p-4">
                 <CheckCircle2 className="h-16 w-16 text-teal-600" />
               </div>
-            </div>
-            <h1 className="mb-2 text-3xl font-bold">Registration Successful! 🎉</h1>
-            <p className="text-lg text-teal-50">
+            </motion.div>
+            <motion.h1
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="mb-2 text-3xl font-bold"
+            >
+              Registration Successful! 🎉
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+              className="text-lg text-teal-50"
+            >
               Welcome to {BRANDING.APP_NAME}, {registrationData.adminName}
-            </p>
+            </motion.p>
           </div>
 
           {/* Content */}
@@ -220,6 +244,7 @@ export default function RegistrationSuccessPage() {
           </div>
         </CardContent>
       </Card>
+      </motion.div>
     </div>
   );
 }

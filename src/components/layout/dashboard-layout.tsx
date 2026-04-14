@@ -1,8 +1,7 @@
 import { ReactNode, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DashboardSidebar } from './dashboard-sidebar';
-import type { SidebarSection } from './dashboard-sidebar';
+import { DashboardSidebar, type SidebarSection } from './dashboard-sidebar';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -55,7 +54,7 @@ export function DashboardLayout({ children, sidebarSections }: DashboardLayoutPr
       </Button>
 
       {/* Main Content - Responsive padding */}
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">{children}</main>
+      <main className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">{children}</main>
     </div>
   );
 }

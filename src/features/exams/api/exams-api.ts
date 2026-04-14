@@ -1,8 +1,14 @@
 /**
  * Exams API Client
+ *
+ * Role-based API structure:
+ * - Admin: Full CRUD on sessions, exams, marks
+ * - Employee: Read sessions/exams, enter marks for assigned classes
+ * - Parent: Read-only access to children's marks
  */
 
 import apiClient from '@/lib/api';
+import { isAdminUser } from '@/lib/utils/auth-utils';
 import type { ApiListResponse } from '@/lib/utils/api-response-handler';
 import type {
   ExamSession,
@@ -13,55 +19,56 @@ import type {
   ExamListParams,
   ExamCreatePayload,
   ExamUpdatePayload,
-  ExamSubject,
-  ExamSubjectListParams,
-  ExamSubjectCreatePayload,
-  ExamSubjectUpdatePayload,
+  BulkExamCreatePayload,
   Mark,
-  MarkListParams,
-  MarkCreatePayload,
-  MarkUpdatePayload,
-  BulkMarkCreatePayload,
+  BulkMarkEntry,
 } from '../types';
 
-const BASE_URL = '/exams';
+// Role-based endpoints
+const ADMIN_BASE_URL = '/exams/admin';
+const EMPLOYEE_BASE_URL = '/exams/employee';
 
-// ── Helper ─────────────────────────────────────────────────
-
-function buildQueryString(params?: Record<string, unknown>): string {
-  if (!params) return '';
-  const qp = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      qp.append(key, String(value));
-    }
-  });
-  const str = qp.toString();
-  return str ? `?${str}` : '';
+/**
+ * Get the appropriate base URL based on user role and operation type
+ */
+function getBaseUrl(isWriteOperation = false): string {
+  // Write operations always use admin endpoint
+  if (isWriteOperation) {
+    return ADMIN_BASE_URL;
+  }
+  
+  // Use admin endpoint for admin users
+  if (isAdminUser()) {
+    return ADMIN_BASE_URL;
+  }
+  
+  return EMPLOYEE_BASE_URL;
 }
 
-// ── Exam Sessions ──────────────────────────────────────────
+// Exam Sessions
 
 export async function fetchExamSessions(
   params?: ExamSessionListParams
 ): Promise<ApiListResponse<ExamSession>> {
-  const qs = buildQueryString(params);
+  const baseUrl = getBaseUrl();
   const response = await apiClient.get<ApiListResponse<ExamSession>>(
-    `${BASE_URL}/sessions/${qs}`
+    `${baseUrl}/sessions/`,
+    { params }
   );
   return response.data;
 }
 
 export async function fetchExamSession(publicId: string): Promise<ExamSession> {
+  const baseUrl = getBaseUrl();
   const response = await apiClient.get<{ success: boolean; data: ExamSession }>(
-    `${BASE_URL}/sessions/${publicId}/`
+    `${baseUrl}/sessions/${publicId}/`
   );
   return response.data.data;
 }
 
 export async function createExamSession(data: ExamSessionCreatePayload): Promise<ExamSession> {
   const response = await apiClient.post<{ success: boolean; data: ExamSession }>(
-    `${BASE_URL}/sessions/`,
+    `${ADMIN_BASE_URL}/sessions/`,
     data
   );
   return response.data.data;
@@ -72,41 +79,64 @@ export async function updateExamSession(
   data: ExamSessionUpdatePayload
 ): Promise<ExamSession> {
   const response = await apiClient.patch<{ success: boolean; data: ExamSession }>(
-    `${BASE_URL}/sessions/${publicId}/`,
+    `${ADMIN_BASE_URL}/sessions/${publicId}/`,
     data
   );
   return response.data.data;
 }
 
 export async function deleteExamSession(publicId: string): Promise<void> {
-  await apiClient.delete(`${BASE_URL}/sessions/${publicId}/`);
+  await apiClient.delete(`${ADMIN_BASE_URL}/sessions/${publicId}/`);
 }
 
 export async function reactivateExamSession(publicId: string): Promise<ExamSession> {
   const response = await apiClient.post<{ success: boolean; data: ExamSession }>(
-    `${BASE_URL}/sessions/${publicId}/activate/`
+    `${ADMIN_BASE_URL}/sessions/${publicId}/activate/`
   );
   return response.data.data;
 }
 
-// ── Exams ──────────────────────────────────────────────────
+export async function bulkUpdateExamStatusBySession(
+  sessionId: string,
+  status: string
+): Promise<{ updated_count: number; status: string; session_id: string }> {
+  const response = await apiClient.post<{
+    success: boolean;
+    data: { updated_count: number; status: string; session_id: string };
+  }>(`${ADMIN_BASE_URL}/sessions/${sessionId}/bulk-update-exam-status/`, { status });
+  return response.data.data;
+}
+
+// Exams (Subject + Session combination)
 
 export async function fetchExams(params?: ExamListParams): Promise<ApiListResponse<Exam>> {
-  const qs = buildQueryString(params);
-  const response = await apiClient.get<ApiListResponse<Exam>>(`${BASE_URL}/exams/${qs}`);
+  const baseUrl = getBaseUrl();
+  const response = await apiClient.get<ApiListResponse<Exam>>(
+    `${baseUrl}/exams/`,
+    { params }
+  );
   return response.data;
 }
 
 export async function fetchExam(publicId: string): Promise<Exam> {
+  const baseUrl = getBaseUrl();
   const response = await apiClient.get<{ success: boolean; data: Exam }>(
-    `${BASE_URL}/exams/${publicId}/`
+    `${baseUrl}/exams/${publicId}/`
   );
   return response.data.data;
 }
 
 export async function createExam(data: ExamCreatePayload): Promise<Exam> {
   const response = await apiClient.post<{ success: boolean; data: Exam }>(
-    `${BASE_URL}/exams/`,
+    `${ADMIN_BASE_URL}/exams/`,
+    data
+  );
+  return response.data.data;
+}
+
+export async function bulkCreateExams(data: BulkExamCreatePayload): Promise<Exam[]> {
+  const response = await apiClient.post<{ success: boolean; data: Exam[] }>(
+    `${ADMIN_BASE_URL}/exams/bulk-create/`,
     data
   );
   return response.data.data;
@@ -114,105 +144,157 @@ export async function createExam(data: ExamCreatePayload): Promise<Exam> {
 
 export async function updateExam(publicId: string, data: ExamUpdatePayload): Promise<Exam> {
   const response = await apiClient.patch<{ success: boolean; data: Exam }>(
-    `${BASE_URL}/exams/${publicId}/`,
+    `${ADMIN_BASE_URL}/exams/${publicId}/`,
     data
   );
   return response.data.data;
 }
 
 export async function deleteExam(publicId: string): Promise<void> {
-  await apiClient.delete(`${BASE_URL}/exams/${publicId}/`);
+  await apiClient.delete(`${ADMIN_BASE_URL}/exams/${publicId}/`);
 }
 
 export async function reactivateExam(publicId: string): Promise<Exam> {
   const response = await apiClient.post<{ success: boolean; data: Exam }>(
-    `${BASE_URL}/exams/${publicId}/activate/`
+    `${ADMIN_BASE_URL}/exams/${publicId}/activate/`
   );
   return response.data.data;
 }
 
-// ── Exam Subjects ──────────────────────────────────────────
+// Marks
 
-export async function fetchExamSubjects(
-  params?: ExamSubjectListParams
-): Promise<ApiListResponse<ExamSubject>> {
-  const qs = buildQueryString(params);
-  const response = await apiClient.get<ApiListResponse<ExamSubject>>(
-    `${BASE_URL}/exam-subjects/${qs}`
-  );
-  return response.data;
+/**
+ * Bulk upsert marks for multiple students in one exam.
+ * Available to both Admin and Employee (teachers).
+ */
+export interface BulkMarkUpsertPayload {
+  session_id: string;
+  exam_id: string;
+  marks: BulkMarkEntry[];
 }
 
-export async function fetchExamSubject(publicId: string): Promise<ExamSubject> {
-  const response = await apiClient.get<{ success: boolean; data: ExamSubject }>(
-    `${BASE_URL}/exam-subjects/${publicId}/`
-  );
-  return response.data.data;
-}
-
-export async function createExamSubject(data: ExamSubjectCreatePayload): Promise<ExamSubject> {
-  const response = await apiClient.post<{ success: boolean; data: ExamSubject }>(
-    `${BASE_URL}/exam-subjects/`,
-    data
-  );
-  return response.data.data;
-}
-
-export async function updateExamSubject(
-  publicId: string,
-  data: ExamSubjectUpdatePayload
-): Promise<ExamSubject> {
-  const response = await apiClient.patch<{ success: boolean; data: ExamSubject }>(
-    `${BASE_URL}/exam-subjects/${publicId}/`,
-    data
-  );
-  return response.data.data;
-}
-
-export async function deleteExamSubject(publicId: string): Promise<void> {
-  await apiClient.delete(`${BASE_URL}/exam-subjects/${publicId}/`);
-}
-
-// ── Marks ──────────────────────────────────────────────────
-
-export async function fetchMarks(params?: MarkListParams): Promise<ApiListResponse<Mark>> {
-  const qs = buildQueryString(params);
-  const response = await apiClient.get<ApiListResponse<Mark>>(`${BASE_URL}/marks/${qs}`);
-  return response.data;
-}
-
-export async function fetchMark(publicId: string): Promise<Mark> {
-  const response = await apiClient.get<{ success: boolean; data: Mark }>(
-    `${BASE_URL}/marks/${publicId}/`
-  );
-  return response.data.data;
-}
-
-export async function createMark(data: MarkCreatePayload): Promise<Mark> {
-  const response = await apiClient.post<{ success: boolean; data: Mark }>(
-    `${BASE_URL}/marks/`,
-    data
-  );
-  return response.data.data;
-}
-
-export async function updateMark(publicId: string, data: MarkUpdatePayload): Promise<Mark> {
-  const response = await apiClient.patch<{ success: boolean; data: Mark }>(
-    `${BASE_URL}/marks/${publicId}/`,
-    data
-  );
-  return response.data.data;
-}
-
-export async function deleteMark(publicId: string): Promise<void> {
-  await apiClient.delete(`${BASE_URL}/marks/${publicId}/`);
-}
-
-export async function bulkCreateMarks(
-  data: BulkMarkCreatePayload
+export async function bulkUpsertMarks(
+  data: BulkMarkUpsertPayload
 ): Promise<{ success: boolean; message: string; data: Mark[] }> {
+  const baseUrl = getBaseUrl();
   const response = await apiClient.post<{ success: boolean; message: string; data: Mark[] }>(
-    `${BASE_URL}/marks/bulk-create/`,
+    `${baseUrl}/marks/bulk-upsert/`,
+    data
+  );
+  return response.data;
+}
+
+// Marks Overview API
+
+export interface MarksOverviewSubject {
+  exam_public_id: string;
+  subject_name: string;
+  max_marks: number;
+  passing_marks: number;
+  status: string;
+  date: string | null;
+  // Analytics fields
+  total_students: number;
+  appeared: number;
+  absent: number;
+  passed: number;
+  failed: number;
+  highest_marks: number;
+  lowest_marks: number;
+  total_marks_obtained: number;
+  average_marks: number;
+  pass_percentage: number;
+}
+
+export interface MarksOverviewStudentMark {
+  marks_obtained: number;
+  is_absent: boolean;
+  max_marks: number;
+  passing_marks: number;
+  is_pass: boolean;
+}
+
+export interface MarksOverviewStudent {
+  student_public_id: string;
+  student_name: string;
+  admission_number: string;
+  roll_number: string | null;
+  gender: string | null;
+  profile_photo_thumbnail: string | null;
+  marks?: Record<string, MarksOverviewStudentMark>; // exam_public_id -> marks_info (optional - may not have marks yet)
+  summary?: {
+    total_max: number;
+    total_obtained: number;
+    percentage: number;
+    is_pass: boolean | null;
+  };
+}
+
+export interface MarksOverviewResponse {
+  session: {
+    public_id: string;
+    name: string;
+    session_type: string;
+    start_date: string | null;
+    end_date: string | null;
+  };
+  class_info: {
+    public_id: string;
+    name: string;
+    class_master_name: string;
+    section_name: string;
+  };
+  subjects: MarksOverviewSubject[];
+  students: MarksOverviewStudent[];
+  stats: {
+    total_students: number;
+    passed_count: number;
+    failed_count: number;
+    pass_percentage: number;
+  };
+}
+
+export interface MarksOverviewParams {
+  session_id: string;
+  class_id: string;
+}
+
+export async function fetchMarksOverview(
+  params: MarksOverviewParams
+): Promise<{ success: boolean; message: string; data: MarksOverviewResponse }> {
+  const baseUrl = getBaseUrl();
+  const response = await apiClient.get<{ success: boolean; message: string; data: MarksOverviewResponse }>(
+    `${baseUrl}/marks/overview/`,
+    { params }
+  );
+  return response.data;
+}
+
+// Bulk Save All Marks (for Marks Overview page)
+
+export interface StudentExamMark {
+  exam_id: string;
+  marks_obtained: number | null;
+  is_absent: boolean;
+}
+
+export interface StudentMarksEntry {
+  student_id: string;
+  marks: StudentExamMark[];
+}
+
+export interface BulkSaveAllMarksPayload {
+  session_id: string;
+  class_id: string;
+  students: StudentMarksEntry[];
+}
+
+export async function bulkSaveAllMarks(
+  data: BulkSaveAllMarksPayload
+): Promise<{ success: boolean; message: string; data: { count: number } }> {
+  const baseUrl = getBaseUrl();
+  const response = await apiClient.post<{ success: boolean; message: string; data: { count: number } }>(
+    `${baseUrl}/marks/bulk-save-all/`,
     data
   );
   return response.data;

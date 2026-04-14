@@ -124,8 +124,14 @@ const TimesheetApprovalsPage = lazy(
 );
 
 // Exams & Marks
-const ExamsManagementPage = lazy(() =>
-  import('./features/exams/pages').then((m) => ({ default: m.ExamsManagementPage }))
+const ExamSessionsPage = lazy(() =>
+  import('./features/exams/pages').then((m) => ({ default: m.ExamSessionsPage }))
+);
+const ExamsListPage = lazy(() =>
+  import('./features/exams/pages').then((m) => ({ default: m.ExamsListPage }))
+);
+const ExamOverviewPage = lazy(() =>
+  import('./features/exams/pages').then((m) => ({ default: m.ExamOverviewPage }))
 );
 const ExamSessionFormPage = lazy(() =>
   import('./features/exams/pages').then((m) => ({ default: m.ExamSessionFormPage }))
@@ -133,8 +139,11 @@ const ExamSessionFormPage = lazy(() =>
 const ExamFormPage = lazy(() =>
   import('./features/exams/pages').then((m) => ({ default: m.ExamFormPage }))
 );
-const MarksEntryPage = lazy(() =>
-  import('./features/exams/pages').then((m) => ({ default: m.MarksEntryPage }))
+const BulkExamCreatePage = lazy(() =>
+  import('./features/exams/pages').then((m) => ({ default: m.BulkExamCreatePage }))
+);
+const MarksOverviewPage = lazy(() =>
+  import('./features/exams/pages').then((m) => ({ default: m.MarksOverviewPage }))
 );
 
 // Preferences
@@ -145,6 +154,10 @@ const HolidayCalendarPage = lazy(() => import('./pages/holidays-page'));
 
 // Exceptional Work Policy
 const ExceptionalWorkPage = lazy(() => import('./pages/exceptional-work-page'));
+
+// Timetable
+const ClassTimetablePage = lazy(() => import('./features/timetable/pages/class-timetable-page'));
+const TimetableSetupPage = lazy(() => import('./features/timetable/pages/timetable-setup-page'));
 
 // Profile
 const ProfilePage = lazy(() => import('./features/profile/pages/profile-page'));
@@ -231,16 +244,17 @@ function App() {
             <Route path={ROUTES.SUBJECTS_EDIT} element={<SubjectFormPage />} />
 
             {/* Exams & Marks */}
-            <Route path={ROUTES.EXAMS} element={<ExamsManagementPage />} />
-            <Route path={ROUTES.EXAMS_LIST} element={<ExamsManagementPage />} />
+            <Route path={ROUTES.EXAMS} element={<ExamSessionsPage />} />
+            <Route path={ROUTES.EXAMS_OVERVIEW} element={<ExamOverviewPage />} />
+            <Route path={ROUTES.EXAMS_LIST} element={<ExamsListPage />} />
             <Route path={ROUTES.EXAM_SESSIONS_NEW} element={<ExamSessionFormPage />} />
             <Route path={ROUTES.EXAM_SESSIONS_VIEW} element={<ExamSessionFormPage />} />
             <Route path={ROUTES.EXAM_SESSIONS_EDIT} element={<ExamSessionFormPage />} />
             <Route path={ROUTES.EXAMS_NEW} element={<ExamFormPage />} />
+            <Route path={ROUTES.EXAMS_BULK_CREATE} element={<BulkExamCreatePage />} />
             <Route path={ROUTES.EXAMS_VIEW} element={<ExamFormPage />} />
             <Route path={ROUTES.EXAMS_EDIT} element={<ExamFormPage />} />
-            <Route path={ROUTES.MARKS} element={<ExamsManagementPage />} />
-            <Route path={ROUTES.MARKS_ENTRY} element={<MarksEntryPage />} />
+            <Route path={ROUTES.MARKS_OVERVIEW} element={<MarksOverviewPage />} />
 
             {/* Organization Preferences */}
             <Route path={ROUTES.PREFERENCES} element={<PreferencesPage />} />
@@ -253,6 +267,10 @@ function App() {
 
             {/* Exceptional Work Policy */}
             <Route path={ROUTES.EXCEPTIONAL_WORK} element={<ExceptionalWorkPage />} />
+
+            {/* Timetable */}
+            <Route path={ROUTES.TIMETABLE} element={<ClassTimetablePage />} />
+            <Route path={ROUTES.TIMETABLE_SETUP} element={<TimetableSetupPage />} />
 
             {/* Profile */}
             <Route path={ROUTES.PROFILE} element={<ProfilePage />} />

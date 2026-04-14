@@ -19,9 +19,9 @@ import {
   BarChart3,
   CheckSquare,
   Sliders,
+  Clock,
   ClipboardList,
   FileText,
-  PenLine,
 } from 'lucide-react';
 import type { SidebarSection } from '@/components/layout/dashboard-sidebar';
 import { ROUTES } from '@/constants/app-config';
@@ -70,6 +70,12 @@ export const employeeSidebarConfig: SidebarSection[] = [
         icon: BookOpen,
         path: ROUTES.SUBJECTS,
       },
+      {
+        id: 'timetable',
+        label: 'Timetable',
+        icon: Clock,
+        path: ROUTES.TIMETABLE,
+      },
     ],
   },
   {
@@ -88,10 +94,16 @@ export const employeeSidebarConfig: SidebarSection[] = [
         path: ROUTES.EXAMS_LIST,
       },
       {
-        id: 'marks-entry',
-        label: 'Enter Marks',
-        icon: PenLine,
-        path: ROUTES.MARKS_ENTRY,
+        id: 'exam-overview',
+        label: 'Exam Overview',
+        icon: BarChart3,
+        path: ROUTES.EXAMS_OVERVIEW,
+      },
+      {
+        id: 'marks-overview',
+        label: 'Marks Overview',
+        icon: CheckSquare,
+        path: ROUTES.MARKS_OVERVIEW,
       },
     ],
   },

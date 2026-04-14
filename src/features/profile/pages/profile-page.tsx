@@ -1,9 +1,10 @@
 /**
  * Profile Settings Page
- * Main page for managing user profile with tabbed interface
+ * Main page for managing user profile with tabbed interface and entrance animations
  */
 
 import { User, Lock, Mail, Phone, MapPin } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHeader } from '@/components/common';
@@ -16,7 +17,12 @@ import { AddressUpdateForm } from '../components/address-update-form';
 
 export default function ProfilePage() {
   return (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className="space-y-6"
+    >
       <PageHeader
         title="Profile Settings"
         description="Manage your personal information, security, and contact details"
@@ -69,6 +75,6 @@ export default function ProfilePage() {
           </TabsContent>
         </Tabs>
       </Card>
-    </div>
+    </motion.div>
   );
 }

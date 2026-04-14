@@ -1,6 +1,7 @@
 /**
  * Reactivate Confirmation Dialog Component
- * Reusable dialog for confirming reactivation of soft-deleted records
+ * Modern styled dialog for confirming reactivation of soft-deleted records
+ * Matches the visual style of DeleteConfirmationDialog
  */
 
 import {
@@ -14,7 +15,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { RotateCcw, AlertCircle } from 'lucide-react';
+import { RotateCcw, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 interface ReactivateConfirmationDialogProps {
   open: boolean;
@@ -43,54 +44,78 @@ export function ReactivateConfirmationDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2 text-white">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
-              <RotateCcw className="h-5 w-5 text-green-600" />
+      <AlertDialogContent className="overflow-hidden border-0 p-0 bg-gradient-to-br from-green-50/50 via-white to-emerald-50/50">
+        {/* Header with gradient background */}
+        <div className="relative overflow-hidden bg-gradient-to-r from-green-500 via-emerald-500 to-green-500 px-6 py-6">
+          {/* Decorative circles */}
+          <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/5 blur-2xl" />
+          <div className="absolute -left-8 -bottom-8 h-32 w-32 rounded-full bg-white/5 blur-2xl" />
+
+          <AlertDialogHeader className="relative">
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-white/15 p-3 backdrop-blur-sm">
+                <RotateCcw className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <AlertDialogTitle className="text-xl font-bold text-white">
+                  {title}
+                </AlertDialogTitle>
+              </div>
             </div>
-            {title}
-          </AlertDialogTitle>
-          <AlertDialogDescription className="text-base text-white">
-            {description || defaultDescription}
+          </AlertDialogHeader>
+        </div>
+
+        {/* Content */}
+        <div className="px-6 py-6">
+          <AlertDialogDescription className="text-base text-gray-700">
+            <div>{description || defaultDescription}</div>
+            <div className="mt-3 flex items-start gap-2">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
+              <span className="text-sm text-green-600">
+                This record will be restored and become active again.
+              </span>
+            </div>
           </AlertDialogDescription>
-        </AlertDialogHeader>
-        
-        {error && (
-          <Alert variant="destructive" className="mx-6 mb-2">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        
-        <AlertDialogFooter>
-          <AlertDialogCancel
-            disabled={isReactivating}
-            className="text-red-600 hover:text-red-700 border-red-600 hover:border-red-700"
-          >
-            Cancel
-          </AlertDialogCancel>
-          <AlertDialogAction
-            onClick={(e) => {
-              e.preventDefault();
-              onConfirm();
-            }}
-            disabled={isReactivating}
-            className="bg-green-600 hover:bg-green-700 focus:ring-green-600"
-          >
-            {isReactivating ? (
-              <>
-                <RotateCcw className="mr-2 h-4 w-4 animate-spin" />
-                Reactivating...
-              </>
-            ) : (
-              <>
-                <RotateCcw className="mr-2 h-4 w-4" />
-                Reactivate
-              </>
-            )}
-          </AlertDialogAction>
-        </AlertDialogFooter>
+
+          {error && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="bg-gradient-to-r from-green-50/30 to-emerald-50/30 px-6 py-4 border-t border-green-100">
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={isReactivating}
+              className="border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md hover:scale-105 active:scale-95 transition-all duration-200 font-medium"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                onConfirm();
+              }}
+              disabled={isReactivating}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 text-white border-2 border-green-700 hover:from-green-700 hover:to-emerald-700 hover:border-green-800 hover:shadow-lg hover:shadow-green-500/50 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-md transition-all duration-200 font-semibold"
+            >
+              {isReactivating ? (
+                <>
+                  <RotateCcw className="mr-2 h-4 w-4 animate-spin" />
+                  Reactivating...
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Reactivate
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </div>
       </AlertDialogContent>
     </AlertDialog>
   );

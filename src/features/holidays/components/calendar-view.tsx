@@ -18,6 +18,7 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useRole } from '@/hooks/use-role';
 import type { Holiday, CalendarDay } from '../types';
 import {
   getHolidayTypeColor,
@@ -42,6 +43,7 @@ export function CalendarView({ currentDate, holidays }: CalendarViewProps) {
   const [showDateDialog, setShowDateDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
 
+  const { isAdmin } = useRole();
   const today = startOfDay(new Date());
 
   // Generate calendar grid
@@ -91,7 +93,14 @@ export function CalendarView({ currentDate, holidays }: CalendarViewProps) {
   }, [holidays, today]);
 
   const handleDateClick = (day: CalendarDay) => {
-    if (!day.isCurrentMonth) return;
+    if (!day.isCurrentMonth) {
+      return;
+    }
+
+    // Non-admin users can only view, not add/edit holidays
+    if (!isAdmin) {
+      return;
+    }
 
     setSelectedDate(day.date);
     setSelectedDateHolidays(day.holidays);

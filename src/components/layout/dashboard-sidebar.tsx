@@ -145,7 +145,14 @@ export function DashboardSidebar({ sections, footer, onNavigate }: DashboardSide
             )}
             <div className="space-y-1">
               {section.items.map((item) => (
-                <SidebarNavItem key={item.id} item={item} onNavigate={onNavigate} />
+                <SidebarNavItem
+                  key={item.id}
+                  item={item}
+                  siblingPaths={section.items
+                    .filter((s) => s.path && s.id !== item.id)
+                    .map((s) => s.path!)}
+                  onNavigate={onNavigate}
+                />
               ))}
             </div>
           </div>

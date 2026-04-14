@@ -1,7 +1,7 @@
 /**
  * Reusable Page Header Component
  * Provides consistent header styling across all pages with title, description, and action buttons
- * Includes smart icon mapping based on page title/context
+ * Includes smart icon mapping based on page title/context and entrance animation
  */
 
 import type { ReactNode } from 'react';
@@ -24,6 +24,7 @@ import {
   Home,
   AlertTriangle,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -74,6 +75,9 @@ const PAGE_ICON_MAP: Record<string, LucideIcon> = {
   reports: BarChart3,
   analytics: BarChart3,
   dashboard: Home,
+
+  // Timetable
+  timetable: Calendar,
 
   // Other
   attendance: ClipboardList,
@@ -135,26 +139,55 @@ export function PageHeader({
   const Icon = icon || getIconForTitle(title);
 
   return (
-    <div className={className}>
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className={className}
+    >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         {/* Title and Description Section */}
         <div className="flex-1">
           <div className="mb-2 flex items-center gap-2 sm:gap-3">
             {Icon && (
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 shadow-md sm:h-10 sm:w-10">
+              <motion.div
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1, type: 'spring', bounce: 0.35 }}
+                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 shadow-md sm:h-10 sm:w-10"
+              >
                 <Icon className="h-4 w-4 text-white sm:h-5 sm:w-5" />
-              </div>
+              </motion.div>
             )}
-            <h1 className="text-xl font-bold tracking-tight text-gray-900 sm:text-3xl">{title}</h1>
+            <motion.h1
+              initial={{ opacity: 0, x: -12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.15, duration: 0.4 }}
+              className="text-xl font-bold tracking-tight text-gray-900 sm:text-3xl"
+            >
+              {title}
+            </motion.h1>
           </div>
           {description && (
-            <p className="mt-1 max-w-2xl text-sm text-gray-600 sm:text-base">{description}</p>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.25, duration: 0.4 }}
+              className="mt-1 max-w-2xl text-sm text-gray-600 sm:text-base"
+            >
+              {description}
+            </motion.p>
           )}
         </div>
 
         {/* Actions and Children Section - Right Side */}
         {(actions.length > 0 || children) && (
-          <div className="flex flex-shrink-0 flex-wrap items-center gap-2 sm:gap-3">
+          <motion.div
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2, duration: 0.4 }}
+            className="flex flex-shrink-0 flex-wrap items-center gap-2 sm:gap-3"
+          >
             {/* Render action buttons */}
             {actions.length > 0 &&
               actions.map((action, index) => {
@@ -190,9 +223,9 @@ export function PageHeader({
 
             {/* Render custom children (e.g., dialog components with their own triggers) */}
             {children}
-          </div>
+          </motion.div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
